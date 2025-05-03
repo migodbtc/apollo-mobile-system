@@ -1,0 +1,33 @@
+# --- Global ---
+.DS_Store
+Thumbs.db
+*.log
+.env
+*.env
+*.sqlite
+*.bak
+
+# --- Python Server ---
+server/__pycache__/
+server/.venv/
+server/.pytest_cache/
+server/*.pyc
+
+# --- Node/Expo App ---
+mobile/node_modules/
+mobile/.expo/
+mobile/.expo-shared/
+mobile/dist/
+mobile/web-build/
+mobile/coverage/
+mobile/npm-debug.log
+mobile/yarn-error.log
+mobile/metro-cache/
+mobile/*.apk
+mobile/.env
+mobile/.DS_Store
+
+# --- OS & Editor junk ---
+.vscode/
+.idea/
+*.swp

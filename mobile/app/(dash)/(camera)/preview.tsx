@@ -4,184 +4,215 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  StatusBar,
+  Image,
 } from "react-native";
 import React, { useRef, useEffect, useState } from "react";
 import { Video, AVPlaybackStatus, ResizeMode } from "expo-av";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useImageUri } from "@/constants/contexts/ImageURIContext";
 
 const { width, height } = Dimensions.get("window");
-
-// LAST PROBLEM: The videos prerecorded and saved within the app
-// do not properly get cleared and sometimes overlays with other videos
 
 const PreviewPage = () => {
   const router = useRouter();
   const { videoUri, setVideoUri } = useVideoUri();
+  const { imageUri, setImageUri } = useImageUri();
+
+  const [videoKey, setVideoKey] = useState(0);
   const videoReference = useRef<Video>(null);
   const [videoError, setVideoError] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [videoStatus, setVideoStatus] = useState<AVPlaybackStatus | null>(null);
+
+  const hardResetVideo = async () => {
+    try {
+      if (videoReference.current) {
+        await videoReference.current.pauseAsync();
+        await videoReference.current.stopAsync();
+        await videoReference.current.unloadAsync();
+      }
+
+      setVideoError(false);
+      setIsVideoReady(false);
+      setVideoStatus(null);
+
+      setVideoKey((prev) => prev + 1);
+
+      setVideoUri(null);
+      setImageUri(null);
+    } catch (error) {
+      console.error("[hardResetVideo] ERROR during reset:", error);
+      throw error;
+    }
+  };
+
+  const hardResetVideoWithoutUri = async () => {
+    try {
+      if (videoReference.current) {
+        await videoReference.current.pauseAsync();
+        await videoReference.current.stopAsync();
+        await videoReference.current.unloadAsync();
+      }
+
+      setVideoError(false);
+      setIsVideoReady(false);
+      setVideoStatus(null);
+
+      setVideoKey((prev) => prev + 1);
+    } catch (error) {
+      console.error("[hardResetVideoWithoutUri] ERROR during reset:", error);
+      throw error;
+    }
+
+    if (videoUri) {
+      setTimeout(() => {
+        videoReference.current?.playAsync().catch(console.error);
+      }, 500);
+    }
+  };
+
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    setVideoStatus(status);
+
+    if (!status.isLoaded) {
+      if (status.error) {
+        console.error("Video playback error:", status.error);
+        setVideoError(true);
+      }
+      return;
+    }
+
+    if (!isVideoReady) {
+      setIsVideoReady(true);
+    }
+  };
 
   useEffect(() => {
     const loadVideo = async () => {
-      if (videoUri && videoReference.current) {
-        try {
+      if (!videoUri) return;
+
+      try {
+        setVideoError(false);
+        setIsVideoReady(false);
+
+        if (videoReference.current) {
           await videoReference.current.loadAsync(
             { uri: videoUri },
-            { shouldPlay: true },
+            { shouldPlay: true, isLooping: true },
             false
           );
-        } catch (error) {
-          console.error("Video load error:", error);
-          setVideoError(true);
         }
+      } catch (error) {
+        console.error("Video load error:", error);
+        setVideoError(true);
       }
     };
 
     loadVideo();
 
     return () => {
-      const cleanup = async () => {
-        try {
-          if (videoReference.current) {
-            await videoReference.current.stopAsync();
-            await videoReference.current.unloadAsync();
-          }
-        } catch (error) {
-          console.error("Cleanup error:", error);
-        }
-      };
-      cleanup();
+      if (videoReference.current) {
+        videoReference.current.unloadAsync().catch(console.error);
+      }
     };
-  }, [videoUri]);
+  }, [videoUri, videoKey]);
 
-  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    setVideoStatus(status);
-
-    if (!status.isLoaded) {
-      if ("error" in status) {
-        console.error("Playback error:", status.error);
-        setVideoError(true);
-      }
-      return;
-    }
-
-    if (status.didJustFinish) {
-      if (videoReference.current && !status.isPlaying) {
-        videoReference.current.replayAsync();
-      }
+  const handleBack = async () => {
+    try {
+      await hardResetVideo();
+      router.replace("/(dash)/(camera)/capture");
+    } catch (error) {
+      console.error("handleBack: Error during back navigation:", error);
     }
   };
 
-  const retryPlayback = async () => {
-    setVideoError(false);
-    if (videoUri && videoReference.current) {
-      try {
-        await videoReference.current.replayAsync();
-      } catch (error) {
-        console.error("Retry failed:", error);
-        setVideoError(true);
-      }
+  const handleSubmit = async () => {
+    try {
+      await hardResetVideoWithoutUri();
+      await router.replace("/(dash)/(camera)/submission");
+    } catch (error) {
+      console.error("handleSubmit: Error during submission:", error);
     }
   };
+
+  const showLoading = !isVideoReady && !videoError && videoUri;
 
   return (
-    <>
-      <View style={[styles.container, { width, height }]}>
-        {videoUri ? (
-          <View style={styles.videoContainer}>
-            <Video
-              ref={videoReference}
-              style={styles.video}
-              source={{ uri: videoUri }}
-              useNativeControls={false}
-              resizeMode={ResizeMode.CONTAIN}
-              isLooping
-              isMuted={false}
-              shouldPlay
-              onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-            />
+    <View style={[styles.container, { width, height }]}>
+      {videoUri ? (
+        <View style={styles.videoContainer}>
+          <Video
+            key={`video-${videoKey}`}
+            ref={videoReference}
+            style={styles.video}
+            source={{ uri: videoUri }}
+            useNativeControls={false}
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            isMuted={false}
+            shouldPlay={true}
+            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+          />
 
-            {videoError && (
-              <View style={styles.errorOverlay}>
-                <Text style={styles.errorText}>Video playback failed</Text>
-                <Text style={styles.retryText} onPress={retryPlayback}>
-                  Tap to retry
-                </Text>
-              </View>
-            )}
-          </View>
-        ) : (
-          <Text style={styles.noVideoText}>No video available</Text>
-        )}
+          {showLoading && (
+            <View style={styles.loadingOverlay}>
+              <Text style={styles.loadingText}>Loading video...</Text>
+            </View>
+          )}
 
-        <View style={styles.actionCard}>
-          <View style={styles.actionCardTextSection}>
-            <Text style={styles.actionCardTitle}>Media Preview</Text>
-            <Text style={styles.actionCardSubtitle}>
-              Review your media and decide whether to submit or to retake.
+          {videoError && (
+            <View style={styles.loadingOverlay}>
+              <Text style={styles.errorText}>Video playback failed</Text>
+              <TouchableOpacity onPress={() => hardResetVideo()}>
+                <Text style={styles.retryText}>Tap to reset</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      ) : imageUri ? (
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: imageUri }} style={styles.image} />
+        </View>
+      ) : (
+        <Text style={styles.noMediaText}>No media available</Text>
+      )}
+
+      <View style={styles.actionCard}>
+        <View style={styles.actionCardTextSection}>
+          <Text style={styles.actionCardTitle}>Media Preview</Text>
+          <Text style={styles.actionCardSubtitle}>
+            Review your media and decide whether to submit or to retake.
+          </Text>
+        </View>
+        <View style={styles.actionButtonsRow}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleBack}>
+            <Text style={styles.actionButtonText}>
+              <FontAwesome
+                name="arrow-left"
+                size={width * 0.035}
+                color="#11162B"
+              />
+              {"  "}
+              BACK
             </Text>
-          </View>
-          <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={async () => {
-                try {
-                  if (videoReference.current) {
-                    await videoReference.current.stopAsync();
-                    await videoReference.current.unloadAsync();
-                  }
-                  setVideoUri(null);
-                  setVideoError(false);
-                  setVideoStatus(null);
-                } catch (error) {
-                  console.error("Navigation cleanup error:", error);
-                } finally {
-                  router.push("/(dash)/(camera)/capture");
-                }
-              }}
-            >
-              <Text style={styles.actionButtonText}>
-                <FontAwesome
-                  name="arrow-left"
-                  size={width * 0.035}
-                  color="#11162B"
-                />
-                {"  "}
-                BACK
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={async () => {
-                try {
-                  if (videoReference.current) {
-                    await videoReference.current.pauseAsync();
-                  }
-                  setVideoError(false);
-                } catch (error) {
-                  console.error("Submit preparation error:", error);
-                } finally {
-                  router.push("/(dash)/(camera)/submission");
-                }
-              }}
-            >
-              <Text style={styles.actionButtonText}>
-                <FontAwesome
-                  name="check-circle"
-                  size={width * 0.035}
-                  color="#11162B"
-                />
-                {"  "}
-                SUBMIT
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={handleSubmit}>
+            <Text style={styles.actionButtonText}>
+              <FontAwesome
+                name="check-circle"
+                size={width * 0.035}
+                color="#11162B"
+              />
+              {"  "}
+              SUBMIT
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </>
+    </View>
   );
 };
 
@@ -196,17 +227,16 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     position: "relative",
-    zIndex: 1,
   },
   video: {
     width: "100%",
     height: "100%",
   },
-  noVideoText: {
+  noMediaText: {
     color: "white",
     fontSize: 18,
   },
-  errorOverlay: {
+  loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "center",
@@ -216,6 +246,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     marginBottom: 10,
+  },
+  loadingText: {
+    color: "white",
+    fontSize: 18,
   },
   retryText: {
     color: "#3b82f6",
@@ -259,30 +293,34 @@ const styles = StyleSheet.create({
   },
   actionButtonsRow: {
     flexDirection: "row",
-    width: "100%",
-    height: "30%",
-    paddingBottom: 12,
-    gap: width * 0.02,
-    paddingHorizontal: width * 0.06,
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: width * 0.05,
   },
   actionButton: {
-    flex: 1,
-    flexDirection: "row",
+    backgroundColor: "#F97316",
+    borderRadius: 10,
+    paddingVertical: height * 0.01,
+    paddingHorizontal: width * 0.02,
     justifyContent: "center",
     alignItems: "center",
-    height: "100%",
-    width: "40%",
-    borderRadius: 12,
-    backgroundColor: "#f97316",
-    marginHorizontal: width * 0.01,
-    paddingVertical: height * 0.01,
+    width: "45%",
   },
   actionButtonText: {
+    color: "#11162B",
     fontWeight: "bold",
     fontSize: width * 0.035,
-    color: "#11162B",
+    textAlign: "center",
+  },
+  imageContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
   },
 });
 

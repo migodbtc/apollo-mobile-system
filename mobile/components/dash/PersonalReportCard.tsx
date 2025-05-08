@@ -102,8 +102,7 @@ const PersonalReportCard: React.FC<PersonalReportCardProps> = ({
             fontSize: width * 0.03,
           }}
         >
-          Timestamp:{" "}
-          {new Date(userSubmittedReport.PR_timestamp).toLocaleString()}
+          Timestamp: {new Date(userSubmittedReport.PR_timestamp).toUTCString()}
         </Text>
       </View>
     </View>

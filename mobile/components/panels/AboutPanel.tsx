@@ -15,10 +15,13 @@ const AboutPanel = () => {
       role: "Lead Backend Developer, Assistant Database Administrator, R&D Associate, Assistant Mobile Developer, Assistant Fullstack Developer, Assistant Technical Writer",
     },
     {
-      name: "Mareus Manzano",
+      name: "Mareus Gabriel Manzano",
       role: "Lead Database Admnistrator, R&D Associate, Visionary Lead, Assistant Technical Writer",
     },
-    { name: "Gideon Agan", role: "Lead Technical Writer, Logistics Manager" },
+    {
+      name: "Gideon Rico Agan",
+      role: "Lead Technical Writer, Logistics Manager",
+    },
     {
       name: "Ferdinand Hassan Flojo",
       role: "Capstone Advisor, Professor, Mentor (THE GOAT)",

@@ -11,6 +11,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
   isSelected,
   onPress,
   isCamera = false,
+  styled,
 }) => {
   if (isCamera) {
     return (
@@ -26,7 +27,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.mainButton, isSelected && styles.selectedButton]}
+      style={[styled, styles.mainButton, isSelected && styles.selectedButton]}
       onPress={onPress}
     >
       <FontAwesome

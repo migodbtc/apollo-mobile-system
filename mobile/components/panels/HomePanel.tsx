@@ -36,14 +36,12 @@ const HomePanel = () => {
     const payload = { UA_user_id: sessionData?.UA_user_id };
 
     try {
-      const response = await fetch(
-        `${SERVER_LINK}/reports/preverified/session`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const endpoint = `${SERVER_LINK}/reports/preverified/session`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const data = await response.json();
 
@@ -68,7 +66,8 @@ const HomePanel = () => {
         setSessionReports(reports);
       }
     } catch (error) {
-      console.error("Error fetching unverified reports:", error);
+      console.error("Failed to fetch session reports:", error);
+      throw error; // Re-throw to be caught by the main error handler
     }
   };
 

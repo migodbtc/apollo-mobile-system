@@ -21,7 +21,7 @@ import ReportHelpModal from "../dash/ReportHelpModal";
 
 const { width, height } = Dimensions.get("window");
 
-const ReportsPanel = () => {
+const HistoryPanel = () => {
   // Session context
   const { sessionData } = useSession();
 
@@ -46,29 +46,9 @@ const ReportsPanel = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const combinedReports = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-
-    const filteredPreverified = preverifiedReports.filter((preverified) => {
-      const prDate = new Date(preverified.PR_timestamp)
-        .toISOString()
-        .slice(0, 10);
-      const isToday = prDate === today;
-      return isToday;
-    });
-
-    const result = filteredPreverified.map((preverified) => {
-      const prDate = new Date(preverified.PR_timestamp)
-        .toISOString()
-        .slice(0, 10);
-
+    const result = preverifiedReports.map((preverified) => {
       const verified = verifiedReports.find((v) => {
-        const vrDate = new Date(v.VR_verification_timestamp)
-          .toISOString()
-          .slice(0, 10);
-        const idMatch = v.VR_report_id === preverified.PR_report_id;
-        const dateMatch = vrDate === prDate;
-
-        return idMatch && dateMatch;
+        return v.VR_report_id === preverified.PR_report_id;
       });
 
       return [preverified, verified ?? null] as [
@@ -78,7 +58,7 @@ const ReportsPanel = () => {
     });
 
     return result;
-  }, [preverifiedReports, verifiedReports, showPreverified]);
+  }, [preverifiedReports, verifiedReports]);
 
   // Data fetching use effect to get the infrormation from the database
   useEffect(() => {
@@ -219,11 +199,11 @@ const ReportsPanel = () => {
             <Text style={styles.headerTitle}>
               <FontAwesome name="file" size={width * 0.055} />
               {"  "}
-              Reports Page
+              History Page
             </Text>
 
             <Text style={styles.headerSubtitle}>
-              Showing reports for {formattedDate}
+              Showing all previous reports submitted by all users of Apollo.
             </Text>
           </View>
 
@@ -293,12 +273,12 @@ const ReportsPanel = () => {
             />
             <Text style={styles.emptyText}>
               {showPreverified
-                ? "No reports available today"
-                : "No verified reports available today."}
+                ? "No reports available."
+                : "No verified reports available."}
             </Text>
             <Text style={styles.emptySubtext}>
               {showPreverified
-                ? "There are currently no fire reports in your area"
+                ? "There are currently no fire reports submitted within the database."
                 : "Try showing unverified reports or check back later."}
             </Text>
           </View>
@@ -362,6 +342,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: "#94A3B8",
     fontSize: width * 0.03,
+    width: "70%",
     textAlign: "center",
     marginTop: 8,
   },
@@ -497,4 +478,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReportsPanel;
+export default HistoryPanel;

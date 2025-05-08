@@ -7,6 +7,8 @@ import ReportsPanel from "@/components/panels/ReportsPanel";
 import { useSession } from "@/constants/contexts/SessionContext";
 import { useState } from "react";
 import { View, Text, Dimensions } from "react-native";
+import HistoryPanel from "@/components/panels/HistoryPanel";
+import TeamsPanel from "@/components/panels/TeamsPanel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -21,6 +23,8 @@ export default function Dashboard() {
     map: <MapsPanel />,
     about: <AboutPanel />,
     reports: <ReportsPanel />,
+    history: <HistoryPanel />,
+    team: <TeamsPanel />,
   };
 
   return (

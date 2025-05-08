@@ -1,12 +1,11 @@
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import re
 import time
 import json
 import os
 import threading
 
-from werkzeug.utils import secure_filename
 import pymysql.cursors
 from flask import jsonify, redirect, render_template, url_for, request
 
@@ -15,6 +14,7 @@ from pprint import pprint
 
 
 pms_DictCursor = pymysql.cursors.DictCursor
+philippines_timezone = timezone(timedelta(hours=8))  # UTC+8
 
 ##### ================[[ HANDLER FUNCTIONS ]]================ #####
 """See README for more information! - Migo"""
@@ -28,6 +28,22 @@ def get_users():
         conn = mysql.connect()
         cursor = conn.cursor(pms_DictCursor)
         cursor.execute("SELECT * FROM `user_accounts`")
+        users = cursor.fetchall()
+        return jsonify(users), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+def get_users_responders():
+    """DESC: Fetches all user accounts from the database."""
+    conn, cursor = None, None
+    
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+        cursor.execute("SELECT * FROM `user_accounts` WHERE UA_user_role = 'responder'")
         users = cursor.fetchall()
         return jsonify(users), 200
     except Exception as e:
@@ -236,29 +252,21 @@ def delete_user(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
+## === POSTVERIFIED REPORTS ===
+def get_postverified_reports():
+    """DESC: Fetches all postverified reports from the database."""
+    conn, cursor = None, None
     try:
         conn = mysql.connect()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM `account_profiles` WHERE AP_user_id = %s", (user_id,))
-        profile = cursor.fetchone()
-        
-        if not profile:
-            return jsonify({"error": f"Profile with User ID '{user_id}' not found."}), 404
-
-        cursor.execute("DELETE FROM `account_profiles` WHERE AP_user_id = %s", (user_id,))
-        conn.commit()
-        
-        return jsonify({"message": f"Profile with User ID '{user_id}' deleted successfully."}), 200
+        cursor = conn.cursor(pms_DictCursor)
+        cursor.execute("SELECT * FROM `postverified_reports`")
+        reports = cursor.fetchall()
+        return jsonify(reports), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        cursor.close()
-        conn.close()
-
-## === POSTVERIFIED REPORTS ===
-def get_postverified_reports():
-    pass
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 def get_one_postverified_report(request):
     pass
@@ -454,28 +462,33 @@ def get_media_file(request):
     pass
 
 def add_media_file(request):
-    """Handles raw video file uploads into MySQL."""
+    """Handles raw media file uploads (video or image) into MySQL."""
     conn = None
     cursor = None
 
     try:
-        # Get file from FormData
         video_file = request.files.get("video")
-        if not video_file:
-            raise ValueError("No video file uploaded")
-
-        # Get report JSON
+        image_file = request.files.get("image")
+        
+        if not video_file and not image_file:
+            raise ValueError("No media file uploaded (expected video or image)")
+        
+        media_type = 'video' if video_file else 'image'
+        media_file = video_file if video_file else image_file
+        
         report_data = request.form.get("report")
+        if not report_data:
+            raise ValueError("No report data provided")
+            
         report = json.loads(report_data)
         user_id = report['reporter']['id']
+        
         current_date = datetime.now().strftime("%Y%m%d") 
         current_time = datetime.now().strftime("%H%M%S")
-        file_name = f"ID{user_id}TIME{current_time}DATE{current_date}VID.mp4"
+        extension = 'mp4' if media_type == 'video' else 'jpg'
+        file_name = f"ID{user_id}TIME{current_time}DATE{current_date}{media_type.upper()}.{extension}"
 
-        # print(f"[DEBUG] user_id: {user_id}, file_name: {file_name}, content_type: {video_file.content_type}")
-
-        # Read raw file bytes
-        file_data_bytes = video_file.read()
+        file_data_bytes = media_file.read()
 
         conn = mysql.connect()
         cursor = conn.cursor(pms_DictCursor)
@@ -489,30 +502,37 @@ def add_media_file(request):
             INSERT INTO media_storage 
             (MS_user_owner, MS_file_type, MS_file_name, MS_file_data)
             VALUES (%s, %s, %s, %s)
-        """, (user_id, video_file.content_type, file_name, file_data_bytes))
+        """, (
+            user_id, 
+            media_file.content_type, 
+            file_name, 
+            file_data_bytes
+        ))
+
         conn.commit()
 
         media_id = cursor.lastrowid
-        # print(f"[DEBUG] Media stored with ID: {media_id}")
 
         return {
-            "message": "Upload successful",
+            "message": f"{media_type.capitalize()} upload successful",
             "media_id": media_id,
-            "file_size": len(file_data_bytes)
+            "media_type": media_type,
+            "file_size": len(file_data_bytes),
+            "file_name": file_name
         }, 201
 
+    except json.JSONDecodeError as e:
+        return {"error": f"Invalid report data: {str(e)}"}, 400
     except Exception as e:
-        # print(f"[ERROR] Upload failed: {str(e)}")
         if conn:
             conn.rollback()
-        return jsonify({"error": str(e)}), 500
-
+        print(str(e))
+        return {"error": str(e)}, 500
     finally:
         if cursor:
             cursor.close()
         if conn:
             conn.close()
-        # print("[DEBUG] DB connection closed")
 
 def update_media_file(request):
     pass 
@@ -522,39 +542,60 @@ def delete_media_file(request):
 
 ### === UPLOAD/DOWNLOAD ===
 def process_report_request(request):
-    """DESC: Processes incoming report data and validates required fields."""
+    """Processes incoming report data and validates required fields with media-type specific requirements."""
     # print("\n=== STARTING REPORT REQUEST PROCESSING ===")
-    
-    # Check if request contains any data
+
     # print("Checking for request data...")
     if not request.files and not request.form:
         # print("ERROR: No data provided in request")
         return None, {"error": "No data provided"}, 400
-    
-    # Get and validate report data
+
     # print("Extracting report data from request...")
     report_data = request.form.get("report")
     if not report_data:
         # print("ERROR: Missing report data in form")
         return None, {"error": "Missing report data"}, 400
-    
-    # Parse JSON data
+    # print(f"Report data: {report_data}")
+
     # print("Parsing JSON report data...")
     try:
         report = json.loads(report_data)
-        # print("JSON parsed successfully")
     except json.JSONDecodeError as e:
         # print(f"JSON PARSE ERROR: {str(e)}")
         return None, {"error": f"Invalid JSON data: {str(e)}"}, 400
-    
-    # Validate required fields
+
+    # print("Checking for media files...")
+    video_file = request.files.get("video")
+    image_file = request.files.get("image")
+    # print(f"Video File: {video_file is not None}")
+    # print(f"Image File: {image_file is not None}")
+
+    if video_file and image_file:
+        # print("ERROR: Both video and image provided")
+        return None, {"error": "Cannot provide both video and image"}, 400
+
+    if video_file:
+        report['media_type'] = 'video'
+        report['file_received'] = True
+        # print("Video file detected")
+    elif image_file:
+        report['media_type'] = 'image'
+        report['file_received'] = True
+        # print("Image file detected")
+    else:
+        # print("ERROR: No media file provided")
+        return None, {"error": "No media file provided (video or image required)"}, 400
+
     # print("Validating required fields...")
     required_fields = {
         'reporter': ['id'],
         'location': ['coordinates', 'address'],
-        'media': ['size', 'duration']
+        'media': ['size']
     }
-    
+
+    if report['media_type'] == 'video':
+        required_fields['media'].append('duration')
+
     for section, fields in required_fields.items():
         if section not in report:
             # print(f"MISSING SECTION: {section}")
@@ -563,15 +604,9 @@ def process_report_request(request):
             if field not in report[section]:
                 # print(f"MISSING FIELD: {section}.{field}")
                 return None, {"error": f"Missing field: {section}.{field}"}, 400
-    
-    # Check for video file
-    # print("Checking for video file...")
-    video_file = request.files.get("video")
-    report['video_received'] = video_file is not None
-    # print(f"Video received: {'YES' if report['video_received'] else 'NO'}")
-    
-    # print("=== REPORT VALIDATION SUCCESSFUL ===")
-    return report, {"message": "Data validated successfully"}, 200
+
+    # print(f"=== {report['media_type'].upper()} REPORT VALIDATION SUCCESSFUL ===")
+    return report, {"message": f"{report['media_type'].capitalize()} report validated successfully"}, 200
 
 def prepare_report_blob(request):
     """Processes the request and prepares data for BLOB storage"""
@@ -618,14 +653,18 @@ def prepare_report_blob(request):
         return None, {"error": f"Processing failed: {str(e)}"}, 500
 
 def log_report_details(report):
-    """Helper function for logging report details"""
+    """Logs report details with media-type awareness"""
     print("\n=== RECEIVED REPORT ===")
-    print(f"report['reporter']['id']: {report['reporter']['id']}")
-    print(f"report['location']['coordinates']: {report['location']['coordinates']['latitude']}, {report['location']['coordinates']['longitude']}")
-    print(f"report['location']['address']: {report['location']['address']}")
-    print(f"report['media']['size']: {report['media']['size']} bytes")
-    print(f"report['media']['duration']: {report['media']['duration']} seconds")
-    print(f"report.get('video_received'): {'Yes' if report.get('video_received') else 'No'}")
+    print(f"Media Type: {report.get('media_type', 'unknown')}")
+    print(f"Reporter ID: {report['reporter']['id']}")
+    print(f"Coordinates: {report['location']['coordinates']['latitude']}, {report['location']['coordinates']['longitude']}")
+    print(f"Address: {report['location']['address']}")
+    print(f"File Size: {report['media']['size']} bytes")
+    
+    if report.get('media_type') == 'video':
+        print(f"Duration: {report['media']['duration']} seconds")
+    
+    print(f"File Received: {'Yes' if report.get('file_received') else 'No'}")
     print("======================\n")
 
 
@@ -636,6 +675,16 @@ def log_report_details(report):
 @app.route('/', methods=["GET"])
 def route_default():
     pass
+
+@app.route('/ping', methods=["GET"])
+def route_ping():
+    if request.method != 'GET':
+        return jsonify({"error": "Invalid request method. Expected GET method."}), 405
+    
+    try:
+        return jsonify({"message": "Pong!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 ## === AUTHENTICATION ===
 def handle_login(data):
@@ -790,6 +839,16 @@ def route_get_users():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/user/get/all/responders', methods=['GET'])
+def route_get_users_responders():
+    if request.method != 'GET':
+        return jsonify({"error": "Invalid request method. Expected GET method."}), 405
+    
+    try:
+        return get_users_responders()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/user/get/one', methods=['GET'])
 def route_get_one_user():
     if request.method != 'GET':
@@ -849,49 +908,98 @@ def route_delete_user():
         return jsonify({"error": str(e)}), 500
 
 ## === REPORTS RESOURCE ===
-
 @app.route('/reports/upload/video', methods=["POST"])
 def route_upload_report_video():
+    try:
+        # Process and validate request
+        report, response, status = process_report_request(request)
+        if not report:
+            return jsonify(response), status
+
+        # Upload media file
+        media_response, media_status = add_media_file(request)
+        if media_status != 201:
+            return jsonify(media_response), media_status
+
+        # Create report record
+        report_data = {
+            "PR_user_id": report['reporter']['id'],
+            "PR_image": None,
+            "PR_video": media_response['media_id'],
+            "PR_latitude": report['location']['coordinates']['latitude'],
+            "PR_longitude": report['location']['coordinates']['longitude'],
+            "PR_address": report['location']['address'],
+            "PR_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S"),
+            "PR_verified": False,
+            "PR_report_status": "pending"
+        }
+        
+        report_response, report_status = add_preverified_report(report_data)
+        if report_status != 201:
+            return jsonify(report_response), report_status
+
+        # Success response
+        return jsonify({
+            "status": "success",
+            "message": "Video report processed successfully",
+            "report_id": report_response.get('report_id'),
+            "media_id": media_response['media_id'],
+            "reporter_id": report['reporter']['id'],
+            "timestamp": report_data['PR_timestamp']
+        }), 200
+
+    except Exception as e:
+        print(f"Error processing video report: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": "Failed to process video report",
+            "error": str(e)
+        }), 500
+    
+@app.route('/reports/upload/image', methods=["POST"])
+def route_upload_report_image():
     try:
         report, response, status = process_report_request(request)
         if not report:
             return jsonify(response), status
 
-        
-        log_report_details(report)
+        media_response, media_status = add_media_file(request)
+        if media_status != 201:
+            return jsonify(media_response), media_status
 
-        response, status_code = add_media_file(request)
+        report_data = {
+            "PR_user_id": report['reporter']['id'],
+            "PR_image": media_response['media_id'],
+            "PR_video": None,
+            "PR_latitude": report['location']['coordinates']['latitude'],
+            "PR_longitude": report['location']['coordinates']['longitude'],
+            "PR_address": report['location']['address'],
+            "PR_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S"),
+            "PR_verified": False,
+            "PR_report_status": "pending"
+        }
+        
+        report_response, report_status = add_preverified_report(report_data)
+        if report_status != 201:
+            return jsonify(report_response), report_status
 
-        response_2, status_code = add_preverified_report({
-            "PR_user_id": report['reporter']['id'],           
-            "PR_image": None,
-            "PR_video": response['media_id'], 
-            "PR_latitude": report['location']['coordinates']['latitude'],       
-            "PR_longitude": report['location']['coordinates']['longitude'],     
-            "PR_address": report['location']['address'], 
-            "PR_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
-            "PR_verified": False,         
-            "PR_report_status": "pending" 
-        })
-        
-        print(f"Response from add_preverified_report: {response_2}")
-        
         return jsonify({
-            "message": "Report processed successfully",
-            "report_id": report['reporter']['id'],
-            "video_received": report['video_received']
+            "status": "success",
+            "message": "Image report processed successfully",
+            "report_id": report_response.get('report_id'),
+            "media_id": media_response['media_id'],
+            "reporter_id": report['reporter']['id'],
+            "timestamp": report_data['PR_timestamp']
         }), 200
 
     except Exception as e:
-        print(f"Error processing report: {str(e)}")
-        return jsonify({"error": "Server error processing report"}), 500
-
-@app.route('/reports/upload/image', methods=["POST"])
-def route_upload_report_image(): 
-    data = request.get_json()
-    print(data)
-    return jsonify({"message": "Report submission received!"}), 200
-
+        print(f"Error processing image report: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": "Failed to process image report",
+            "error": str(e)
+        }), 500
+    
 @app.route('/reports/preverified/all', methods=['GET'])
 def route_get_preverified_reports():
     if request.method != 'GET':

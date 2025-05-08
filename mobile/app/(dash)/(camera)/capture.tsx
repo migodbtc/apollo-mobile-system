@@ -1,5 +1,5 @@
 import { Dimensions, StyleSheet, View } from "react-native";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CameraType, CameraView } from "expo-camera";
 import { Video } from "expo-av";
 import * as FileSystem from "expo-file-system";
@@ -7,6 +7,7 @@ import { useRouter } from "expo-router";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
 import CameraPanel from "@/components/camera/CameraPanel";
 import { VideoMetadata } from "@/constants/interfaces/media";
+import { useImageUri } from "@/constants/contexts/ImageURIContext";
 
 const { height } = Dimensions.get("window");
 
@@ -21,6 +22,7 @@ const CaptureScreen = () => {
     undefined
   );
   const { videoUri, setVideoUri } = useVideoUri();
+  const { imageUri, setImageUri } = useImageUri();
 
   const [facing, setFacing] = useState<CameraType>("back");
   const [isVideoMode, setIsVideoMode] = useState(false);
@@ -29,8 +31,8 @@ const CaptureScreen = () => {
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const toggleMediaType = () => {
-    setIsVideoMode((prev) => !prev);
     if (isRecording) handleStopRecording();
+    setIsVideoMode((prev) => !prev);
   };
 
   const getVideoMetadata = async (uri: string): Promise<VideoMetadata> => {
@@ -96,6 +98,10 @@ const CaptureScreen = () => {
     if (!cameraViewReference.current) return;
     try {
       setVideoUri(null);
+      if (videoReference.current) {
+        await videoReference.current.unloadAsync();
+      }
+
       setRecordingDuration(0);
       setIsRecording(true);
 
@@ -126,11 +132,40 @@ const CaptureScreen = () => {
       await cameraViewReference.current.stopRecording();
     } catch (err) {
     } finally {
+      setImageUri(null);
       setIsRecording(false);
       if (durationIntervalRef.current)
         clearInterval(durationIntervalRef.current);
     }
   };
+
+  const handleTakePhoto = async () => {
+    if (!cameraViewReference.current) {
+      console.warn("Camera ref is not available");
+      return;
+    }
+
+    try {
+      const photo = await cameraViewReference.current.takePictureAsync({
+        quality: 1,
+      });
+
+      if (!photo?.uri) {
+        throw new Error("Photo capture failed - no URI returned");
+      }
+
+      setVideoUri(null);
+      setImageUri(photo.uri);
+
+      router.push("/(dash)/(camera)/preview");
+    } catch (err) {
+      console.error("Failed to take photo", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!videoUri) setVideoSource(undefined);
+  }, [videoUri]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#020617", height }}>
@@ -145,7 +180,12 @@ const CaptureScreen = () => {
         handleStartRecording={handleStartRecording}
         handleStopRecording={handleStopRecording}
         recordingDuration={recordingDuration}
-        handleGoBack={() => router.push("/dashboard")}
+        handleGoBack={() => {
+          setVideoUri(null);
+          setImageUri(null);
+          router.push("/dashboard");
+        }}
+        handleTakePhoto={handleTakePhoto}
       />
       {videoSource && (
         <Video

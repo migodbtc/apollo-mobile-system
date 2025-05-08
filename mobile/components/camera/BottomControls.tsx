@@ -11,6 +11,7 @@ const BottomControls = ({
   onRecord,
   onFlipCamera,
   onBack,
+  onCapturePhoto,
 }: BottomControlProps) => (
   <View style={styles.container}>
     {!isRecording && (
@@ -19,13 +20,20 @@ const BottomControls = ({
       </TouchableOpacity>
     )}
 
-    <TouchableOpacity onPress={onRecord} style={styles.button}>
+    <TouchableOpacity
+      onPress={isVideoMode ? onRecord : onCapturePhoto}
+      style={styles.button}
+    >
       <FontAwesome
         name={
-          isVideoMode ? "camera" : isRecording ? "stop-circle" : "video-camera"
+          isVideoMode
+            ? isRecording
+              ? "stop-circle"
+              : "video-camera"
+            : "camera"
         }
         size={width * 0.1}
-        color={isRecording ? "red" : "#f97316"}
+        color={isVideoMode && isRecording ? "red" : "#f97316"}
       />
     </TouchableOpacity>
 

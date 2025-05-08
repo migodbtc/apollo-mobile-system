@@ -18,6 +18,7 @@ const CameraPanel = ({
   handleStopRecording,
   recordingDuration,
   handleGoBack,
+  handleTakePhoto,
 }: CameraPanelProps) => {
   const [dimensions, setDimensions] = useState({
     width: Dimensions.get("window").width,
@@ -79,7 +80,7 @@ const CameraPanel = ({
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
             facing={facing}
-            mode="video"
+            mode={isVideoMode ? "video" : "picture"}
             onCameraReady={() => {
               setTimeout(() => setCameraReady(true), 100);
             }}
@@ -105,6 +106,7 @@ const CameraPanel = ({
         isRecording={isRecording}
         isVideoMode={isVideoMode}
         onRecord={isRecording ? handleStopRecording : handleStartRecording}
+        onCapturePhoto={handleTakePhoto}
         onFlipCamera={() => setFacing(facing === "back" ? "front" : "back")}
         onBack={handleGoBack}
       />

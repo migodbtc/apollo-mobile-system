@@ -1,4 +1,12 @@
-import { View, Text, Alert, Dimensions, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  Alert,
+  Dimensions,
+  ActivityIndicator,
+  Touchable,
+  TouchableOpacity,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import MapView, { Callout, Marker, Overlay, UrlTile } from "react-native-maps";
 import * as Location from "expo-location";
@@ -48,13 +56,13 @@ const MapsPanel = () => {
         flex: 1,
         width: "100%",
         height: "100%",
-        backgroundColor: "blue",
+        backgroundColor: "#11162B",
         justifyContent: "flex-start",
         alignItems: "center",
       }}
     >
       <MapView
-        style={{ flex: 1, backgroundColor: "red", width: "100%" }}
+        style={{ flex: 1, backgroundColor: "#11162B", width: "100%" }}
         initialRegion={{
           latitude: location?.latitude || 0,
           longitude: location?.longitude || 0,
@@ -75,17 +83,45 @@ const MapsPanel = () => {
               latitude: location.latitude,
               longitude: location.longitude,
             }}
+            onPress={() => Alert.alert("Marker Pressed")}
           >
-            <Callout>
-              <View style={{ padding: 10 }}>
-                <Text style={{ fontWeight: "bold" }}>Nearby Marker</Text>
-                <Text>Coordinates:</Text>
-                <Text>
-                  {location?.latitude || 0}, {location?.longitude || 0}
-                </Text>
-                <Text>Click me!</Text>
-              </View>
-            </Callout>
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                backgroundColor: "#C53030",
+                padding: 2,
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FontAwesome name="question" size={24} color="#FFFFFF" />
+            </View>
+          </Marker>
+        )}
+
+        {location && (
+          <Marker
+            coordinate={{
+              latitude: location.latitude + 0.0005,
+              longitude: location.longitude + 0.00115,
+            }}
+            onPress={() => Alert.alert("Marker Pressed")}
+          >
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                backgroundColor: "#2F855A",
+                padding: 2,
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FontAwesome name="exclamation" size={24} color="#FFFFFF" />
+            </View>
           </Marker>
         )}
       </MapView>

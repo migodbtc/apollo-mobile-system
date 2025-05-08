@@ -9,16 +9,11 @@ export default function DashboardLayout() {
       screenOptions={{
         headerShown: false,
         animationDuration: 1000,
+        animation: "fade",
       }}
     >
-      <Stack.Screen
-        name="dashboard"
-        options={{ title: "Dashboard", animation: "slide_from_bottom" }}
-      />
-      <Stack.Screen
-        name="(camera)"
-        options={{ title: "Camera", animation: "slide_from_right" }}
-      />
+      <Stack.Screen name="dashboard" options={{ title: "Dashboard" }} />
+      <Stack.Screen name="(camera)" options={{ title: "Camera" }} />
     </Stack>
   );
 }

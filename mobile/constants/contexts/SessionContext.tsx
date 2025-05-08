@@ -15,7 +15,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
     UA_user_id: 13,
     UA_username: "responder.alec",
     UA_password: "~~~~~~~~",
-    UA_user_role: "civilian",
+    UA_user_role: "responder",
     UA_created_at: "2025-04-15 22:08:06",
     UA_last_name: "Eigenmann",
     UA_first_name: "Alec Theodore",

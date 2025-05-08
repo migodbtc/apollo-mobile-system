@@ -1,8 +1,9 @@
 import { CameraType, CameraView } from "expo-camera";
-import { PostverifiedReport, PreverifiedReport } from "./database";
+import { PostverifiedReport, PreverifiedReport, UserRole } from "./database";
 import { FontAwesomeIconName } from "../type/component";
 import { Video } from "expo-av";
 import { TextStyle, ViewStyle } from "react-native";
+import * as Location from "expo-location";
 
 export interface CustomAlertProps {
   visible: boolean;
@@ -49,10 +50,38 @@ export interface CameraPanelProps {
   isRecording: boolean;
   isVideoMode: boolean;
   toggleMediaType: () => void;
+  handleTakePhoto: () => void;
   handleStartRecording: () => void;
   handleStopRecording: () => void;
   recordingDuration: number;
   handleGoBack: () => void;
+}
+
+export interface SubmissionPanelProps {
+  isLoading: boolean;
+  isSubmissionSending: boolean;
+  isSubmissionSuccessVisible: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSubmissionSending: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSubmissionSuccessVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  getFullName: () => string;
+  formatAddress: (addr: any) => string;
+  address: any;
+  coords: { latitude: number; longitude: number } | null;
+  timestamp: string;
+  setAddress: React.Dispatch<
+    React.SetStateAction<Location.LocationGeocodedAddress | null>
+  >;
+  setCoords: React.Dispatch<
+    React.SetStateAction<{
+      latitude: number;
+      longitude: number;
+    } | null>
+  >;
+  setTimestamp: React.Dispatch<React.SetStateAction<string>>;
+  onBackPress: () => void;
+  onSubmitPress: () => void;
+  onCloseSuccessModal: () => void;
 }
 
 export interface TopControlProps {
@@ -68,6 +97,7 @@ export interface BottomControlProps {
   onRecord: () => void;
   onFlipCamera: () => void;
   onBack: () => void;
+  onCapturePhoto?: () => void;
 }
 
 export interface ReportHelpModalProps {
@@ -81,11 +111,22 @@ export interface NavigationButtonProps {
   isSelected: boolean;
   onPress: () => void;
   isCamera?: boolean;
+  styled?: ViewStyle;
 }
 
+// Add this to your types/interfaces file
 export interface NavigationButtonConfig {
   iconName: FontAwesomeIconName;
   label: string;
   panel: string;
   isCamera?: boolean;
+  subItems?: Array<{
+    iconName: FontAwesomeIconName;
+    label: string;
+    panel: string;
+  }>;
 }
+
+export type RoleBasedButtonsConfig = {
+  [role in UserRole]: NavigationButtonConfig[];
+};

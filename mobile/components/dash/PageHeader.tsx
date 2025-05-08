@@ -41,6 +41,18 @@ const renderHeaderContent: React.FC<NavigationBarProps> = ({
           <FontAwesome name="info" size={iconSize} /> About
         </Text>
       );
+    case "history":
+      return (
+        <Text style={textStyle}>
+          <FontAwesome name="history" size={iconSize} /> History
+        </Text>
+      );
+    case "team":
+      return (
+        <Text style={textStyle}>
+          <FontAwesome name="users" size={iconSize} /> Teams
+        </Text>
+      );
     default:
       return null;
   }

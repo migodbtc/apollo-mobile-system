@@ -16,7 +16,7 @@ const BottomControls = ({
   <View style={styles.container}>
     {!isRecording && (
       <TouchableOpacity onPress={onBack} style={styles.button}>
-        <FontAwesome name="chevron-left" size={width * 0.1} color="#f97316" />
+        <FontAwesome name="chevron-left" size={48} color="#f97316" />
       </TouchableOpacity>
     )}
 
@@ -32,14 +32,14 @@ const BottomControls = ({
               : "video-camera"
             : "camera"
         }
-        size={width * 0.1}
+        size={48}
         color={isVideoMode && isRecording ? "red" : "#f97316"}
       />
     </TouchableOpacity>
 
     {!isRecording && (
       <TouchableOpacity onPress={onFlipCamera} style={styles.button}>
-        <FontAwesome name="exchange" size={width * 0.1} color="#f97316" />
+        <FontAwesome name="exchange" size={48} color="#f97316" />
       </TouchableOpacity>
     )}
   </View>
@@ -53,15 +53,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: height * 0.15,
-    paddingBottom: height * 0.03,
+    height: 120,
     backgroundColor: "#020617",
     zIndex: 2,
   },
   button: {
     marginHorizontal: 10,
-    width: 72,
-    height: 52,
+    width: 64,
+    height: 64,
     backgroundColor: "#020617",
     justifyContent: "center",
     alignItems: "center",

@@ -97,7 +97,7 @@ const UserProfileCard = () => {
           style={{
             width: "100%",
             height: "100%",
-            backgroundColor: "red",
+            backgroundColor: "#020617",
             borderTopLeftRadius: 20,
             borderBottomLeftRadius: 20,
             overflow: "hidden",

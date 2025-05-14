@@ -430,7 +430,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: "#4A5568",
+                    backgroundColor: "#7FAA1C",
                     paddingHorizontal: 10,
                     paddingVertical: 5,
                     borderRadius: 20,
@@ -549,7 +549,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: "#4A5568",
+                    backgroundColor: "#4695CD",
                     paddingHorizontal: 10,
                     paddingVertical: 5,
                     borderRadius: 20,
@@ -644,7 +644,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
                 letterSpacing: 0.5,
               }}
             >
-              Full Name
+              Name
             </Text>
           </View>
           <View
@@ -661,7 +661,9 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
                 lineHeight: height * 0.025,
               }}
             >
-              {getFullName()}
+              {sessionData?.UA_first_name && sessionData?.UA_last_name
+                ? getFullName()
+                : `@${sessionData?.UA_username}`}
             </Text>
           </View>
         </View>

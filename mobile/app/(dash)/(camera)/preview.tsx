@@ -141,6 +141,21 @@ const PreviewPage = () => {
 
   return (
     <View style={[styles.container, { width, height }]}>
+      <View style={styles.header}>
+        {videoUri ? (
+          <Text style={[styles.actionCardTitle, { fontSize: width * 0.04 }]}>
+            <FontAwesome name="video-camera" />
+            {"  "}VIDEO PREVIEW
+          </Text>
+        ) : (
+          <Text style={[styles.actionCardTitle, { fontSize: width * 0.04 }]}>
+            <FontAwesome name="image" />
+            {"  "}
+            IMAGE PREVIEW
+          </Text>
+        )}
+      </View>
+
       {videoUri ? (
         <View style={styles.videoContainer}>
           <Video
@@ -181,7 +196,9 @@ const PreviewPage = () => {
 
       <View style={styles.actionCard}>
         <View style={styles.actionCardTextSection}>
-          <Text style={styles.actionCardTitle}>Media Preview</Text>
+          <Text style={styles.actionCardTitle}>
+            Satisfied with the recording?
+          </Text>
           <Text style={styles.actionCardSubtitle}>
             Review your media and decide whether to submit or to retake.
           </Text>
@@ -219,18 +236,35 @@ const PreviewPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black",
+    backgroundColor: "#020617",
     justifyContent: "center",
     alignItems: "center",
   },
   videoContainer: {
     width: "100%",
-    height: "100%",
-    position: "relative",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
   },
   video: {
+    width: "90%",
+    marginHorizontal: "5%",
+    height: "90%",
+  },
+  imageContainer: {
+    width: "90%",
+    paddingBottom: height * 0.12,
+    // borderStyle: "solid",
+    // borderWidth: 1,
+    // borderColor: "red",
+    // borderRadius: 24,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+  },
+  image: {
     width: "100%",
     height: "100%",
+    resizeMode: "cover",
   },
   noMediaText: {
     color: "white",
@@ -279,7 +313,7 @@ const styles = StyleSheet.create({
   actionCardTitle: {
     width: "100%",
     color: "#f97316",
-    fontSize: width * 0.06,
+    fontSize: width * 0.045,
     fontWeight: "bold",
     textAlign: "center",
     marginTop: 8,
@@ -311,16 +345,15 @@ const styles = StyleSheet.create({
     fontSize: width * 0.035,
     textAlign: "center",
   },
-  imageContainer: {
+  header: {
     width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
+    paddingVertical: 20,
+    backgroundColor: "#11162B",
+    overflow: "hidden",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 2,
   },
 });
 

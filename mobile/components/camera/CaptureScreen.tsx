@@ -143,7 +143,7 @@ const CameraScreen = () => {
         backgroundColor: "black",
       }}
     >
-      <CameraPanel
+      {/* <CameraPanel
         cameraRef={cameraViewReference}
         videoRef={videoReference}
         facing={facing}
@@ -155,7 +155,8 @@ const CameraScreen = () => {
         handleStopRecording={handleStopRecording}
         recordingDuration={recordingDuration}
         handleGoBack={() => router.push("/dashboard")}
-      />
+        handleTakePhoto={}
+      /> */}
     </View>
   );
 };

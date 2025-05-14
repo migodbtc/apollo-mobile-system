@@ -64,12 +64,13 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       { iconName: "home", label: "Home", panel: "home" },
       { iconName: "map", label: "Map", panel: "map" },
       { iconName: "camera", label: "", panel: "camera", isCamera: true },
-      { iconName: "database", label: "Database", panel: "database" },
+      { iconName: "pie-chart", label: "Reports", panel: "reports" },
       {
         iconName: "bars",
         label: "More",
         panel: "more",
         subItems: [
+          { iconName: "database", label: "Database", panel: "database" },
           { iconName: "bug", label: "Meta", panel: "meta" },
           { iconName: "info-circle", label: "About", panel: "about" },
         ],

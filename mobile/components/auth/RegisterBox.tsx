@@ -10,7 +10,6 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AuthModal from "./AuthModal";
 import { useSession } from "@/constants/contexts/SessionContext";
-import { SessionData } from "@/constants/interfaces/databaseInterfaces";
 import { SERVER_LINK } from "@/constants/netvar";
 
 const RegisterBox: React.FC = () => {

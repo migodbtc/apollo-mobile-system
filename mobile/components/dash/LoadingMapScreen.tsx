@@ -32,7 +32,8 @@ const LoadingMapPanel = () => {
           textAlign: "center",
         }}
       >
-        The map won't load if location {"\n"} permissions are disabled.
+        The map won't load if location permissions are disabled.{"\n"}
+        Number of reports may affect loading time!
       </Text>
       <ActivityIndicator size="large" color="#c2410c" />
     </View>

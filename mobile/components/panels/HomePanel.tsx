@@ -94,6 +94,31 @@ const HomePanel = () => {
 
     return () => (
       <View>
+        <Text
+          style={{
+            color: "#B0B3C4",
+            fontSize: 12,
+            marginHorizontal: 10,
+            fontStyle: "italic",
+          }}
+        >
+          <FontAwesome name="info" />
+          {"  "}
+          Complete the setup of your account by submitting personal information,
+          which in turn will increase your reputation score and make your
+          account and reports more credible and trusted!
+        </Text>
+        <Text
+          style={{
+            color: "#B0B3C4",
+            marginVertical: 10,
+            marginHorizontal: 10,
+            fontSize: 12,
+            fontWeight: "bold",
+          }}
+        >
+          EDIT YOUR ACCOUNT INFORMATION WITH THE PROFILE BUTTON BELOW!{" "}
+        </Text>
         {[
           { key: "User ID", value: sessionData?.UA_user_id },
           { key: "Last Name", value: sessionData?.UA_last_name },
@@ -132,7 +157,7 @@ const HomePanel = () => {
                 fontSize: valueFontSize,
               }}
             >
-              {item.value ?? "..."}
+              {item.value ?? "  "}
             </Text>
           </View>
         ))}

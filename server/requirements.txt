@@ -3,7 +3,6 @@ blinker==1.8.2
 bytecode==0.15.1
 click==8.1.7
 colorama==0.4.6
-dearpygui==1.10.1
 distlib==0.3.8
 fastjsonschema==2.21.1
 filelock==3.13.1
@@ -18,18 +17,14 @@ Jinja2==3.1.4
 MarkupSafe==2.1.5
 mysql-connector-python==8.2.0
 mysqlclient==2.2.4
-numpy==2.1.0
-phonenumbers==8.13.27
 platformdirs==4.1.0
 protobuf==4.21.12
 pure_eval==0.2.3
 pydantic==2.5.3
 pydantic_core==2.14.6
-pygame==2.5.1
 PyMySQL==1.1.0
 pywin32==308
 Rx==3.2.0
-scipy==1.15.1
 six==1.16.0
 SQLAlchemy==2.0.28
 typing_extensions==4.9.0

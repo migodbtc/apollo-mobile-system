@@ -98,16 +98,7 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                 </View>
                 <View style={styles.contentColumn}>
                   <Text style={styles.sectionText}>
-                    {new Date(selectedReport[0]?.PR_timestamp).toLocaleString(
-                      [],
-                      {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }
-                    )}
+                    {new Date(selectedReport[0]?.PR_timestamp).toUTCString()}
                   </Text>
                 </View>
               </View>

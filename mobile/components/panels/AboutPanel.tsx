@@ -38,7 +38,7 @@ const AboutPanel = () => {
     },
     {
       name: "Ferdinand Hassan Flojo",
-      role: "Capstone Advisor, Professor, Mentor (THE GOAT)",
+      role: "Capstone Advisor, Professor, Mentor",
     },
   ];
 

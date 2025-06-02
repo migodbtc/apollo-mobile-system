@@ -27,7 +27,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const [sessionData, setSessionData] = useState<UserSession | null>(
-    sampleSession
+    null
   );
 
   return (

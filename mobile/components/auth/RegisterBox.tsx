@@ -123,7 +123,7 @@ const RegisterBox: React.FC = () => {
           }}
         >
           <FontAwesome name="fire" size={width * 0.04} />
-          {"  "}APOLLO REGISTRATION
+          {"  "}APOLLO SIGN-UP FORM
         </Text>
 
         <View
@@ -254,7 +254,7 @@ const RegisterBox: React.FC = () => {
               fontSize: width * 0.04,
             }}
           >
-            REGISTER
+            SIGN-UP
           </Text>
         </TouchableOpacity>
 

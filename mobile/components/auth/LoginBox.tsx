@@ -130,6 +130,8 @@ const LoginBox: React.FC = () => {
       <View
         style={{
           width: "75%",
+          position: "relative",
+          marginTop: 100,
           backgroundColor: "#11162B",
           paddingHorizontal: width * 0.08,
           paddingVertical: height * 0.035,
@@ -270,7 +272,7 @@ const LoginBox: React.FC = () => {
               fontSize: width * 0.03,
             }}
           >
-            Don't have an account? Go register!
+            Don't have an account? Sign-Up!
           </Text>
         </TouchableOpacity>
       </View>

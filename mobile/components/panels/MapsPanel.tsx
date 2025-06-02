@@ -8,7 +8,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useMemo, useState } from "react";
-import MapView, { Callout, Marker, Overlay, UrlTile } from "react-native-maps";
+import MapView, {
+  Callout,
+  Circle,
+  Marker,
+  Overlay,
+  UrlTile,
+} from "react-native-maps";
 import * as Location from "expo-location";
 import { FontAwesome } from "@expo/vector-icons";
 import LoadingMapPanel from "../dash/LoadingMapScreen";
@@ -17,7 +23,7 @@ import {
   PreverifiedReport,
 } from "@/constants/interfaces/database";
 import SERVER_LINK from "@/constants/netvar";
-import PulsatingMarker from "./PulsatingMarker";
+import PulsatingMarker from "../dash/PulsatingMarker";
 
 const { width, height } = Dimensions.get("window");
 
@@ -276,8 +282,8 @@ const MapsPanel = () => {
                 <PulsatingMarker>
                   <View
                     style={{
-                      width: 32,
-                      height: 32,
+                      width: 35,
+                      height: 35,
                       backgroundColor: "#C53030",
                       padding: 2,
                       borderRadius: 20,

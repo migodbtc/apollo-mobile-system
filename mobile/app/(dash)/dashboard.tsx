@@ -5,7 +5,7 @@ import NavigationBar from "@/components/dash/NavigationBar";
 import PageHeader from "@/components/dash/PageHeader";
 import ReportsPanel from "@/components/panels/ReportsPanel";
 import { useSession } from "@/constants/contexts/SessionContext";
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { View, Text, Dimensions } from "react-native";
 import HistoryPanel from "@/components/panels/HistoryPanel";
 import TeamsPanel from "@/components/panels/TeamsPanel";

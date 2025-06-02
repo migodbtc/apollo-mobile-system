@@ -126,7 +126,3 @@ export interface NavigationButtonConfig {
     panel: string;
   }>;
 }
-
-export type RoleBasedButtonsConfig = {
-  [role in UserRole]: NavigationButtonConfig[];
-};

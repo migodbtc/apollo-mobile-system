@@ -57,8 +57,8 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
 
   const getVideoMetadata = async (uri: string): Promise<VideoMetadata> => {
     return new Promise(async (resolve, reject) => {
-      let intervalId: NodeJS.Timeout | null = null;
-      let timeoutId: NodeJS.Timeout | null = null;
+      let intervalId: number | null = null;
+      let timeoutId: number | null = null;
       const MAX_RETRIES = 30;
       let retryCount = 0;
 

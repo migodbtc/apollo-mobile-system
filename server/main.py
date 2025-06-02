@@ -7,7 +7,7 @@ import os
 import threading
 
 import pymysql.cursors
-from flask import jsonify, redirect, render_template, url_for, request
+from flask import Response, jsonify, redirect, render_template, url_for, request
 
 from app import app, mysql
 from pprint import pprint
@@ -458,8 +458,111 @@ def delete_fire_statistic(request):
 def get_all_media_files():
     pass
 
-def get_media_file(request):
-    pass
+def get_media_file_details(request):
+    conn = None
+    cursor = None
+
+    data = request.json
+    MS_media_id = data.get("MS_media_id")
+
+    if not MS_media_id:
+        return jsonify({"error": "Missing MS_media_id parameter!"}), 400
+
+    try:
+        
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+
+        cursor.execute("SELECT MS_media_id, MS_user_owner, MS_file_name, MS_file_type FROM media_storage WHERE MS_media_id = %s", (MS_media_id, ))
+        media_row = cursor.fetchone()
+        if not media_row:
+            return jsonify({"error": f"Media row with ID {MS_media_id} not found"}), 404
+
+        return jsonify(media_row), 200
+    except Exception as e:
+        print(str(e))
+        return {"error": str(e)}, 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def get_media_file_blob(request):
+    conn = None
+    cursor = None
+    data = request.json
+    MS_media_id = data.get("MS_media_id")
+
+    if not MS_media_id:
+        return jsonify({"error": "Missing MS_media_id"}), 400
+
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+
+        cursor.execute("""
+            SELECT MS_file_data 
+            FROM media_storage 
+            WHERE MS_media_id = %s
+        """, (MS_media_id,))
+        media_row = cursor.fetchone()
+
+        if not media_row:
+            return jsonify({"error": "Media not found"}), 404
+
+        return Response(
+            media_row['MS_file_data'],  
+            mimetype="application/octet-stream"  
+        )
+
+    except Exception as e:
+        return {"error": str(e)}, 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+def get_media_file_blob_download(request):
+    data = request.json
+    MS_media_id = data.get("MS_media_id")
+
+    if not MS_media_id:
+        return jsonify({"error": "Missing MS_media_id"}), 400
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+
+        cursor.execute("""
+            SELECT MS_file_data, MS_file_type 
+            FROM media_storage 
+            WHERE MS_media_id = %s
+        """, (MS_media_id,))
+        media_row = cursor.fetchone()
+
+        if not media_row:
+            return jsonify({"error": "Media not found"}), 404
+
+        return Response(
+            media_row["MS_file_data"],
+            mimetype=media_row.get("MS_file_type", "application/octet-stream"),
+            headers={
+                "Content-Disposition": f"attachment; filename=media_{MS_media_id}"
+            }
+        )
+
+    except Exception as e:
+        print(f"Error fetching BLOB: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 def add_media_file(request):
     """Handles raw media file uploads (video or image) into MySQL."""
@@ -539,6 +642,125 @@ def update_media_file(request):
 
 def delete_media_file(request):
     pass
+
+## === AUTHENTICATION ===
+def handle_login(data):
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+
+        UA_username = data.get("UA_username")
+        UA_password = data.get("UA_password")
+
+        if not UA_username or not UA_password:
+            return {"error": "Missing username or password"}, 400
+
+        cursor.execute("SELECT * FROM `user_accounts` WHERE UA_username = %s", (UA_username,))
+        found_user = cursor.fetchone()
+
+        if not found_user:
+            return {"error": f"User '{UA_username}' is not a registered user within the app!"}, 404
+
+        UA_user_id = found_user[0] if found_user[0] is not None else None
+        UA_username = found_user[1] if found_user[1] is not None else None
+        UA_passwordStored = found_user[2] if found_user[2] is not None else None
+        UA_user_role = found_user[3] if found_user[3] is not None else None
+        UA_created_at = found_user[4] if found_user[4] is not None else None
+        UA_last_name = found_user[5] if found_user[5] is not None else None
+        UA_first_name = found_user[6] if found_user[6] is not None else None
+        UA_middle_name = found_user[7] if found_user[7] is not None else None
+        UA_suffix = found_user[8] if found_user[8] is not None else None
+        UA_email_address = found_user[9] if found_user[9] is not None else None
+        UA_phone_number = found_user[10] if found_user[10] is not None else None
+        UA_reputation_score = found_user[11] if found_user[11] is not None else 0  
+        UA_id_picture_front = found_user[12] if found_user[12] is not None else None
+        UA_id_picture_back = found_user[13] if found_user[13] is not None else None
+
+        print(UA_password, UA_passwordStored)
+        if UA_password != UA_passwordStored:
+            return {"error": "The password submitted is invalid!"}, 401
+
+        user_data = {
+            "UA_user_id": UA_user_id,
+            "UA_username": UA_username,
+            "UA_password": "Secret!",
+            "UA_user_role": UA_user_role,
+            "UA_created_at": UA_created_at,
+            "UA_last_name": UA_last_name,
+            "UA_first_name": UA_first_name,
+            "UA_middle_name": UA_middle_name,
+            "UA_suffix": UA_suffix,
+            "UA_email_address": UA_email_address,
+            "UA_phone_number": UA_phone_number,
+            "UA_reputation_score": UA_reputation_score,
+            "UA_id_picture_front": UA_id_picture_front,
+            "UA_id_picture_back": UA_id_picture_back
+        }
+
+        return {
+            "message": "Login is successful!",
+            "user_data": user_data
+        }, 200
+
+    except Exception as e:
+        print("Error found! " + str(e))
+        return {"error": str(e)}, 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+def handle_registration(data):
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+
+        UA_username = data.get("UA_username")
+        UA_password = data.get("UA_password")
+        UA_email_address = data.get("UA_email_address")
+
+        if not all([UA_username, UA_password, UA_email_address]):
+            return jsonify({"error": "All fields are required. Please make sure nothing is left blank."}), 400
+
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_pattern, UA_email_address):
+            return jsonify({"error": "Oops! That doesn’t look like a valid email address."}), 400
+
+        cursor.execute("SELECT 1 FROM user_accounts WHERE UA_username = %s", (UA_username,))
+        if cursor.fetchone():
+            return jsonify({"error": f"The username '@{UA_username}' is already in use. Try another one?"}), 409
+
+        cursor.execute("SELECT 1 FROM user_accounts WHERE UA_email_address = %s", (UA_email_address,))
+        if cursor.fetchone():
+            return jsonify({"error": "That email address is already linked to an existing account."}), 409
+
+        cursor.execute("""
+            INSERT INTO user_accounts (
+                UA_username, UA_password, UA_user_role, UA_created_at, UA_last_name, 
+                UA_first_name, UA_middle_name, UA_suffix, UA_email_address, 
+                UA_phone_number, UA_reputation_score
+            )
+            VALUES (%s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            UA_username, 
+            UA_password, 
+            "civilian", 
+            None, None, None, None, 
+            UA_email_address, 
+            None, 0
+        ))
+
+        conn.commit()
+
+        return jsonify({"message": f"Welcome aboard, @{UA_username}! Your account has been successfully created."}), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}. Please contact support or try again later."}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 ### === UPLOAD/DOWNLOAD ===
 def process_report_request(request):
@@ -685,125 +907,6 @@ def route_ping():
         return jsonify({"message": "Pong!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-## === AUTHENTICATION ===
-def handle_login(data):
-
-    conn, cursor = None, None
-    try:
-        conn = mysql.connect()
-        cursor = conn.cursor()
-
-        UA_username = data.get("UA_username")
-        UA_password = data.get("UA_password")
-
-        if not UA_username or not UA_password:
-            return {"error": "Missing username or password"}, 400
-
-        cursor.execute("SELECT * FROM `user_accounts` WHERE UA_username = %s", (UA_username,))
-        found_user = cursor.fetchone()
-
-        if not found_user:
-            return {"error": f"User '{UA_username}' is not a registered user within the app!"}, 404
-
-        UA_user_id = found_user[0] if found_user[0] is not None else None
-        UA_username = found_user[1] if found_user[1] is not None else None
-        UA_passwordStored = found_user[2] if found_user[2] is not None else None
-        UA_user_role = found_user[3] if found_user[3] is not None else None
-        UA_created_at = found_user[4] if found_user[4] is not None else None
-        UA_last_name = found_user[5] if found_user[5] is not None else None
-        UA_first_name = found_user[6] if found_user[6] is not None else None
-        UA_middle_name = found_user[7] if found_user[7] is not None else None
-        UA_suffix = found_user[8] if found_user[8] is not None else None
-        UA_email_address = found_user[9] if found_user[9] is not None else None
-        UA_phone_number = found_user[10] if found_user[10] is not None else None
-        UA_reputation_score = found_user[11] if found_user[11] is not None else 0  
-        UA_id_picture_front = found_user[12] if found_user[12] is not None else None
-        UA_id_picture_back = found_user[13] if found_user[13] is not None else None
-
-        print(UA_password, UA_passwordStored)
-        if UA_password != UA_passwordStored:
-            return {"error": "The password submitted is invalid!"}, 401
-
-        user_data = {
-            "UA_user_id": UA_user_id,
-            "UA_username": UA_username,
-            "UA_password": "Secret!",
-            "UA_user_role": UA_user_role,
-            "UA_created_at": UA_created_at,
-            "UA_last_name": UA_last_name,
-            "UA_first_name": UA_first_name,
-            "UA_middle_name": UA_middle_name,
-            "UA_suffix": UA_suffix,
-            "UA_email_address": UA_email_address,
-            "UA_phone_number": UA_phone_number,
-            "UA_reputation_score": UA_reputation_score,
-            "UA_id_picture_front": UA_id_picture_front,
-            "UA_id_picture_back": UA_id_picture_back
-        }
-
-        return {
-            "message": "Login is successful!",
-            "user_data": user_data
-        }, 200
-
-    except Exception as e:
-        print("Error found! " + str(e))
-        return {"error": str(e)}, 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-def handle_registration(data):
-    conn, cursor = None, None
-    try:
-        conn = mysql.connect()
-        cursor = conn.cursor()
-
-        UA_username = data.get("UA_username")
-        UA_password = data.get("UA_password")
-        UA_email_address = data.get("UA_email_address")
-
-        if not all([UA_username, UA_password, UA_email_address]):
-            return jsonify({"error": "All fields are required. Please make sure nothing is left blank."}), 400
-
-        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-        if not re.match(email_pattern, UA_email_address):
-            return jsonify({"error": "Oops! That doesn’t look like a valid email address."}), 400
-
-        cursor.execute("SELECT 1 FROM user_accounts WHERE UA_username = %s", (UA_username,))
-        if cursor.fetchone():
-            return jsonify({"error": f"The username '@{UA_username}' is already in use. Try another one?"}), 409
-
-        cursor.execute("SELECT 1 FROM user_accounts WHERE UA_email_address = %s", (UA_email_address,))
-        if cursor.fetchone():
-            return jsonify({"error": "That email address is already linked to an existing account."}), 409
-
-        cursor.execute("""
-            INSERT INTO user_accounts (
-                UA_username, UA_password, UA_user_role, UA_created_at, UA_last_name, 
-                UA_first_name, UA_middle_name, UA_suffix, UA_email_address, 
-                UA_phone_number, UA_reputation_score
-            )
-            VALUES (%s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            UA_username, 
-            UA_password, 
-            "civilian", 
-            None, None, None, None, 
-            UA_email_address, 
-            None, 0
-        ))
-
-        conn.commit()
-
-        return jsonify({"message": f"Welcome aboard, @{UA_username}! Your account has been successfully created."}), 201
-
-    except Exception as e:
-        return jsonify({"error": f"Server error: {str(e)}. Please contact support or try again later."}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
 
 ## === AUTHENTICATION RESOURCE ===
 
@@ -1029,8 +1132,39 @@ def route_get_postverified_reports():
         return get_postverified_reports()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+## === MEDIA RESOURCE ===
 
+## === TESTING RESOURCE ===
+@app.route('/test/media/details/get/one', methods=['POST'])
+def route_get_one_media_detail():
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method."}), 405
+    
+    try: 
+        return get_media_file_details(request)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/test/media/blob/get/one', methods=['POST'])
+def route_get_one_media_blob():
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method."}), 405
+    
+    try: 
+        return get_media_file_blob(request)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+@app.route('/test/media/blob/get/one/dl', methods=['POST'])
+def route_get_one_media_blob_download():
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method."}), 405
+    
+    try: 
+        return get_media_file_blob_download(request)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 ### === BOILERPLATE CODE ===
 if __name__ == "__main__":

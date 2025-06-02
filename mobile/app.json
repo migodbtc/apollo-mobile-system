@@ -22,8 +22,12 @@
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
         "RECORD_AUDIO"
-      ],
-      "usesCleartextTraffic": true 
+      ]
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#020617",
+      "barStyle": "light",
+      "visible": true
     },
     "web": {
       "bundler": "metro",

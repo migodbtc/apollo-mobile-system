@@ -60,7 +60,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         ],
       },
     ],
-    sysad: [
+    admin: [
       { iconName: "home", label: "Home", panel: "home" },
       { iconName: "map", label: "Map", panel: "map" },
       { iconName: "camera", label: "", panel: "camera", isCamera: true },
@@ -72,6 +72,24 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         subItems: [
           { iconName: "database", label: "Database", panel: "database" },
           { iconName: "bug", label: "Meta", panel: "meta" },
+          { iconName: "info-circle", label: "About", panel: "about" },
+        ],
+      },
+    ],
+    superadmin: [
+      { iconName: "home", label: "Home", panel: "home" },
+      { iconName: "map", label: "Map", panel: "map" },
+      { iconName: "camera", label: "", panel: "camera", isCamera: true },
+      { iconName: "pie-chart", label: "Reports", panel: "reports" },
+      {
+        iconName: "bars",
+        label: "More",
+        panel: "more",
+        subItems: [
+          { iconName: "database", label: "Database", panel: "database" },
+          { iconName: "bug", label: "Meta", panel: "meta" },
+          { iconName: "history", label: "History", panel: "history" },
+          { iconName: "users", label: "Team", panel: "team" },
           { iconName: "info-circle", label: "About", panel: "about" },
         ],
       },

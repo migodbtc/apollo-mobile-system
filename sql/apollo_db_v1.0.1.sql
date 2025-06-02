@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `apollo_system` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+USE `apollo_system`;
 -- MySQL dump 10.13  Distrib 8.0.38, for Win64 (x86_64)
 --
 -- Host: localhost    Database: apollo_system
@@ -47,7 +49,7 @@ CREATE TABLE `media_storage` (
   `MS_file_name` varchar(255) DEFAULT NULL,
   `MS_file_data` longblob DEFAULT NULL,
   PRIMARY KEY (`MS_media_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=110 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,7 +71,7 @@ CREATE TABLE `postverified_reports` (
   PRIMARY KEY (`VR_verification_id`),
   KEY `VR_report_id` (`VR_report_id`),
   CONSTRAINT `postverified_reports_ibfk_1` FOREIGN KEY (`VR_report_id`) REFERENCES `preverified_reports` (`PR_report_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -97,7 +99,7 @@ CREATE TABLE `preverified_reports` (
   CONSTRAINT `preverified_reports_ibfk_1` FOREIGN KEY (`PR_user_id`) REFERENCES `user_accounts` (`UA_user_id`),
   CONSTRAINT `preverified_reports_ibfk_2` FOREIGN KEY (`PR_image`) REFERENCES `media_storage` (`MS_media_id`),
   CONSTRAINT `preverified_reports_ibfk_3` FOREIGN KEY (`PR_video`) REFERENCES `media_storage` (`MS_media_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=89 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -129,7 +131,7 @@ CREATE TABLE `user_accounts` (
   `UA_user_id` int(11) NOT NULL AUTO_INCREMENT,
   `UA_username` varchar(255) DEFAULT NULL,
   `UA_password` varchar(255) DEFAULT NULL,
-  `UA_user_role` enum('civilian','responder','sysad') DEFAULT NULL,
+  `UA_user_role` enum('civilian','responder','admin','superadmin') DEFAULT NULL,
   `UA_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `UA_last_name` varchar(255) DEFAULT NULL,
   `UA_first_name` varchar(255) DEFAULT NULL,
@@ -148,7 +150,7 @@ CREATE TABLE `user_accounts` (
   KEY `UA_id_picture_back` (`UA_id_picture_back`),
   CONSTRAINT `user_accounts_ibfk_1` FOREIGN KEY (`UA_id_picture_front`) REFERENCES `media_storage` (`MS_media_id`),
   CONSTRAINT `user_accounts_ibfk_2` FOREIGN KEY (`UA_id_picture_back`) REFERENCES `media_storage` (`MS_media_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -160,4 +162,4 @@ CREATE TABLE `user_accounts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-05-04  1:27:02
+-- Dump completed on 2025-06-02 14:03:31

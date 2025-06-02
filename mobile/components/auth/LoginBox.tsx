@@ -106,7 +106,7 @@ const LoginBox: React.FC = () => {
           });
         }, 3000);
       } else {
-        handleLoginError(data.error);
+        handleLoginError("Login authentication failed.");
       }
     } catch (e) {
       console.error(e);

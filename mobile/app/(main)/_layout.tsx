@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import LoadingScreen from "@/components/auth/LoadingScreen";
 import { useSession } from "@/constants/contexts/SessionContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const MainLayout = () => {
   const { sessionData } = useSession(); // Access session data

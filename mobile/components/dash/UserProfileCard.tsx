@@ -30,12 +30,19 @@ const UserProfileCard = () => {
         };
         badgeText = "Responder";
         break;
-      case "sysad":
+      case "admin":
         badgeStyle = {
           backgroundColor: "#EF4444", // RED
           color: "#FFFFFF",
         };
-        badgeText = "System Administrator";
+        badgeText = "Administrator";
+        break;
+      case "superadmin":
+        badgeStyle = {
+          backgroundColor: "#01B073", // TEAL
+          color: "#FFFFFF",
+        };
+        badgeText = "⭐ Superadministrator";
         break;
       default:
         badgeStyle = {

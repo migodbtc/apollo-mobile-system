@@ -1,0 +1,195 @@
+#bodyComponent {
+  background-color: #020617;
+  font-family: "Prompt", sans-serif;
+  color: #ffffff;
+}
+
+.navbarApolloItem {
+  borderbottom: "3px solid #11162B";
+}
+
+.bg-herosection {
+  background-image: url("./assets/background/herosection.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-missionsection {
+  background-image: url("./assets/background/missionsection.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-featuressection {
+  background-image: url("./assets/background/featuressection.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-fullpagebg {
+  background-image: url("./assets/background/fullpagebg.png");
+  background-size: conver;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(102, 107, 126, 0.9) 0%,
+    rgba(66, 71, 90, 0) 60%
+  );
+}
+
+.image-wrapper img {
+  display: block;
+  max-width: 100;
+}
+
+.custom-input {
+  background-color: transparent;
+  color: rgb(106, 106, 133);
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  border-bottom: 3px solid rgb(106, 106, 133);
+  outline: none;
+}
+
+.custom-input-login {
+  background-color: #11162b;
+  color: rgb(106, 106, 133);
+  border: none;
+  outline: none;
+}
+
+.custom-input:focus {
+  background-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+.nav-sidebar .nav-item > .nav-link:hover {
+  color: rgb(159, 164, 188);
+}
+
+.nav-sidebar .nav-item > .nav-link.active {
+  background-color: rgb(100, 106, 133);
+  color: #020617;
+  border-radius: 1rem;
+}
+
+.prompt-thin {
+  font-family: "Prompt", sans-serif;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.prompt-extralight {
+  font-family: "Prompt", sans-serif;
+  font-weight: 200;
+  font-style: normal;
+}
+
+.prompt-light {
+  font-family: "Prompt", sans-serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.prompt-regular {
+  font-family: "Prompt", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.prompt-medium {
+  font-family: "Prompt", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.prompt-semibold {
+  font-family: "Prompt", sans-serif;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.prompt-bold {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.prompt-extrabold {
+  font-family: "Prompt", sans-serif;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.prompt-black {
+  font-family: "Prompt", sans-serif;
+  font-weight: 900;
+  font-style: normal;
+}
+
+.prompt-thin-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 100;
+  font-style: italic;
+}
+
+.prompt-extralight-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 200;
+  font-style: italic;
+}
+
+.prompt-light-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.prompt-regular-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.prompt-medium-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.prompt-semibold-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.prompt-bold-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.prompt-extrabold-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 800;
+  font-style: italic;
+}
+
+.prompt-black-italic {
+  font-family: "Prompt", sans-serif;
+  font-weight: 900;
+  font-style: italic;
+}

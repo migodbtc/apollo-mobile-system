@@ -1,6 +1,6 @@
 import { CameraType, CameraView } from "expo-camera";
 import { PostverifiedReport, PreverifiedReport, UserRole } from "./database";
-import { FontAwesomeIconName } from "../type/component";
+import { FontAwesomeIconName } from "../types/component";
 import { Video } from "expo-av";
 import { TextStyle, ViewStyle } from "react-native";
 import * as Location from "expo-location";

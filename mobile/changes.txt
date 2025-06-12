@@ -1,3 +1,0 @@
-2025-03-10: added a new project for apollo's experimental app
-
-2025-03-11: did animation tests on login and register 

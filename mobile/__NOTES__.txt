@@ -1,7 +1,0 @@
-
-> fix about page's footer not being responsive
-> fix search bar filter icon's right margin
-> revamp the login page to fit the aesthetic
-
-> do reports page
-> start modularizing report card from the home profile to use for the reports page

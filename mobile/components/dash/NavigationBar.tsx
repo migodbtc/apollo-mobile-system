@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 import NavigationButton from "./NavigationButton";
 import { NavigationBarProps } from "@/constants/interfaces/components";
 import { useSession } from "@/constants/contexts/SessionContext";
-import { RoleBasedButtonsConfig } from "@/constants/type/component";
+import { RoleBasedButtonsConfig } from "@/constants/types/component";
 
 const { width, height } = Dimensions.get("window");
 
@@ -72,6 +72,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         subItems: [
           { iconName: "database", label: "Database", panel: "database" },
           { iconName: "bug", label: "Meta", panel: "meta" },
+          { iconName: "lock", label: "Privileges", panel: "privileges" },
           { iconName: "info-circle", label: "About", panel: "about" },
         ],
       },
@@ -86,6 +87,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         label: "More",
         panel: "more",
         subItems: [
+          { iconName: "lock", label: "Privileges", panel: "privileges" },
           { iconName: "database", label: "Database", panel: "database" },
           { iconName: "bug", label: "Meta", panel: "meta" },
           { iconName: "history", label: "History", panel: "history" },

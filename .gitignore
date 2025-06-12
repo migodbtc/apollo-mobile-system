@@ -27,7 +27,11 @@ mobile/*.apk
 mobile/.env
 mobile/.DS_Store
 
+# --- Web Application ---
+web/node_modules/
+
 # --- OS & Editor junk ---
 .vscode/
 .idea/
 *.swp
+start.bat

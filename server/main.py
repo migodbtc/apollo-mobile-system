@@ -1168,4 +1168,4 @@ def route_get_one_media_blob_download():
 
 ### === BOILERPLATE CODE ===
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5001)
+    app.run(debug=True, host="0.0.0.0", port=5821)

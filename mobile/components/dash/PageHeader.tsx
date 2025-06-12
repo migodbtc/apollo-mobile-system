@@ -7,9 +7,10 @@ import { useSession } from "@/constants/contexts/SessionContext";
 const { width, height } = Dimensions.get("window");
 
 // Function to render the dynamic page title and icon
-const renderHeaderContent: React.FC<NavigationBarProps> = ({
+const renderHeaderContent = ({
   selectedPanel,
-}) => {
+  setSelectedPanel,
+}: NavigationBarProps) => {
   const iconSize = width * 0.045;
   const textStyle = {
     color: "#646A85",

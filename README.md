@@ -11,7 +11,7 @@ The project is developed as part of the Capstone Project 1 (IT401) and will cont
   Contains documents and files related to paper writing, presentations, and other documentation needs for the project.
 
 - **`mobile/`**  
-  The main mobile application built using Expo SDK 52. Features include:
+  The main mobile application built using Expo SDK 53. Features include:
 
   - Automated incident reporting via media capture
   - Real-time location tracking
@@ -29,6 +29,4 @@ The project is developed as part of the Capstone Project 1 (IT401) and will cont
   - Other related entities
 
 - **`web/`**  
-  (Planned) Web application for system administrators and responders.  
-  Focused on management and monitoring functions.  
-  Does not include media capture features.
+  A React.js-based web application that displays the information about the mobile application, the mission of the development, the main beneficiary, and other key details of the capstone project. It also houses the admin dashboard for the administrators in order to see a more technical overview of the database.

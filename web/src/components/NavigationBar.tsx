@@ -4,6 +4,7 @@ import {
   faInfoCircle,
   faMobileAndroidAlt,
   faPhoneAlt,
+  faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "../constants/context/SessionContext";
@@ -14,10 +15,15 @@ interface NavigationBarProps {
 }
 
 const NavigationBar = ({ segment, setSegment }: NavigationBarProps) => {
-  const { sessionData } = useSession();
+  const { sessionData, setSessionData } = useSession();
 
   const handleSegmentChange = (newSegment: string) => {
     setSegment(newSegment);
+  };
+
+  const handleLogout = () => {
+    alert("Account bound to session has been logged out.");
+    setSessionData(null);
   };
 
   return (
@@ -128,19 +134,32 @@ const NavigationBar = ({ segment, setSegment }: NavigationBarProps) => {
           </li>
         </ul>
       ) : (
-        <ul className="navbar-nav ml-auto">
-          <li
-            className="nav-item d-none d-sm-inline-block nav-link"
-            style={{
-              borderBottom: "3px solid #11162B",
-              color: "#646A85",
-              cursor: "pointer",
-            }}
-            onClick={() => handleSegmentChange("public")}
-          >
-            Back to Public
-          </li>
-        </ul>
+        <>
+          <ul className="navbar-nav ml-auto">
+            <li
+              className="nav-item d-none d-sm-inline-block nav-link mr-2"
+              style={{
+                color: "#646A85",
+                cursor: "pointer",
+              }}
+              onClick={() => handleSegmentChange("public")}
+            >
+              Back to Public
+            </li>
+            {sessionData && (
+              <li
+                className="nav-item d-none d-sm-inline-block nav-link"
+                style={{
+                  color: "#646A85",
+                  cursor: "pointer",
+                }}
+                onClick={handleLogout}
+              >
+                <FontAwesomeIcon icon={faRightFromBracket} />
+              </li>
+            )}
+          </ul>
+        </>
       )}
     </nav>
   );

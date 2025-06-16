@@ -7,7 +7,7 @@ import {
   Dimensions,
   StyleSheet,
 } from "react-native";
-import { getSeverityColor, getStatusColor } from "../dash/ReportCard";
+import { getSeverityColor, getStatusColor } from "./ReportCard";
 import { SelectedReportModalProps } from "@/constants/interfaces/components";
 
 const { width, height } = Dimensions.get("window");

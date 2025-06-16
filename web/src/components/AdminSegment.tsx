@@ -3,6 +3,7 @@ import { useSession } from "../constants/context/SessionContext";
 import AdminSidebar from "./AdminComponents/AdminSidebar";
 import AdminLoginPage from "./AdminComponents/AdminLoginPage";
 import DashboardPage from "./AdminComponents/DashboardPage";
+import MapVisualPage from "./AdminComponents/MapVisualPage";
 
 const AdminSegment = () => {
   const { sessionData } = useSession();
@@ -21,7 +22,7 @@ const AdminSegment = () => {
           <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
           <div className="col-md-9 col-lg-10">
-            <div style={{ padding: "20px", height: "100%" }}>
+            <div style={{ height: "100%", paddingBottom: 0, marginBottom: 0 }}>
               {activeTab === "dashboard" && (
                 <DashboardPage
                   activeTab={activeTab}
@@ -29,7 +30,12 @@ const AdminSegment = () => {
                 />
               )}
               {activeTab === "profile" && <div>Profile Content</div>}
-              {activeTab === "reportsMap" && <div>Reports Map Content</div>}
+              {activeTab === "reportsMap" && (
+                <MapVisualPage
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                />
+              )}
               {activeTab === "users" && <div>Users Management</div>}
               {activeTab === "reports" && <div>Reports List</div>}
               {activeTab === "responseLogs" && <div>Media Storage</div>}

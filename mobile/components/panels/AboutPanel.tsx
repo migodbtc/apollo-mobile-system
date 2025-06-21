@@ -9,6 +9,7 @@ import {
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import faqs from "@/constants/faq";
+import { LayoutAnimation } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,6 +17,7 @@ const AboutPanel = () => {
   const [expandedIndex, setExpandedIndex] = useState(null);
 
   const toggleExpand = (index: any) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedIndex(expandedIndex === index ? null : index);
   };
 

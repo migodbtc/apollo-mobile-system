@@ -138,6 +138,7 @@ const LoginBox: React.FC = () => {
           shadowColor: "#000",
           shadowOpacity: 0.2,
           shadowRadius: 5,
+          marginBottom: height * 0.25,
         }}
       >
         <Text
@@ -260,18 +261,33 @@ const LoginBox: React.FC = () => {
 
         <TouchableOpacity
           onPress={() => router.push("/register")}
-          style={{ marginTop: 15, marginBottom: 15 }}
+          style={{ marginTop: 15, marginBottom: 5 }}
         >
           <Text
             style={{
               color: "#c2410c",
               textAlign: "center",
               fontWeight: "bold",
-
               fontSize: width * 0.03,
             }}
           >
             Don't have an account? Sign up!
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push("/forgot-password")}
+          style={{ marginBottom: 15 }}
+        >
+          <Text
+            style={{
+              color: "#c2410c",
+              textAlign: "center",
+              fontWeight: "bold",
+              fontSize: width * 0.03,
+            }}
+          >
+            Forgot Password?
           </Text>
         </TouchableOpacity>
       </View>

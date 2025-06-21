@@ -75,6 +75,7 @@ const RegisterBox: React.FC = () => {
         setAlertVisible(true);
 
         setTimeout(() => {
+          setAlertVisible(false);
           router.push("/login");
         }, 3000);
       } else {

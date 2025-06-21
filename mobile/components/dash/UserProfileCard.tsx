@@ -1,11 +1,42 @@
-import { View, Text, Dimensions, ImageBackground } from "react-native";
-import React from "react";
+import { View, Text, Dimensions, ImageBackground, TouchableOpacity, Alert } from "react-native";
+import React, { useState } from "react";
 import { useSession } from "@/constants/contexts/SessionContext";
+import * as ImagePicker from 'expo-image-picker';
+import { FontAwesome } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get("window");
 
 const UserProfileCard = () => {
   const { sessionData } = useSession();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    try {
+
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permission required', 'Need photo library access to change profile picture');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, //DI KO ALAM BAKIT DEPRACATED TO PERO NAGANA NAMAN EH NAKAKAPAG PICK NAMAN AKO NG PICS SA GALLERY EH 
+        allowsEditing: true,
+        aspect: [4, 3], 
+        quality: 0.8, 
+      });
+  
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedAsset = result.assets[0];
+        if (selectedAsset.uri) {
+          setProfileImage(selectedAsset.uri);
+        }
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
 
   // Function to render role badge
   const renderRoleBadge = (role: string | undefined) => {
@@ -87,9 +118,10 @@ const UserProfileCard = () => {
         backgroundColor: "#11162B",
         borderRadius: 20,
         marginBottom: 20,
+        position: "relative",
       }}
     >
-      {/* Left Half of User Card */}
+      {/* Left Half of User Card with Edit Icon integrated*/}
       <View
         style={{
           width: "40%",
@@ -99,8 +131,29 @@ const UserProfileCard = () => {
           borderBottomLeftRadius: 20,
         }}
       >
+{/* Functioning Edit Icon (BACKEND NOT YET IMPLEMENTED KASI HEHE)*/}
+<TouchableOpacity
+        onPress={pickImage}
+        style={{
+          position: 'absolute',
+          top: 5,
+          right: 5,
+          width: 35,
+          backgroundColor: '#0000',
+          
+          borderRadius: 20,
+          paddingLeft: 9,
+          flexDirection: 'row',
+          alignItems: 'center',
+          zIndex: 1,
+          borderWidth: 0,
+          borderColor: '#F97316',
+        }}
+      >
+        <FontAwesome name="pencil" size={18} color="#F97316" />
+      </TouchableOpacity>
         <ImageBackground
-          source={require("../../assets/images/user_placeholder.png")}
+          source={profileImage ? { uri: profileImage } : require("../../assets/images/user_placeholder.png")}
           style={{
             width: "100%",
             height: "100%",
@@ -109,7 +162,8 @@ const UserProfileCard = () => {
             borderBottomLeftRadius: 20,
             overflow: "hidden",
           }}
-        ></ImageBackground>
+        >        
+        </ImageBackground>
       </View>
       {/* Right Half of User Card */}
       <View

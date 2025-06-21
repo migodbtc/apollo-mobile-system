@@ -52,6 +52,12 @@
           "microphonePermission": "Allow Apollo Mobile App to access your microphone",
           "recordAudioAndroid": true
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Apollo Mobile App to access your photos"
+        }
       ]
     ],
     "experiments": {

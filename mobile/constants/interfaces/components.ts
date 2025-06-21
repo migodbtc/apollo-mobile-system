@@ -26,11 +26,15 @@ export interface NavigationBarProps {
   setSelectedPanel: (panel: string) => void;
 }
 
+// binago ko to para sa use session hehehe
 export interface ReportCardProps {
   preverified: PreverifiedReport;
-  verified: PostverifiedReport | null;
-  onClick: () => void;
+  verified?: PostverifiedReport | null;
+  onClick?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
+
 
 export interface PersonalReportCardProps {
   userSubmittedReport: PreverifiedReport;

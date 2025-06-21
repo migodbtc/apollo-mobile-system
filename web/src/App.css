@@ -107,6 +107,17 @@
   outline: none;
 }
 
+.custom-input-2 {
+  background-color: transparent;
+  color: rgb(106, 106, 133);
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-radius: 1rem;
+  border: 3px solid rgb(106, 106, 133);
+  outline: none;
+}
+
 .custom-input-login {
   background-color: #11162b;
   color: rgb(106, 106, 133);
@@ -114,7 +125,8 @@
   outline: none;
 }
 
-.custom-input:focus {
+.custom-input:focus,
+.custom-input-2:focus {
   background-color: transparent;
   outline: none;
   box-shadow: none;
@@ -128,6 +140,12 @@
   background-color: rgb(100, 106, 133);
   color: #020617;
   border-radius: 1rem;
+}
+
+#adminProfilePicture {
+  background-image: url("./assets/128x128.svg");
+  background-size: cover;
+  background-position: center;
 }
 
 .prompt-thin {

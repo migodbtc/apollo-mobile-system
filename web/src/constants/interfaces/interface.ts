@@ -1,4 +1,5 @@
 import type {
+  FireType,
   ReportStatus,
   ResponseStatus,
   SeverityLevel,
@@ -23,7 +24,7 @@ export interface PostverifiedReport {
   VR_verification_timestamp: string;
   VR_severity_level?: SeverityLevel;
   VR_spread_potential?: SpreadPotential;
-  VR_fire_type?: string;
+  VR_fire_type?: FireType;
 }
 
 export interface PreverifiedReport {

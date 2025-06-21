@@ -21,7 +21,7 @@ const verifiedReports: PostverifiedReport[] = [
     VR_report_id: 101,
     VR_confidence_score: 0.92,
     VR_detected: true,
-    VR_verification_timestamp: "2025-06-16T09:45:00Z",
+    VR_verification_timestamp: "2025-06-21T09:45:00Z",
     VR_severity_level: "moderate",
     VR_spread_potential: "high",
     VR_fire_type: "medium",
@@ -31,7 +31,7 @@ const verifiedReports: PostverifiedReport[] = [
     VR_report_id: 102,
     VR_confidence_score: 0.87,
     VR_detected: true,
-    VR_verification_timestamp: "2025-06-16T11:25:00Z",
+    VR_verification_timestamp: "2025-06-21T11:25:00Z",
     VR_severity_level: "mild",
     VR_spread_potential: "high",
     VR_fire_type: "large",
@@ -41,7 +41,7 @@ const verifiedReports: PostverifiedReport[] = [
     VR_report_id: 105,
     VR_confidence_score: 0.95,
     VR_detected: false,
-    VR_verification_timestamp: "2025-06-16T14:25:00Z",
+    VR_verification_timestamp: "2025-06-21T14:25:00Z",
     VR_severity_level: undefined,
     VR_spread_potential: undefined,
     VR_fire_type: undefined,
@@ -57,7 +57,7 @@ const preverifiedReports: PreverifiedReport[] = [
     PR_latitude: 14.582,
     PR_longitude: 121.041,
     PR_address: "San Miguel Avenue, near Kai Garden Residences, Mandaluyong",
-    PR_timestamp: "2025-06-16T10:15:00Z",
+    PR_timestamp: "2025-06-21T10:15:00Z",
     PR_verified: false,
     PR_report_status: "pending",
   },
@@ -69,7 +69,7 @@ const preverifiedReports: PreverifiedReport[] = [
     PR_latitude: 14.5805,
     PR_longitude: 121.0398,
     PR_address: "J.P. Rizal Street, Mandaluyong (near Kai Garden)",
-    PR_timestamp: "2025-06-16T12:30:00Z",
+    PR_timestamp: "2025-06-21T12:30:00Z",
     PR_verified: false,
     PR_report_status: "pending",
   },
@@ -81,7 +81,7 @@ const preverifiedReports: PreverifiedReport[] = [
     PR_latitude: 14.5815,
     PR_longitude: 121.0405,
     PR_address: "Kai Garden Residences, Mandaluyong City",
-    PR_timestamp: "2025-06-16T09:30:00Z",
+    PR_timestamp: "2025-06-21T09:30:00Z",
     PR_verified: true,
     PR_report_status: "verified",
   },
@@ -93,7 +93,7 @@ const preverifiedReports: PreverifiedReport[] = [
     PR_latitude: 14.5818,
     PR_longitude: 121.0412,
     PR_address: "Adjacent building to Kai Garden Residences",
-    PR_timestamp: "2025-06-16T11:10:00Z",
+    PR_timestamp: "2025-06-21T11:10:00Z",
     PR_verified: true,
     PR_report_status: "verified",
   },
@@ -105,7 +105,7 @@ const preverifiedReports: PreverifiedReport[] = [
     PR_latitude: 14.579,
     PR_longitude: 121.038,
     PR_address: "Boni Avenue, Mandaluyong",
-    PR_timestamp: "2025-06-16T14:05:00Z",
+    PR_timestamp: "2025-06-21T14:05:00Z",
     PR_verified: true,
     PR_report_status: "false_alarm",
   },
@@ -281,7 +281,6 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
         </div>
       </div>
       <div>
-        {/* Modal Backdrop - Add this */}
         {showSelectedModal && (
           <div
             className="modal-backdrop fade show"
@@ -297,7 +296,6 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
           ></div>
         )}
 
-        {/* Modal */}
         <SelectedReportModal
           selectedReport={selectedReport}
           handleMarkerExit={handleMarkerExit}

@@ -40,9 +40,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
     UA_reputation_score: 0,
   };
 
-  const [sessionData, setSessionData] = useState<UserSession | null>(
-    sampleSession
-  );
+  const [sessionData, setSessionData] = useState<UserSession | null>(null);
 
   return (
     <SessionContext.Provider value={{ sessionData, setSessionData }}>

@@ -4,6 +4,9 @@ import AdminSidebar from "./AdminComponents/AdminSidebar";
 import AdminLoginPage from "./AdminComponents/AdminLoginPage";
 import DashboardPage from "./AdminComponents/DashboardPage";
 import MapVisualPage from "./AdminComponents/MapVisualPage";
+import AdminProfilePage from "./AdminComponents/AdminProfilePage";
+import UserCrudPage from "./AdminComponents/UserCrudPage";
+import ReportsCrudPage from "./AdminComponents/ReportsCrudPage";
 
 const AdminSegment = () => {
   const { sessionData } = useSession();
@@ -13,10 +16,8 @@ const AdminSegment = () => {
 
   return (
     <div id="adminSegment" className={containerClass}>
-      {/* Render the login page if there is no session logged in */}
       {!sessionData && <AdminLoginPage />}
 
-      {/* Render the admin dashboard if an admin is logged in.  */}
       {sessionData && (
         <div className="row" style={{ height: "90vh" }}>
           <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -29,15 +30,15 @@ const AdminSegment = () => {
                   setActiveTab={setActiveTab}
                 />
               )}
-              {activeTab === "profile" && <div>Profile Content</div>}
+              {activeTab === "profile" && <AdminProfilePage />}
               {activeTab === "reportsMap" && (
                 <MapVisualPage
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
                 />
               )}
-              {activeTab === "users" && <div>Users Management</div>}
-              {activeTab === "reports" && <div>Reports List</div>}
+              {activeTab === "users" && <UserCrudPage />}
+              {activeTab === "reports" && <ReportsCrudPage />}
               {activeTab === "responseLogs" && <div>Media Storage</div>}
               {activeTab === "mediaStorage" && <div>Response Logs</div>}
             </div>

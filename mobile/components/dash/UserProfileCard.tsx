@@ -1,31 +1,43 @@
-import { View, Text, Dimensions, ImageBackground, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  Dimensions,
+  ImageBackground,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import React, { useState } from "react";
 import { useSession } from "@/constants/contexts/SessionContext";
-import * as ImagePicker from 'expo-image-picker';
-import { FontAwesome } from '@expo/vector-icons';
+import * as ImagePicker from "expo-image-picker";
+import { FontAwesome } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
+const IMG_ICON_SIZE = 24;
 
 const UserProfileCard = () => {
   const { sessionData } = useSession();
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
+  // Function to pick the image for the profile
   const pickImage = async () => {
     try {
-
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert('Permission required', 'Need photo library access to change profile picture');
+        Alert.alert(
+          "Permission required!",
+          "Need photo library access to change profile picture"
+        );
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, //DI KO ALAM BAKIT DEPRACATED TO PERO NAGANA NAMAN EH NAKAKAPAG PICK NAMAN AKO NG PICS SA GALLERY EH 
+
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
         allowsEditing: true,
-        aspect: [4, 3], 
-        quality: 0.8, 
+        aspect: [1, 1],
+        quality: 1,
       });
-  
-      
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedAsset = result.assets[0];
         if (selectedAsset.uri) {
@@ -33,9 +45,28 @@ const UserProfileCard = () => {
         }
       }
     } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
+      console.error("Image picker error:", error);
+      Alert.alert("Error", "Failed to select image. Please try again.");
     }
+  };
+
+  // Function to reset the image picked
+  const handleResetImage = () => {
+    Alert.alert(
+      "Reset Profile Image",
+      "Are you sure you want to reset your profile image?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Yes, Reset",
+          style: "destructive",
+          onPress: () => setProfileImage(null),
+        },
+      ]
+    );
   };
 
   // Function to render role badge
@@ -89,7 +120,7 @@ const UserProfileCard = () => {
         style={{
           backgroundColor: badgeStyle.backgroundColor,
           borderRadius: 12,
-          paddingHorizontal: 10,
+          paddingHorizontal: 8,
           paddingVertical: 4,
           alignSelf: "flex-start",
           marginTop: 8,
@@ -98,7 +129,7 @@ const UserProfileCard = () => {
         <Text
           style={{
             color: badgeStyle.color,
-            fontSize: width * 0.03,
+            fontSize: width * 0.025,
             fontWeight: "bold",
           }}
         >
@@ -114,7 +145,7 @@ const UserProfileCard = () => {
         flexDirection: "row",
         alignItems: "flex-end",
         width: "100%",
-        height: height * 0.2,
+        height: height * 0.25,
         backgroundColor: "#11162B",
         borderRadius: 20,
         marginBottom: 20,
@@ -124,36 +155,89 @@ const UserProfileCard = () => {
       {/* Left Half of User Card with Edit Icon integrated*/}
       <View
         style={{
-          width: "40%",
+          width: "50%",
           height: "100%",
           backgroundColor: "#020617",
           borderTopLeftRadius: 20,
           borderBottomLeftRadius: 20,
         }}
       >
-{/* Functioning Edit Icon (BACKEND NOT YET IMPLEMENTED KASI HEHE)*/}
-<TouchableOpacity
-        onPress={pickImage}
-        style={{
-          position: 'absolute',
-          top: 5,
-          right: 5,
-          width: 35,
-          backgroundColor: '#0000',
-          
-          borderRadius: 20,
-          paddingLeft: 9,
-          flexDirection: 'row',
-          alignItems: 'center',
-          zIndex: 1,
-          borderWidth: 0,
-          borderColor: '#F97316',
-        }}
-      >
-        <FontAwesome name="pencil" size={18} color="#F97316" />
-      </TouchableOpacity>
+        {/* Functioning Edit Icon (BACKEND NOT YET IMPLEMENTED KASI HEHE)*/}
+        <TouchableOpacity
+          onPress={pickImage}
+          style={{
+            position: "absolute",
+            top: 5,
+            right: 5,
+            width: "auto",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            zIndex: 1,
+            borderWidth: 0,
+            borderColor: "#F97316",
+          }}
+        >
+          <FontAwesome
+            name="pencil"
+            size={IMG_ICON_SIZE}
+            color="#F97316"
+            style={{
+              textShadowColor: "#020617",
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 3,
+            }}
+          />
+        </TouchableOpacity>
+        {profileImage && (
+          <View
+            style={{
+              position: "absolute",
+              bottom: 8,
+              left: 8,
+              width: "80%",
+              height: IMG_ICON_SIZE,
+              zIndex: 1,
+              flexDirection: "row",
+            }}
+          >
+            {/* Save the submitted image into the database */}
+            <TouchableOpacity>
+              <FontAwesome
+                name="save"
+                size={IMG_ICON_SIZE}
+                color="#F97316"
+                style={{
+                  textShadowColor: "#020617",
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 3,
+                  marginRight: 8,
+                }}
+              />
+            </TouchableOpacity>
+            {/* Reset the submitted image */}
+            <TouchableOpacity onPress={handleResetImage}>
+              <FontAwesome
+                name="refresh"
+                size={IMG_ICON_SIZE}
+                color="#6c757d"
+                style={{
+                  textShadowColor: "#020617",
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 3,
+                  marginRight: 8,
+                }}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
         <ImageBackground
-          source={profileImage ? { uri: profileImage } : require("../../assets/images/user_placeholder.png")}
+          source={
+            profileImage
+              ? { uri: profileImage }
+              : require("../../assets/images/user_placeholder.png")
+          }
           style={{
             width: "100%",
             height: "100%",
@@ -162,15 +246,14 @@ const UserProfileCard = () => {
             borderBottomLeftRadius: 20,
             overflow: "hidden",
           }}
-        >        
-        </ImageBackground>
+        ></ImageBackground>
       </View>
       {/* Right Half of User Card */}
       <View
         style={{
           flex: 1,
           justifyContent: "center",
-          width: "60%",
+          width: "50%",
           height: "100%",
           borderTopRightRadius: 20,
           borderBottomRightRadius: 20,
@@ -180,11 +263,11 @@ const UserProfileCard = () => {
         <Text
           style={{
             color: "#fb923c",
-            fontSize: width * 0.045,
+            fontSize: width * 0.04,
             fontWeight: "bold",
           }}
         >
-          {sessionData?.UA_username.toUpperCase() || "Name not found"}
+          {"@" + sessionData?.UA_username.toUpperCase() || "Name not found"}
         </Text>
         <Text
           style={{
@@ -199,7 +282,7 @@ const UserProfileCard = () => {
         <Text
           style={{
             color: "#B0B3C4",
-            fontSize: width * 0.03,
+            fontSize: width * 0.025,
             paddingTop: 4,
           }}
         >

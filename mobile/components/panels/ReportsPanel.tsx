@@ -18,6 +18,7 @@ import {
   PreverifiedReport,
 } from "@/constants/interfaces/database";
 import ReportHelpModal from "../dash/ReportHelpModal";
+import { EditReportModal } from "../dash/EditReportModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,13 +39,20 @@ const ReportsPanel = () => {
     [PreverifiedReport, PostverifiedReport | null] | null
   >(null);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isHelpModalVisible, setIsHelpModalVisible] = useState(false);
   const [showPreverified, setShowPreverified] = useState(false);
+  const isAdmin =
+    sessionData?.UA_user_role &&
+    ["admin", "superadmin", "responder"].includes(
+      sessionData.UA_user_role.toLowerCase()
+    );
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Report combination
   const combinedReports = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
 
@@ -73,7 +81,7 @@ const ReportsPanel = () => {
 
       return [preverified, verified ?? null] as [
         PreverifiedReport,
-        PostverifiedReport | null
+        PostverifiedReport | null,
       ];
     });
 
@@ -127,6 +135,12 @@ const ReportsPanel = () => {
     },
     []
   );
+
+  const handleEditSave = (updatedData: any) => {
+    //pwede dito ilagay yunhg save logic or kahit saan mo trip bahala ka sa buhay mo hehe
+    console.log("Saved data:", updatedData);
+    setIsEditModalVisible(false);
+  };
 
   const toggleHelpModal = useCallback(() => {
     setIsHelpModalVisible((prev) => !prev);
@@ -311,6 +325,7 @@ const ReportsPanel = () => {
                 preverified={report[0]}
                 verified={report[1]}
                 onClick={() => handleReportClick(report)}
+                setIsEditModalVisible={setIsEditModalVisible}
               />
             ))
         )}
@@ -319,10 +334,19 @@ const ReportsPanel = () => {
       {/* Help Modal */}
       <ReportHelpModal visible={isHelpModalVisible} onClose={toggleHelpModal} />
 
+      {/* Selected Report Modal */}
       <SelectedReportModal
         visible={isReportModalVisible}
         onClose={closeReportModal}
         selectedReport={selectedReport}
+      />
+
+      {/* Edit Report Modal */}
+      <EditReportModal
+        visible={isEditModalVisible}
+        onClose={() => setIsEditModalVisible(false)}
+        reportData={selectedReport}
+        onSave={handleEditSave}
       />
     </>
   );

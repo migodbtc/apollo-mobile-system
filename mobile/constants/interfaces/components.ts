@@ -30,11 +30,11 @@ export interface NavigationBarProps {
 export interface ReportCardProps {
   preverified: PreverifiedReport;
   verified?: PostverifiedReport | null;
+  setIsEditModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
   onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
-
 
 export interface PersonalReportCardProps {
   userSubmittedReport: PreverifiedReport;

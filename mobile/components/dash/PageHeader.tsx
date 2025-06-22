@@ -1,4 +1,4 @@
-import { View, Text, Dimensions, TouchableOpacity } from "react-native";
+import { View, Text, Dimensions, TouchableOpacity, Alert } from "react-native";
 import React from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { NavigationBarProps } from "@/constants/interfaces/components";
@@ -66,7 +66,17 @@ const PageHeader: React.FC<NavigationBarProps> = ({
   const { sessionData, setSessionData } = useSession();
 
   const handleLogout = () => {
-    setSessionData(null);
+    Alert.alert("Logout", "Are you sure you want to log out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => setSessionData(null),
+      },
+    ]);
   };
 
   return (

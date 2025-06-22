@@ -1,6 +1,11 @@
-import { faUser } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFloppyDisk,
+  faRightFromBracket,
+  faRotateLeft,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { UserRole } from "../../constants/types/types";
 import { useSession } from "../../constants/context/SessionContext";
 
@@ -31,76 +36,14 @@ interface UserEditModalProps {
 const UserEditModal = ({
   showSelectedModal,
   selectedRow,
-  setSelectedRow,
   handleExitClick,
 }: UserEditModalProps) => {
   const { sessionData } = useSession();
 
-  const renderRoleBadge = (role: string | undefined) => {
-    let badgeStyle: { backgroundColor: string; color: string } = {
-      backgroundColor: "",
-      color: "",
-    };
-    let badgeText = "";
-
-    switch (role) {
-      case "guest":
-        badgeStyle = {
-          backgroundColor: "#111827", // GRAY
-          color: "#FFFFFF",
-        };
-        badgeText = "Guest";
-        break;
-      case "civilian":
-        badgeStyle = {
-          backgroundColor: "#3B82F6", // BLUE
-          color: "#FFFFFF",
-        };
-        badgeText = "Civilian";
-        break;
-      case "responder":
-        badgeStyle = {
-          backgroundColor: "#F59E0B", // AMBER
-          color: "#FFFFFF",
-        };
-        badgeText = "Responder";
-        break;
-      case "admin":
-        badgeStyle = {
-          backgroundColor: "#EF4444", // RED
-          color: "#FFFFFF",
-        };
-        badgeText = "Administrator";
-        break;
-      case "superadmin":
-        badgeStyle = {
-          backgroundColor: "#01B073", // TEAL
-          color: "#FFFFFF",
-        };
-        badgeText = "Superadministrator";
-        break;
-      default:
-        badgeStyle = {
-          backgroundColor: "#6B7280", // CYAN
-          color: "#FFFFFF",
-        };
-        badgeText = "Unknown Role";
-        break;
-    }
-
-    return (
-      <span
-        style={{
-          backgroundColor: badgeStyle.backgroundColor,
-          borderRadius: "1rem",
-          color: badgeStyle.color,
-        }}
-        className="badge badge-xs text-bold px-2 py-1"
-      >
-        {badgeText}
-      </span>
-    );
-  };
+  const [modifiedData, setModifiedData] = useState<UserType | null>(
+    selectedRow
+  );
+  const [hasChanges, setHasChanges] = useState(false);
 
   const roleOptions: UserRole[] = [
     "civilian",
@@ -109,6 +52,72 @@ const UserEditModal = ({
       ? (["admin"] as UserRole[])
       : []),
   ];
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    if (!modifiedData) return;
+    const { id, value } = e.target;
+    const keyMap: Record<string, keyof UserType> = {
+      inputFirstName: "UA_first_name",
+      inputMiddleName: "UA_middle_name",
+      inputLastName: "UA_last_name",
+      inputSuffix: "UA_suffix",
+      inputEmailAddress: "UA_email_address",
+      inputPhoneNumber: "UA_phone_number",
+      inputReputationScore: "UA_reputation_score",
+      userRole: "UA_user_role",
+    };
+    const userKey = keyMap[id];
+    if (!userKey) return;
+    setModifiedData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [userKey]:
+              userKey === "UA_reputation_score" ? Number(value) : value,
+          }
+        : prev
+    );
+  };
+
+  const handleComparison = () => {
+    if (!selectedRow || !modifiedData) {
+      setHasChanges(false);
+      return;
+    }
+    const safeCompare = (a: any, b: any) => (a || "") === (b || "");
+    const changed =
+      !safeCompare(selectedRow.UA_first_name, modifiedData.UA_first_name) ||
+      !safeCompare(selectedRow.UA_middle_name, modifiedData.UA_middle_name) ||
+      !safeCompare(selectedRow.UA_last_name, modifiedData.UA_last_name) ||
+      !safeCompare(selectedRow.UA_suffix, modifiedData.UA_suffix) ||
+      !safeCompare(
+        selectedRow.UA_email_address,
+        modifiedData.UA_email_address
+      ) ||
+      !safeCompare(selectedRow.UA_phone_number, modifiedData.UA_phone_number) ||
+      !safeCompare(selectedRow.UA_user_role, modifiedData.UA_user_role) ||
+      Number(selectedRow.UA_reputation_score) !==
+        Number(modifiedData.UA_reputation_score);
+    setHasChanges(changed);
+  };
+
+  const handleReset = () => {
+    setModifiedData(selectedRow);
+  };
+
+  const handleNewDataSubmission = () => {
+    // Submit logic here
+  };
+
+  useEffect(() => {
+    setModifiedData(selectedRow);
+  }, [selectedRow, showSelectedModal]);
+
+  useEffect(() => {
+    handleComparison();
+  }, [modifiedData, selectedRow]);
 
   return (
     <div
@@ -141,14 +150,14 @@ const UserEditModal = ({
           }}
         >
           {" "}
-          {selectedRow && (
+          {modifiedData && (
             <div className="modal-body p-4" style={{ overflowY: "scroll" }}>
               <h5
                 className="box-title mt-1 text-bold"
                 style={{ color: "rgb(194, 65, 12)" }}
               >
                 <FontAwesomeIcon icon={faUser} className="mr-2" />
-                User ID {selectedRow.UA_user_id}
+                User ID {modifiedData.UA_user_id}
               </h5>
               <span className="text-muted text-sm text-bold mt-2">
                 INFORMATION
@@ -172,6 +181,8 @@ const UserEditModal = ({
                     className="form-control w-100 custom-input text-sm text-white"
                     id="inputFirstName"
                     placeholder="First name..."
+                    value={modifiedData.UA_first_name || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -185,6 +196,8 @@ const UserEditModal = ({
                     className="form-control w-100 custom-input text-sm text-white"
                     id="inputMiddleName"
                     placeholder="Middle name..."
+                    value={modifiedData.UA_middle_name || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -198,6 +211,8 @@ const UserEditModal = ({
                     className="form-control w-100 custom-input text-sm text-white"
                     id="inputLastName"
                     placeholder="Last name..."
+                    value={modifiedData.UA_last_name || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -217,6 +232,8 @@ const UserEditModal = ({
                     className="form-control w-100 custom-input text-sm text-white"
                     id="inputEmailAddress"
                     placeholder="Email address..."
+                    value={modifiedData.UA_email_address || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -230,6 +247,8 @@ const UserEditModal = ({
                     className="form-control w-100 custom-input text-sm text-white"
                     id="inputPhoneNumber"
                     placeholder="Phone number..."
+                    value={modifiedData.UA_phone_number || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -252,17 +271,12 @@ const UserEditModal = ({
                       border: "none",
                       borderRadius: "1rem",
                     }}
-                    value={selectedRow?.UA_user_role || ""}
-                    onChange={(e) => {
-                      setSelectedRow({
-                        ...selectedRow,
-                        UA_user_role: e.target.value as UserRole,
-                      });
-                    }}
+                    value={modifiedData.UA_user_role}
+                    onChange={handleInputChange}
                   >
                     {roleOptions.map((role) => (
                       <option key={role} value={role}>
-                        {renderRoleBadge(role)}
+                        {role.charAt(0).toUpperCase() + role.slice(1)}
                       </option>
                     ))}
                   </select>
@@ -273,64 +287,14 @@ const UserEditModal = ({
                   <div style={{ height: "100%" }}>Reputation Score</div>
                 </div>
                 <div className="col-md-6 form-group d-flex justify-content-center align-items-center mb-0">
-                  <span className="text-left w-100 text-sm mb-2 mt-1">
-                    <input
-                      type="number"
-                      className="form-control w-100 custom-input text-sm text-white"
-                      id="inputReputationScore"
-                      placeholder="Reputation score..."
-                    />
-                  </span>
-                </div>
-              </div>
-              <div className="my-2" />
-              <div className="row w-100 px-2">
-                <span className="text-muted text-sm text-bold">
-                  IDENTITY VALIDATION
-                </span>
-              </div>
-              <div className="row w-100 px-2 mt-2 d-flex justify-content-center align-items-center text-left py-0">
-                <div className="col-md-6">
-                  <div>Front ID Picture</div>
-                </div>
-                <div className="col-md-6">
-                  <div>Back ID Picture</div>
-                </div>
-              </div>
-              <div className="row w-100 px-2 d-flex justify-content-center align-items-center text-left py-0 mt-2">
-                <div className="col-md-6 form-group d-flex flex-column align-items-center mb-0">
                   <input
-                    type="file"
-                    className="form-control w-100 text-sm text-white"
-                    id="inputFrontIdPicture"
-                    style={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "1rem",
-                    }}
+                    type="number"
+                    className="form-control w-100 custom-input text-sm text-white"
+                    id="inputReputationScore"
+                    placeholder="Reputation score..."
+                    value={modifiedData.UA_reputation_score}
+                    onChange={handleInputChange}
                   />
-                  {true ? (
-                    <span className="text-green-500 w-100 text-xs ml-2 pl-2">
-                      Uploaded: filename...
-                    </span>
-                  ) : null}
-                </div>
-                <div className="col-md-6 form-group d-flex flex-column align-items-center mb-0">
-                  <input
-                    type="file"
-                    className="form-control w-100 text-sm text-white "
-                    id="inputBackIdPicture"
-                    style={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "1rem",
-                    }}
-                  />
-                  {true ? (
-                    <span className="text-green-500 w-100 text-xs ml-2 pl-2">
-                      Uploaded: filename...
-                    </span>
-                  ) : null}
                 </div>
               </div>
               <div className="my-4" />
@@ -340,18 +304,34 @@ const UserEditModal = ({
             className="modal-footer justify-content-right"
             style={{ border: "none" }}
           >
-            <button
-              type="button"
-              className="btn btn-primary px-4"
-              style={{
-                backgroundColor: "rgb(249, 115, 22)",
-                border: "none",
-                borderRadius: "1rem",
-              }}
-              onClick={handleExitClick}
-            >
-              {"  "}Exit Modal
-            </button>
+            <div className="col d-flex justify-content-end">
+              <button
+                className={`btn btm-sm btn-muted bg-dark ml-2 ${
+                  !hasChanges ? "disabled" : ""
+                }`}
+                onClick={handleReset}
+              >
+                <FontAwesomeIcon icon={faRotateLeft} className="mr-2" />
+                Reset
+              </button>
+              <button
+                className={`btn btm-sm btn-muted bg-orange ml-2 ${
+                  !hasChanges ? "disabled" : ""
+                }`}
+                onClick={handleNewDataSubmission}
+              >
+                <FontAwesomeIcon icon={faFloppyDisk} className="mr-2" />
+                Save
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary ml-2"
+                onClick={handleExitClick}
+              >
+                <FontAwesomeIcon icon={faRightFromBracket} className="mr-2" />
+                Exit Modal
+              </button>
+            </div>
           </div>
         </div>
       </div>

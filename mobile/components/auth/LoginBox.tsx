@@ -35,11 +35,6 @@ const LoginBox: React.FC = () => {
 
   const { width, height } = Dimensions.get("window");
 
-  // NOTES: 2025 04 03
-  // FIX THE LOGIN LOGIC cause i want the async/sync parts to be separated
-  // it doesnt help the rendering lol, the router change bugs out and shit
-  // mwa mwa
-
   const handleLogin = async () => {
     if (!username || !password) {
       setAlertData({
@@ -56,6 +51,10 @@ const LoginBox: React.FC = () => {
       UA_remember_me: rememberMe,
     };
 
+    // Payload debugging
+
+    console.log(payload);
+
     try {
       const response = await fetch(`${SERVER_LINK}/auth/login`, {
         method: "POST",
@@ -64,6 +63,8 @@ const LoginBox: React.FC = () => {
       });
 
       const data = await response.json();
+
+      console.log(data);
 
       if (response.ok) {
         const {
@@ -130,15 +131,15 @@ const LoginBox: React.FC = () => {
       <View
         style={{
           width: "75%",
-          position: "relative",
           backgroundColor: "#11162B",
           paddingHorizontal: width * 0.08,
-          paddingVertical: height * 0.035,
+          paddingTop: height * 0.035,
+          paddingBottom: height * 0.06,
           borderRadius: 10,
           shadowColor: "#000",
           shadowOpacity: 0.2,
           shadowRadius: 5,
-          marginBottom: height * 0.25,
+          marginBottom: height * 0.05,
         }}
       >
         <Text
@@ -217,7 +218,7 @@ const LoginBox: React.FC = () => {
             flexDirection: "row",
             alignItems: "center",
             marginLeft: width * 0.01,
-            marginBottom: height * 0.04,
+            marginBottom: height * 0.03,
           }}
           onPress={() => setRememberMe(!rememberMe)}
         >
@@ -245,6 +246,7 @@ const LoginBox: React.FC = () => {
             alignItems: "center",
             marginHorizontal: width * 0.005,
             paddingVertical: height * 0.01,
+            marginBottom: height * 0.03,
           }}
           onPress={handleLogin}
         >
@@ -261,14 +263,18 @@ const LoginBox: React.FC = () => {
 
         <TouchableOpacity
           onPress={() => router.push("/register")}
-          style={{ marginTop: 15, marginBottom: 5 }}
+          style={{
+            marginBottom: 5,
+            width: "100%",
+          }}
         >
           <Text
             style={{
               color: "#c2410c",
-              textAlign: "center",
+              textAlign: "left",
               fontWeight: "bold",
               fontSize: width * 0.03,
+              width: "100%",
             }}
           >
             Don't have an account? Sign up!
@@ -276,18 +282,22 @@ const LoginBox: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push("/forgot-password")}
-          style={{ marginBottom: 15 }}
+          // Put onPress event when forgot password feature is implemented
+          style={{
+            marginBottom: 5,
+            width: "100%",
+          }}
         >
           <Text
             style={{
               color: "#c2410c",
-              textAlign: "center",
+              textAlign: "left",
               fontWeight: "bold",
               fontSize: width * 0.03,
+              width: "100%",
             }}
           >
-            Forgot Password?
+            Forgot your password?
           </Text>
         </TouchableOpacity>
       </View>

@@ -521,214 +521,205 @@ const ReportsCrudPage = () => {
       >
         <div className="row w-100">
           <div
-            className="container-fluid"
-            style={{ height: "90vh", overflowY: "hidden" }}
+            className="d-flex flex-row justify-content-between align-items-center"
+            style={{ height: "5vh", color: "#c2410c" }}
           >
-            <div className="row w-100">
-              <div
-                className="d-flex flex-row justify-content-between align-items-center"
-                style={{ height: "5vh", color: "#c2410c" }}
-              >
-                <div>
-                  <h5 className="box-title">All Submitted Reports</h5>
-                </div>
-              </div>
-              <div
-                className="card py-3 px-4 w-100"
+            <div>
+              <h5 className="box-title">All Submitted Reports</h5>
+            </div>
+          </div>
+          <div
+            className="card py-3 px-4 w-100"
+            style={{
+              height: "80vh",
+              borderRadius: "1rem",
+              backgroundColor: "rgb(17, 22, 43)",
+              overflowX: "hidden",
+            }}
+          >
+            <div className="d-flex justify-content-between mb-3">
+              <input
+                type="text"
+                placeholder="Search reports..."
+                className="form-control form-control-sm w-25 custom-input-2 px-3"
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+              />
+              <button
+                className="btn btn-primary btn-sm"
                 style={{
-                  height: "80vh",
-                  borderRadius: "1rem",
-                  backgroundColor: "rgb(17, 22, 43)",
-                  overflowX: "hidden",
+                  backgroundColor: "rgb(249, 115, 22)",
+                  border: "none",
                 }}
               >
-                <div className="d-flex justify-content-between mb-3">
-                  <input
-                    type="text"
-                    placeholder="Search reports..."
-                    className="form-control form-control-sm w-25 custom-input-2 px-3"
-                    value={globalFilter}
-                    onChange={(e) => setGlobalFilter(e.target.value)}
-                  />
+                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                Add New Report
+              </button>
+            </div>
+            {Object.keys(rowSelection).length > 0 && (
+              <div
+                className="d-flex align-items-center mb-3 p-2 px-4 justify-content-between"
+                style={{
+                  backgroundColor: "rgba(249, 115, 22, 0.1)",
+                  borderRadius: "1rem",
+                }}
+              >
+                <div className="d-flex">
+                  <span className="me-3">
+                    {Object.keys(rowSelection).length} row(s) selected
+                  </span>
+                </div>
+                <div className="d-flex">
                   <button
-                    className="btn btn-primary btn-sm"
-                    style={{
-                      backgroundColor: "rgb(249, 115, 22)",
-                      border: "none",
+                    className="btn btn-danger btn-sm mr-2"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to delete the selected rows?"
+                        )
+                      ) {
+                        console.log(
+                          "Selected rows to delete:",
+                          Object.keys(rowSelection)
+                        );
+                        setRowSelection({});
+                      }
                     }}
                   >
-                    <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                    Add New Report
+                    <FontAwesomeIcon icon={faTrash} className="mr-2" />
+                    Delete Selected
+                  </button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setRowSelection({})}
+                  >
+                    Clear Selection
                   </button>
                 </div>
-                {Object.keys(rowSelection).length > 0 && (
-                  <div
-                    className="d-flex align-items-center mb-3 p-2 px-4 justify-content-between"
-                    style={{
-                      backgroundColor: "rgba(249, 115, 22, 0.1)",
-                      borderRadius: "1rem",
-                    }}
-                  >
-                    <div className="d-flex">
-                      <span className="me-3">
-                        {Object.keys(rowSelection).length} row(s) selected
-                      </span>
-                    </div>
-                    <div className="d-flex">
-                      <button
-                        className="btn btn-danger btn-sm mr-2"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to delete the selected rows?"
-                            )
-                          ) {
-                            console.log(
-                              "Selected rows to delete:",
-                              Object.keys(rowSelection)
-                            );
-                            setRowSelection({});
-                          }
+              </div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  flex: 1,
+                  overflow: "auto",
+                  marginBottom: "1rem",
+                }}
+              >
+                <table style={{ width: "100%" }}>
+                  <thead style={{ userSelect: "none", cursor: "pointer" }}>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <tr
+                        key={headerGroup.id}
+                        className="mb-2 text-muted text-xs"
+                        style={{
+                          borderBottom: "1px solid rgb(100, 106, 133)",
                         }}
                       >
-                        <FontAwesomeIcon icon={faTrash} className="mr-2" />
-                        Delete Selected
-                      </button>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setRowSelection({})}
-                      >
-                        Clear Selection
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    height: "100%",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      flex: 1,
-                      overflow: "auto",
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    <table style={{ width: "100%" }}>
-                      <thead style={{ userSelect: "none", cursor: "pointer" }}>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                          <tr
-                            key={headerGroup.id}
-                            className="mb-2 text-muted text-xs"
+                        {headerGroup.headers.map((header) => (
+                          <th
+                            className="px-2 pb-1"
+                            key={header.id}
+                            onClick={() => header.column.toggleSorting()}
                             style={{
-                              borderBottom: "1px solid rgb(100, 106, 133)",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                             }}
                           >
-                            {headerGroup.headers.map((header) => (
-                              <th
-                                className="px-2 pb-1"
-                                key={header.id}
-                                onClick={() => header.column.toggleSorting()}
-                                style={{
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                              >
-                                {flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                                {header.column.getIsSorted() ? (
-                                  header.column.getIsSorted() === "desc" ? (
-                                    <FontAwesomeIcon
-                                      icon={faArrowUp}
-                                      className="ml-2"
-                                    />
-                                  ) : (
-                                    <FontAwesomeIcon
-                                      icon={faArrowDown}
-                                      className="ml-2"
-                                    />
-                                  )
-                                ) : null}
-                              </th>
-                            ))}
-                          </tr>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {header.column.getIsSorted() ? (
+                              header.column.getIsSorted() === "desc" ? (
+                                <FontAwesomeIcon
+                                  icon={faArrowUp}
+                                  className="ml-2"
+                                />
+                              ) : (
+                                <FontAwesomeIcon
+                                  icon={faArrowDown}
+                                  className="ml-2"
+                                />
+                              )
+                            ) : null}
+                          </th>
                         ))}
-                      </thead>
-                      <tbody className="text-sm">
-                        {table.getRowModel().rows.map((row) => (
-                          <tr key={row.id}>
-                            {row.getVisibleCells().map((cell) => (
-                              <td key={cell.id} className="px-2 pt-3">
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
-                              </td>
-                            ))}
-                          </tr>
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody className="text-sm">
+                    {table.getRowModel().rows.map((row) => (
+                      <tr key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id} className="px-2 pt-3">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      width: "100%",
-                      padding: "0.5rem 0",
-                      borderTop: "1px solid rgb(100, 106, 133)",
-                    }}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "100%",
+                  padding: "0.5rem 0",
+                  borderTop: "1px solid rgb(100, 106, 133)",
+                }}
+              >
+                <span>
+                  Page {table.getState().pagination.pageIndex + 1} of{" "}
+                  {table.getPageCount()}
+                </span>
+                <div
+                  className="d-flex justify-content-end"
+                  style={{
+                    width: "50%",
+                  }}
+                >
+                  <button
+                    onClick={() => table.setPageIndex(0)}
+                    disabled={!table.getCanPreviousPage()}
+                    className="btn btn-sm btn-secondary mr-1"
                   >
-                    <span>
-                      Page {table.getState().pagination.pageIndex + 1} of{" "}
-                      {table.getPageCount()}
-                    </span>
-                    <div
-                      className="d-flex justify-content-end"
-                      style={{
-                        width: "50%",
-                      }}
-                    >
-                      <button
-                        onClick={() => table.setPageIndex(0)}
-                        disabled={!table.getCanPreviousPage()}
-                        className="btn btn-sm btn-secondary mr-1"
-                      >
-                        {"<<"}
-                      </button>
-                      <button
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                        className="btn btn-sm btn-secondary mr-1"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                        className="btn btn-sm btn-secondary mr-1"
-                      >
-                        Next
-                      </button>
-                      <button
-                        onClick={() =>
-                          table.setPageIndex(table.getPageCount() - 1)
-                        }
-                        disabled={!table.getCanNextPage()}
-                        className="btn btn-sm btn-secondary"
-                      >
-                        {">>"}
-                      </button>
-                    </div>
-                  </div>
+                    {"<<"}
+                  </button>
+                  <button
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    className="btn btn-sm btn-secondary mr-1"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                    className="btn btn-sm btn-secondary mr-1"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                    disabled={!table.getCanNextPage()}
+                    className="btn btn-sm btn-secondary"
+                  >
+                    {">>"}
+                  </button>
                 </div>
               </div>
             </div>

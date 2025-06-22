@@ -8,7 +8,7 @@ import {
   PreverifiedReport,
 } from "@/constants/interfaces/database";
 import { ReportCardProps } from "@/constants/interfaces/components";
-import {EditReportModal} from "./EditReportModal"; 
+import { EditReportModal } from "./EditReportModal";
 
 const { width, height } = Dimensions.get("window");
 const fontSizeBase = width * 0.035;
@@ -74,23 +74,16 @@ const StatusBadge = ({ status }: { status: string }) => {
 const ReportCard = ({
   preverified,
   verified = null,
+  setIsEditModalVisible,
   onClick,
   onDelete,
 }: ReportCardProps) => {
   const { sessionData } = useSession();
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  // Depende kung sino naka login, this is to determine wether the user is admin, superadmin, or responder
   const isAdmin =
     sessionData?.UA_user_role &&
     ["admin", "superadmin", "responder"].includes(
       sessionData.UA_user_role.toLowerCase()
     );
-
-  const handleSave = (updatedData: any) => {
-    //pwede dito ilagay yunhg save logic or kahit saan mo trip bahala ka sa buhay mo hehe 
-    console.log("Saved data:", updatedData);
-    setIsEditModalVisible(false);
-  };
 
   return (
     <View style={{ alignItems: "center" }}>
@@ -100,7 +93,7 @@ const ReportCard = ({
           flexDirection: "row",
           overflow: "hidden",
           width: width * 0.9,
-          height: height * 0.21,
+          height: "auto",
           backgroundColor: "#11162B",
           borderRadius: 12,
           marginBottom: height * 0.015,
@@ -109,7 +102,7 @@ const ReportCard = ({
         <View
           style={{
             flex: 2,
-            paddingHorizontal: width * 0.04,
+            paddingHorizontal: width * 0.05,
             paddingVertical: height * 0.035,
             backgroundColor: "#11162B",
             justifyContent: "center",
@@ -123,7 +116,7 @@ const ReportCard = ({
             style={{
               color: "#f97316",
               fontWeight: "bold",
-              fontSize: fontSizeBase * 1.3,
+              fontSize: fontSizeBase * 1.1,
               marginBottom: 12,
             }}
           >
@@ -140,16 +133,15 @@ const ReportCard = ({
             {new Date(preverified.PR_timestamp).toUTCString()}
           </Text>
 
-          {/**start ng code for the admin controls depending on the role of the user */}  
+          {/**start ng code for the admin controls depending on the role of the user */}
           {isAdmin && (
             <View
               style={{
-                marginTop: height * 0.015,
+                marginTop: height * 0.03,
                 flexDirection: "row",
                 alignItems: "flex-start",
               }}
             >
-              
               <TouchableOpacity
                 onPress={() => setIsEditModalVisible(true)}
                 style={{
@@ -159,7 +151,6 @@ const ReportCard = ({
                   backgroundColor: "#f97316",
                   paddingVertical: height * 0.006,
                   paddingHorizontal: width * 0.04,
-                  marginBottom: height * 0.01,
                   borderRadius: 10,
                 }}
               >
@@ -171,7 +162,7 @@ const ReportCard = ({
                 <Text
                   style={{
                     color: "white",
-                    fontSize: fontSizeBase * 0.75,
+                    fontSize: fontSizeBase * 0.9,
                     fontWeight: "bold",
                     marginLeft: width * 0.02,
                   }}
@@ -180,7 +171,6 @@ const ReportCard = ({
                 </Text>
               </TouchableOpacity>
 
-              
               <TouchableOpacity
                 onPress={onDelete}
                 style={{
@@ -190,7 +180,6 @@ const ReportCard = ({
                   backgroundColor: "#42475A",
                   paddingVertical: height * 0.006,
                   paddingHorizontal: width * 0.04,
-                  marginBottom: height * 0.01,
                   borderRadius: 10,
                   marginLeft: width * 0.02,
                 }}
@@ -203,7 +192,7 @@ const ReportCard = ({
                 <Text
                   style={{
                     color: "white",
-                    fontSize: fontSizeBase * 0.75,
+                    fontSize: fontSizeBase * 0.9,
                     fontWeight: "bold",
                     marginLeft: width * 0.02,
                   }}
@@ -215,7 +204,6 @@ const ReportCard = ({
           )}
         </View>
 
-        
         <View
           style={{
             flex: 1,
@@ -252,9 +240,7 @@ const ReportCard = ({
                   }}
                 >
                   <FontAwesome
-                    name={getConfidenceIcon(
-                      verified.VR_confidence_score * 100
-                    )}
+                    name={getConfidenceIcon(verified.VR_confidence_score * 100)}
                     size={16}
                     color="white"
                   />
@@ -294,21 +280,13 @@ const ReportCard = ({
                   marginTop: 4,
                   textAlign: "center",
                 }}
-                >
+              >
                 Pending verification...
               </Text>
             </View>
           )}
         </View>
       </TouchableOpacity>
-
-      
-      <EditReportModal
-        visible={isEditModalVisible}
-        onClose={() => setIsEditModalVisible(false)}
-        reportData={verified || preverified}
-        onSave={handleSave}
-      />
     </View>
   );
 };

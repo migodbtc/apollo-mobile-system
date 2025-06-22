@@ -678,7 +678,6 @@ def handle_login(data):
         UA_id_picture_front = found_user[12] if found_user[12] is not None else None
         UA_id_picture_back = found_user[13] if found_user[13] is not None else None
 
-        print(UA_password, UA_passwordStored)
         if UA_password != UA_passwordStored:
             return {"error": "The password submitted is invalid!"}, 401
 

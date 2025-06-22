@@ -1,105 +1,164 @@
-import React, { useState } from "react";
-import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, } from "react-native";
-import { Dimensions } from "react-native";
+import React, { useEffect, useState } from "react";
 import {
-    PostverifiedReport,
-    PreverifiedReport,
-  } from "@/constants/interfaces/database";
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+} from "react-native";
+import {
+  PostverifiedReport,
+  PreverifiedReport,
+} from "@/constants/interfaces/database";
+import { FontAwesome } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
 const statusOptions = [
   { label: "Pending", value: "pending" },
-  { label: "Verified", value: "verified" },
+  { label: "Validated", value: "verified" },
   { label: "False Alarm", value: "false alarm" },
   { label: "Resolved", value: "resolved" },
 ];
 
-type EditReportModalProps = {
+interface EditReportModalProps {
   visible: boolean;
+  reportData: [PreverifiedReport, PostverifiedReport | null] | null;
   onClose: () => void;
-  reportData: PreverifiedReport | PostverifiedReport | null;
-  onSave: (updatedData: any) => void;
-};
+  onSave: (updatedData: { status: string }) => void;
+}
 
-export const EditReportModal = ({
+export const EditReportModal: React.FC<EditReportModalProps> = ({
   visible,
-  onClose,
   reportData,
+  onClose,
   onSave,
-}: EditReportModalProps) => {
-    const [notes, setNotes] = React.useState("");
-    const [selectedStatus, setSelectedStatus] = useState("pending")
-      
+}) => {
+  const [selectedStatus, setSelectedStatus] = useState("pending");
+
+  useEffect(() => {
+    setSelectedStatus(
+      reportData?.[0]?.PR_report_status?.toLowerCase() || "pending"
+    );
+  }, [visible, reportData]);
+
   return (
     <Modal
-      animationType="fade"
-      transparent={true}
       visible={visible}
+      transparent={true}
+      animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>EDIT REPORT STATUS</Text>
-          
-          {/* butones na radyo */}
-          <View style={styles.radioContainer}>
-            <View style={styles.radioColumn}>
-              {statusOptions.slice(0, 2).map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={styles.radioButton}
-                  onPress={() => setSelectedStatus(option.value)}
-                >
-                  <View style={styles.radioCircle}>
-                    {selectedStatus === option.value && <View style={styles.selectedRb} />}
-                  </View>
-                  <Text style={styles.radioText}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.radioColumn}>
-              {statusOptions.slice(2, 4).map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={styles.radioButton}
-                  onPress={() => setSelectedStatus(option.value)}
-                >
-                  <View style={styles.radioCircle}>
-                    {selectedStatus === option.value && <View style={styles.selectedRb} />}
-                  </View>
-                  <Text style={styles.radioText}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <Text style={styles.modalTitle}>Edit Report Status</Text>
+          <Text style={{ color: "white", marginBottom: height * 0.01 }}>
+            Update the status of the report manually here.
+          </Text>
+
+          <Text style={styles.sectionLabel}>Status</Text>
+          <View style={styles.radioRow}>
+            {statusOptions.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={styles.radioButton}
+                onPress={() => setSelectedStatus(option.value)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.radioCircle}>
+                  {selectedStatus === option.value && (
+                    <View style={styles.selectedRb} />
+                  )}
+                </View>
+                <Text style={styles.radioText}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          {/* Save Button (WALA PANG BACKEND KASI HEHE*/}
-          <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.saveButton} 
-            onPress={() => onSave({
-              ...reportData,
-              ...(reportData as PreverifiedReport).PR_report_status && { PR_report_status: selectedStatus },
-              notes
-            })}
-          >
-            <Text style={styles.buttonText}>Save</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.resetButton} 
-            onPress={() => {
-              setSelectedStatus("pending");
-              onClose();
+
+          <Text
+            style={{
+              fontSize: width * 0.032,
+              color: "#94a3b8",
+              letterSpacing: 0.8,
             }}
           >
-            <Text style={styles.buttonText}>Reset</Text>
-          </TouchableOpacity>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.buttonText}>Close</Text>
-            </TouchableOpacity>
-            <Text style={styles.descriptionText}>
-             This modal allows you to edit the report status, making it easy to update the report's current state. You can select from options like Pending, Verified, False Alarm, or Resolved. Once you make your selection, click Save to apply the changes.
+            ADDITIONAL DETAILS
           </Text>
+          <View style={{ marginBottom: height * 0.02 }}>
+            <Text style={{ color: "white" }}>
+              To complete the validation, please enter the following details in
+              order to submit to the system.
+            </Text>
+          </View>
+
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: width * 0.02,
+              marginTop: height * 0.02,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => onSave({ status: selectedStatus })}
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "#f97316",
+                paddingVertical: height * 0.006,
+                paddingHorizontal: width * 0.03,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={styles.buttonText}>
+                <FontAwesome name="save" size={20} color="#white" />
+                {"  "}
+                SAVE
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedStatus(
+                  reportData?.[0]?.PR_report_status?.toLowerCase() || "pending"
+                );
+              }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "#6c757d",
+                paddingVertical: height * 0.006,
+                paddingHorizontal: width * 0.03,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={styles.buttonText}>
+                <FontAwesome name="refresh" size={20} color="#white" />
+                {"  "}RESET
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "#42475A",
+                paddingVertical: height * 0.006,
+                paddingHorizontal: width * 0.03,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={styles.buttonText}>
+                <FontAwesome name="times" size={20} color="#white" />
+                {"  "}CLOSE
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -108,18 +167,17 @@ export const EditReportModal = ({
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
   modalContent: {
-    width: width * 0.90,
-    height: height * 0.40,
+    width: width * 0.9,
     backgroundColor: "#1E293B",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: width * 0.06,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -127,27 +185,35 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   modalTitle: {
-    color: "#F97316",
-    fontSize: width * 0.045,
-    fontWeight: "bold",
-    alignItems: "center",
+    fontSize: width * 0.055,
+    fontWeight: "700",
+    color: "#f97316",
     textAlign: "center",
-    marginBottom: 15,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: height * 0.01,
   },
-  radioContainer: {
+  sectionLabel: {
+    fontSize: width * 0.038,
+    fontWeight: "600",
+    color: "#f97316",
+    marginTop: height * 0.01,
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  radioRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: height * 0.015,
     justifyContent: "space-between",
-    paddingTop: 10,
-    height: height * 0.07,
-  },
-  radioColumn: {
-    flex: 1, 
-    paddingHorizontal: 10,
   },
   radioButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 9,
+    marginRight: 18,
+    marginBottom: 8,
+    minWidth: width * 0.32,
   },
   radioCircle: {
     height: 20,
@@ -157,7 +223,7 @@ const styles = StyleSheet.create({
     borderColor: "#F97316",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    marginRight: 8,
   },
   selectedRb: {
     width: 10,
@@ -166,49 +232,39 @@ const styles = StyleSheet.create({
     backgroundColor: "#F97316",
   },
   radioText: {
-    color: "white",
-    fontSize: 17,
+    color: "#E2E8F0",
+    fontSize: width * 0.037,
+    fontWeight: "500",
   },
-  buttonContainer: {
+  input: {
+    backgroundColor: "#334155",
+    color: "#E2E8F0",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: width * 0.037,
+    marginBottom: height * 0.02,
+    marginTop: 2,
+    minHeight: 48,
+    textAlignVertical: "top",
+  },
+  buttonRow: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 50,
-  },
-  
-  saveButton: {
-    backgroundColor: "#F97316",
-    paddingVertical: 10,
-    paddingHorizontal: 60,
-    borderRadius: 12,
-    marginRight: 10,
-  },
-  resetButton: {
-    backgroundColor: "#42475A",
-    paddingVertical: 10,
-    paddingHorizontal: 60,
-    borderRadius: 12,
-    marginLeft: 10,
-  },
-  descriptionText: {
-    backgroundColor: "#1E293B",
-    color: "#94A3B8",
-    fontSize: width * 0.032,
-    height: 55,
-    width: "102%",
-    paddingLeft: 10,
-    position: "absolute",
-    marginTop: 48,
-  },
-  closeButton: {
-    backgroundColor: "#F97316",
-    paddingVertical: 10,
-    paddingHorizontal: 145,
-    borderRadius: 12,
-    position: "absolute",
-    marginTop: 110,
+    justifyContent: "space-between",
+    marginTop: height * 0.01,
+    marginBottom: height * 0.01,
   },
   buttonText: {
-    color: "white",
+    color: "#fff",
     fontWeight: "bold",
+    fontSize: width * 0.038,
+  },
+  closeButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: width * 0.042,
+    letterSpacing: 0.5,
   },
 });
+
+export default EditReportModal;

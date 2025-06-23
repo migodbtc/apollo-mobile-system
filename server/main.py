@@ -1134,8 +1134,7 @@ def route_get_postverified_reports():
     
 ## === MEDIA RESOURCE ===
 
-## === TESTING RESOURCE ===
-@app.route('/test/media/details/get/one', methods=['POST'])
+@app.route('/media/details/get/one', methods=['POST'])
 def route_get_one_media_detail():
     if request.method != 'POST':
         return jsonify({"error": "Invalid request method."}), 405
@@ -1145,7 +1144,7 @@ def route_get_one_media_detail():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-@app.route('/test/media/blob/get/one', methods=['POST'])
+@app.route('/media/blob/get/one', methods=['POST'])
 def route_get_one_media_blob():
     if request.method != 'POST':
         return jsonify({"error": "Invalid request method."}), 405
@@ -1155,7 +1154,7 @@ def route_get_one_media_blob():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/test/media/blob/get/one/dl', methods=['POST'])
+@app.route('/media/blob/get/one/dl', methods=['POST'])
 def route_get_one_media_blob_download():
     if request.method != 'POST':
         return jsonify({"error": "Invalid request method."}), 405

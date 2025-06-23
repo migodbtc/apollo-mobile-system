@@ -51,10 +51,6 @@ const LoginBox: React.FC = () => {
       UA_remember_me: rememberMe,
     };
 
-    // Payload debugging
-
-    console.log(payload);
-
     try {
       const response = await fetch(`${SERVER_LINK}/auth/login`, {
         method: "POST",
@@ -63,8 +59,6 @@ const LoginBox: React.FC = () => {
       });
 
       const data = await response.json();
-
-      console.log(data);
 
       if (response.ok) {
         const {

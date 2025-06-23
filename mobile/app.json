@@ -58,7 +58,9 @@
         {
           "photosPermission": "Allow Apollo Mobile App to access your photos"
         }
-      ]
+      ],
+      "expo-video",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

@@ -167,8 +167,8 @@ const ReportsPanel = () => {
       return data.map((report: any) => ({
         PR_report_id: report["PR_report_id"],
         PR_user_id: report["PR_user_id"],
-        PR_image_url: report["PR_image_url"],
-        PR_video_url: report["PR_video_url"],
+        PR_image: report["PR_image"],
+        PR_video: report["PR_video"],
         PR_latitude: parseFloat(report["PR_latitude"]),
         PR_longitude: parseFloat(report["PR_longitude"]),
         PR_address: report["PR_address"],

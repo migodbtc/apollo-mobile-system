@@ -6,6 +6,8 @@ import TopControls from "./TopControls";
 import BottomControls from "./BottomControls";
 import { CameraPanelProps } from "@/constants/interfaces/components";
 
+import { useVideoPlayer, VideoView } from "expo-video";
+
 const CameraPanel = ({
   cameraRef,
   videoRef,
@@ -109,13 +111,6 @@ const CameraPanel = ({
         onCapturePhoto={handleTakePhoto}
         onFlipCamera={() => setFacing(facing === "back" ? "front" : "back")}
         onBack={handleGoBack}
-      />
-
-      <Video
-        ref={videoRef}
-        source={undefined}
-        style={{ width: 0, height: 0 }}
-        isMuted
       />
     </View>
   );

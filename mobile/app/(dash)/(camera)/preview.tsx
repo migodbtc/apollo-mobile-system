@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import React, { useRef, useEffect, useState } from "react";
-import { Video, AVPlaybackStatus, ResizeMode } from "expo-av";
+import React, { useEffect } from "react";
+import { useVideoPlayer, VideoPlayer, VideoView } from "expo-video";
+import { useEvent } from "expo";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -19,125 +20,73 @@ const PreviewPage = () => {
   const router = useRouter();
   const { videoUri, setVideoUri } = useVideoUri();
   const { imageUri, setImageUri } = useImageUri();
+  const player = useVideoPlayer(videoUri ?? "", (player) => {
+    player.loop = true;
+  });
+  const { isPlaying } = useEvent(player, "playingChange", {
+    isPlaying: player.playing,
+  });
 
-  const [videoKey, setVideoKey] = useState(0);
-  const videoReference = useRef<Video>(null);
-  const [videoError, setVideoError] = useState(false);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const [videoStatus, setVideoStatus] = useState<AVPlaybackStatus | null>(null);
-
-  const hardResetVideo = async () => {
-    try {
-      if (videoReference.current) {
-        await videoReference.current.pauseAsync();
-        await videoReference.current.stopAsync();
-        await videoReference.current.unloadAsync();
-      }
-
-      setVideoError(false);
-      setIsVideoReady(false);
-      setVideoStatus(null);
-
-      setVideoKey((prev) => prev + 1);
-
-      setVideoUri(null);
-      setImageUri(null);
-    } catch (error) {
-      console.error("[hardResetVideo] ERROR during reset:", error);
-      throw error;
-    }
+  // ONPRESS HANDLERS
+  const handleBack = () => {
+    setVideoUri(null);
+    setImageUri(null);
+    router.replace("/(dash)/(camera)/capture");
   };
 
-  const hardResetVideoWithoutUri = async () => {
-    try {
-      if (videoReference.current) {
-        await videoReference.current.pauseAsync();
-        await videoReference.current.stopAsync();
-        await videoReference.current.unloadAsync();
-      }
-
-      setVideoError(false);
-      setIsVideoReady(false);
-      setVideoStatus(null);
-
-      setVideoKey((prev) => prev + 1);
-    } catch (error) {
-      console.error("[hardResetVideoWithoutUri] ERROR during reset:", error);
-      throw error;
-    }
-
-    if (videoUri) {
-      setTimeout(() => {
-        videoReference.current?.playAsync().catch(console.error);
-      }, 500);
-    }
+  const handleSubmit = () => {
+    router.replace("/(dash)/(camera)/submission");
   };
 
-  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    setVideoStatus(status);
-
-    if (!status.isLoaded) {
-      if (status.error) {
-        console.error("Video playback error:", status.error);
-        setVideoError(true);
-      }
-      return;
+  // EFFECT HOOKS
+  useEffect(() => {
+    if (videoUri && player) {
+      player.play();
     }
-
-    if (!isVideoReady) {
-      setIsVideoReady(true);
-    }
-  };
+  }, [videoUri, player]);
 
   useEffect(() => {
-    const loadVideo = async () => {
-      if (!videoUri) return;
-
-      try {
-        setVideoError(false);
-        setIsVideoReady(false);
-
-        if (videoReference.current) {
-          await videoReference.current.loadAsync(
-            { uri: videoUri },
-            { shouldPlay: true, isLooping: true },
-            false
-          );
-        }
-      } catch (error) {
-        console.error("Video load error:", error);
-        setVideoError(true);
-      }
-    };
-
-    loadVideo();
-
     return () => {
-      if (videoReference.current) {
-        videoReference.current.unloadAsync().catch(console.error);
-      }
+      player?.pause?.();
     };
-  }, [videoUri, videoKey]);
+  }, [videoUri]);
 
-  const handleBack = async () => {
-    try {
-      await hardResetVideo();
-      router.replace("/(dash)/(camera)/capture");
-    } catch (error) {
-      console.error("handleBack: Error during back navigation:", error);
+  // HELPER COMPONENT
+  const MediaPreview = ({
+    videoUri,
+    imageUri,
+    player,
+  }: {
+    videoUri: string | null;
+    imageUri: string | null;
+    player: VideoPlayer;
+  }) => {
+    if (videoUri) {
+      return (
+        <View style={styles.mediaContainer}>
+          <VideoView
+            key={videoUri}
+            style={styles.video}
+            player={player}
+            allowsFullscreen
+            allowsPictureInPicture
+          />
+        </View>
+      );
     }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      await hardResetVideoWithoutUri();
-      await router.replace("/(dash)/(camera)/submission");
-    } catch (error) {
-      console.error("handleSubmit: Error during submission:", error);
+    if (imageUri) {
+      return (
+        <View style={styles.mediaContainer}>
+          <Image source={{ uri: imageUri }} style={styles.image} />
+        </View>
+      );
     }
+    return (
+      <View style={styles.mediaContainer}>
+        <Text style={styles.noMediaText}>No media available</Text>
+      </View>
+    );
   };
-
-  const showLoading = !isVideoReady && !videoError && videoUri;
 
   return (
     <View style={[styles.container, { width, height }]}>
@@ -156,55 +105,14 @@ const PreviewPage = () => {
         )}
       </View>
 
-      {videoUri ? (
-        <View style={styles.videoContainer}>
-          <Video
-            key={`video-${videoKey}`}
-            ref={videoReference}
-            style={styles.video}
-            source={{ uri: videoUri }}
-            useNativeControls={false}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            isMuted={false}
-            shouldPlay={true}
-            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-          />
-
-          {showLoading && (
-            <View style={styles.loadingOverlay}>
-              <Text style={styles.loadingText}>Loading video...</Text>
-            </View>
-          )}
-
-          {videoError && (
-            <View style={styles.loadingOverlay}>
-              <Text style={styles.errorText}>Video playback failed</Text>
-              <TouchableOpacity onPress={() => hardResetVideo()}>
-                <Text style={styles.retryText}>Tap to reset</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      ) : imageUri ? (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        </View>
-      ) : (
-        <Text style={styles.noMediaText}>No media available</Text>
-      )}
+      <MediaPreview videoUri={videoUri} imageUri={imageUri} player={player} />
 
       <View style={styles.actionCard}>
-        <View style={styles.actionCardTextSection}>
-          <Text style={styles.actionCardTitle}>
-            Satisfied with the recording?
-          </Text>
-          <Text style={styles.actionCardSubtitle}>
-            Review your media and decide whether to submit or to retake.
-          </Text>
-        </View>
         <View style={styles.actionButtonsRow}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleBack}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionButtonBack]}
+            onPress={handleBack}
+          >
             <Text style={styles.actionButtonText}>
               <FontAwesome
                 name="arrow-left"
@@ -237,29 +145,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#020617",
+  },
+  mediaContainer: {
+    width: "100%",
+    aspectRatio: 9 / 16,
+    backgroundColor: "#18181b",
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-  },
-  videoContainer: {
-    width: "100%",
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
+    marginBottom: height * 0.03,
+    alignSelf: "center",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
   video: {
-    width: "90%",
-    marginHorizontal: "5%",
-    height: "90%",
-  },
-  imageContainer: {
-    width: "90%",
-    paddingBottom: height * 0.12,
-    // borderStyle: "solid",
-    // borderWidth: 1,
-    // borderColor: "red",
-    // borderRadius: 24,
-    overflow: "hidden",
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
+    width: "100%",
+    height: "100%",
   },
   image: {
     width: "100%",
@@ -291,12 +196,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   actionCard: {
-    width: "90%",
-    height: height * 0.225,
-    backgroundColor: "#11162B",
-    borderRadius: 24,
+    width: "100%",
+    height: "auto",
+    backgroundColor: "transparent",
     overflow: "hidden",
-    paddingBottom: 12,
+    paddingVertical: height * 0.02,
     position: "absolute",
     bottom: 0,
     zIndex: 2,
@@ -311,12 +215,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.05,
   },
   actionCardTitle: {
-    width: "100%",
+    width: "80%",
     color: "#f97316",
-    fontSize: width * 0.045,
     fontWeight: "bold",
-    textAlign: "center",
+    textAlign: "left",
     marginTop: 8,
+    marginLeft: width * 0.05,
+    textShadowColor: "#000",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
   },
   actionCardSubtitle: {
     color: "#94A3B8",
@@ -332,12 +239,15 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     backgroundColor: "#F97316",
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: height * 0.01,
     paddingHorizontal: width * 0.02,
     justifyContent: "center",
     alignItems: "center",
-    width: "45%",
+    width: "30%",
+  },
+  actionButtonBack: {
+    backgroundColor: "#42475A",
   },
   actionButtonText: {
     color: "#11162B",
@@ -348,7 +258,7 @@ const styles = StyleSheet.create({
   header: {
     width: "100%",
     paddingVertical: 20,
-    backgroundColor: "#11162B",
+    backgroundColor: "transparent",
     overflow: "hidden",
     position: "absolute",
     top: 0,

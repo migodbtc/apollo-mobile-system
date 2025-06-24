@@ -359,8 +359,17 @@ const GuestLogin = () => {
             }}
           >
             Below is a map rendering of the current reports for
-            (CURRENT_DATE_HERE). Guests are allowed to view this map, but cannot
-            submit reports to the system.
+            <Text
+              style={{
+                color: "#F97316",
+                fontWeight: "bold",
+                marginTop: 24,
+              }}
+            >
+              {" " + new Date(Date.now()).toLocaleDateString() + " "}
+            </Text>
+            . Guests are allowed to view this map, but cannot submit reports to
+            the system.
           </Text>
           {loading ? (
             <LoadingMapPanel />
@@ -457,7 +466,6 @@ const GuestLogin = () => {
         <View
           style={{
             flex: 1,
-            height: height * 0.95,
             padding: width * 0.05,
             marginBottom: height * 0.05,
           }}

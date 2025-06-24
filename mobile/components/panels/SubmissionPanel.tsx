@@ -774,6 +774,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
                 fontSize: width * 0.035,
                 color: "#E2E8F0",
                 lineHeight: height * 0.025,
+                textAlign: "right",
               }}
             >
               {coords
@@ -809,6 +810,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
                 fontSize: width * 0.035,
                 color: "#E2E8F0",
                 lineHeight: height * 0.025,
+                textAlign: "right",
               }}
             >
               {timestamp || "Loading..."}

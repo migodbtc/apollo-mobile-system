@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  Image,
   Modal,
   View,
   Text,
@@ -36,14 +37,11 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
   selectedReport,
 }) => {
   const [subSelection, setSubSelection] = useState<number>(0);
-
-  // IMAGE STATE VARIABLES
-
-  // VIDEO STATE VARIABLES
-  const [showVideo, setShowVideo] = useState(false);
   const [loadingVideo, setLoadingVideo] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false);
 
-  // EXPO-VIDEO PLAYER SETUP
+  // MEDIA SETUP
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const player = useVideoPlayer(videoUri ?? "", (player) => {
     player.loop = true;
@@ -53,29 +51,29 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
   });
 
   // SYNC FUNCTIONS
-  const resetVideoState = () => {
-    setShowVideo(false);
+  const resetMediaState = () => {
     setLoadingVideo(false);
+    setLoadingImage(false);
     setVideoUri(null);
+    setImageUri(null);
     player?.pause?.();
   };
 
   const handleSelectionButton = (index: number) => {
     if (subSelection === 1 && index !== 1) {
-      resetVideoState();
+      resetMediaState();
     }
     setSubSelection(index);
   };
 
   const handleModalClose = () => {
-    resetVideoState();
+    resetMediaState();
     onClose();
   };
 
   // ASYNC FUNCTIONS
   const handleFetchVideo = async () => {
     setLoadingVideo(true);
-    setShowVideo(true);
 
     try {
       const payload = {
@@ -90,9 +88,10 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
       );
 
       if (responseOne.status !== 200) {
-        throw new Error(responseOne.data.message || "Video upload failed");
+        throw new Error(responseOne.data.message || "Video fetching failed");
       }
 
+      console.log("Fetching video details...");
       console.log(responseOne.data);
 
       const responseTwo = await axios.post(
@@ -110,7 +109,7 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
       // console.log("Base64 preview:", base64String.slice(0, 100));
 
       const fileUri =
-        FileSystem.cacheDirectory + `report_video_${Date.now()}.mp4`;
+        FileSystem.cacheDirectory + `${responseOne.data["MS_file_name"]}`;
       await FileSystem.writeAsStringAsync(fileUri, base64String, {
         encoding: FileSystem.EncodingType.Base64,
       });
@@ -123,6 +122,94 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
       setLoadingVideo(false);
     }
   };
+
+  const handleFetchImage = async () => {
+    setLoadingImage(true);
+
+    try {
+      const payload = {
+        MS_media_id: selectedReport?.[0].PR_image,
+      };
+
+      const responseOne = await axios.post(
+        `${SERVER_LINK}/media/details/get/one`,
+        payload
+      );
+
+      if (responseOne.status !== 200) {
+        throw new Error(responseOne.data.message || "Image fetching failed");
+      }
+
+      console.log("Fetching video details...");
+      console.log(responseOne.data);
+
+      const responseTwo = await axios.post(
+        `${SERVER_LINK}/media/blob/get/one`,
+        payload,
+        { responseType: "arraybuffer" }
+      );
+      // console.log("Raw buffer (arraybuffer):", responseTwo.data);
+
+      const buffer = responseTwo.data;
+      // console.log("Buffer byteLength:", buffer.byteLength);
+
+      const base64String = Buffer.from(buffer, "binary").toString("base64");
+      // console.log("Base64 string length:", base64String.length);
+      // console.log("Base64 preview:", base64String.slice(0, 100));
+
+      const fileUri =
+        FileSystem.cacheDirectory + `${responseOne.data["MS_file_name"]}`;
+      await FileSystem.writeAsStringAsync(fileUri, base64String, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      // console.log("File written to:", fileUri);
+
+      setImageUri(fileUri);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setLoadingImage(false);
+    }
+  };
+
+  // HELPER COMPONENTS
+  const MediaLoadButton = ({
+    onPress,
+    icon,
+    label,
+  }: {
+    onPress: () => void;
+    icon: any;
+    label: string;
+  }) => (
+    <TouchableOpacity
+      style={{
+        backgroundColor: "#f97316",
+        paddingVertical: height * 0.01,
+        paddingHorizontal: width * 0.05,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        elevation: 3,
+        flexDirection: "row",
+        gap: 8,
+      }}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <FontAwesome name={icon} size={width * 0.05} color="#fff" />
+      <Text
+        style={{
+          color: "#fff",
+          fontWeight: "bold",
+          fontSize: width * 0.045,
+          marginLeft: 8,
+        }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <Modal
@@ -411,14 +498,22 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                 </>
               )}
 
-              {/* MEDIA SEGMENT */}
               {subSelection == 1 && (
                 <View>
+                  <Text
+                    style={[
+                      styles.verificationTitle,
+                      { marginTop: 0, textAlign: "center" },
+                    ]}
+                  >
+                    MEDIA PREVIEW
+                  </Text>
                   <View
                     style={{
                       width: VIDEO_WIDTH,
                       height: VIDEO_HEIGHT,
-                      backgroundColor: "#18181b",
+                      backgroundColor:
+                        imageUri || videoUri ? "black" : "#18181b",
                       borderRadius: 14,
                       justifyContent: "center",
                       alignItems: "center",
@@ -427,39 +522,8 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                       alignSelf: "center",
                     }}
                   >
-                    {/* Only show Load Media if there is a video available */}
                     {selectedReport[0]?.PR_video ? (
-                      !showVideo ? (
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: "#f97316",
-                            paddingVertical: height * 0.01,
-                            paddingHorizontal: width * 0.05,
-                            borderRadius: 10,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            elevation: 3,
-                          }}
-                          onPress={handleFetchVideo}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            style={{
-                              color: "#fff",
-                              fontWeight: "bold",
-                              fontSize: width * 0.045,
-                            }}
-                          >
-                            <FontAwesome
-                              name="play-circle"
-                              size={width * 0.05}
-                              color="#fff"
-                            />
-                            {"  "}
-                            LOAD
-                          </Text>
-                        </TouchableOpacity>
-                      ) : loadingVideo ? (
+                      loadingVideo ? (
                         <ActivityIndicator size="large" color="#f97316" />
                       ) : videoUri ? (
                         <VideoView
@@ -468,19 +532,32 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                           allowsFullscreen
                           allowsPictureInPicture
                         />
-                      ) : null
-                    ) : // If no video, show image if available
-                    selectedReport[0]?.PR_image ? (
-                      <View
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Text>No content yet!</Text>
-                      </View>
+                      ) : (
+                        <MediaLoadButton
+                          onPress={handleFetchVideo}
+                          icon="play-circle"
+                          label="LOAD"
+                        />
+                      )
+                    ) : selectedReport[0]?.PR_image ? (
+                      loadingImage ? (
+                        <ActivityIndicator size="large" color="#f97316" />
+                      ) : imageUri ? (
+                        <Image
+                          source={{ uri: imageUri }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            resizeMode: "contain",
+                          }}
+                        />
+                      ) : (
+                        <MediaLoadButton
+                          onPress={handleFetchImage}
+                          icon="image"
+                          label="LOAD"
+                        />
+                      )
                     ) : (
                       <Text style={{ color: "#fff", textAlign: "center" }}>
                         No media available.

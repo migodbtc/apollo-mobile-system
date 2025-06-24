@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useVideoPlayer, VideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
@@ -27,6 +27,10 @@ const PreviewPage = () => {
     isPlaying: player.playing,
   });
 
+  const [showPreview, setShowPreview] = useState(false);
+  const [minLoadingTimePassed, setMinLoadingTimePassed] = useState(false);
+  const lastUriRef = useRef<string | null>(null);
+
   // ONPRESS HANDLERS
   const handleBack = () => {
     setVideoUri(null);
@@ -40,16 +44,48 @@ const PreviewPage = () => {
 
   // EFFECT HOOKS
   useEffect(() => {
-    if (videoUri && player) {
-      player.play();
-    }
+    if (!videoUri || !player) return;
+
+    player.replay();
+    player.play();
   }, [videoUri, player]);
 
   useEffect(() => {
-    return () => {
-      player?.pause?.();
-    };
-  }, [videoUri]);
+    const currentUri = videoUri || imageUri || null;
+    if (lastUriRef.current === currentUri) {
+      return;
+    }
+    lastUriRef.current = currentUri;
+
+    setShowPreview(false);
+    setMinLoadingTimePassed(false);
+
+    if (!currentUri) {
+      setShowPreview(true);
+      return;
+    }
+
+    const minTimer = setTimeout(() => {
+      setMinLoadingTimePassed(true);
+    }, 800);
+
+    return () => clearTimeout(minTimer);
+  }, [videoUri, imageUri]);
+
+  useEffect(() => {
+    if (!minLoadingTimePassed) return;
+
+    const currentUri = videoUri || imageUri;
+    if (!currentUri) return;
+
+    if (videoUri) {
+      if (player) {
+        setShowPreview(true);
+      }
+    } else {
+      setShowPreview(true);
+    }
+  }, [minLoadingTimePassed, videoUri, imageUri, player]);
 
   // HELPER COMPONENT
   const MediaPreview = ({
@@ -65,7 +101,6 @@ const PreviewPage = () => {
       return (
         <View style={styles.mediaContainer}>
           <VideoView
-            key={videoUri}
             style={styles.video}
             player={player}
             allowsFullscreen
@@ -105,8 +140,13 @@ const PreviewPage = () => {
         )}
       </View>
 
-      <MediaPreview videoUri={videoUri} imageUri={imageUri} player={player} />
-
+      {showPreview ? (
+        <MediaPreview videoUri={videoUri} imageUri={imageUri} player={player} />
+      ) : (
+        <View style={styles.mediaContainer}>
+          <Text style={styles.loadingText}>Loading preview...</Text>
+        </View>
+      )}
       <View style={styles.actionCard}>
         <View style={styles.actionButtonsRow}>
           <TouchableOpacity

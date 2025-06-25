@@ -11,6 +11,8 @@ import {
   Alert,
   ScrollView,
   Linking,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import * as Location from "expo-location";
 import { FontAwesome } from "@expo/vector-icons";
@@ -19,6 +21,7 @@ import PulsatingMarker from "../dash/PulsatingMarker";
 import MapView, { Marker, UrlTile } from "react-native-maps";
 import LoadingMapPanel from "../dash/LoadingMapScreen";
 import LoginBox from "./LoginBox";
+import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,7 +29,6 @@ const GuestLogin = () => {
   // STATE VARIABLES
   const [loading, setLoading] = useState(true);
   const [showPreverified, setShowPreverified] = useState(false);
-  const [refreshKey, setRefreshKey] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [location, setLocation] = useState<{
@@ -34,12 +36,21 @@ const GuestLogin = () => {
     longitude: number;
   } | null>(null);
 
-  const [preverifiedReports, setPreverifiedReports] = useState<
-    PreverifiedReport[]
-  >([]);
-  const [verifiedReports, setVerifiedReports] = useState<PostverifiedReport[]>(
-    []
-  );
+  const { combinedReports, refreshAll } = useAdminSQL();
+
+  const dailyCombinedReports = combinedReports.filter(([report]) => {
+    if (!report) return false;
+
+    const reportDateObj = new Date(report.PR_timestamp);
+    const today = new Date();
+
+    const comparisonDate =
+      reportDateObj.getUTCFullYear() === today.getUTCFullYear() &&
+      reportDateObj.getUTCMonth() === today.getUTCMonth() &&
+      reportDateObj.getUTCDate() === today.getUTCDate();
+
+    return comparisonDate;
+  });
 
   //   STATIC DATA
   const rolesData = [
@@ -146,164 +157,47 @@ const GuestLogin = () => {
     );
   };
 
-  //   ASYNCHRONOUS FUNCTIONS
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
+    setIsRefreshing(true);
     try {
-      setIsRefreshing(true);
-
-      // Fetch fresh reports
-      const [preverified, postverified] = await Promise.all([
-        fetchUnverifiedReports(),
-        fetchVerifiedReports(),
-      ]);
-
-      setPreverifiedReports(preverified);
-      setVerifiedReports(postverified);
-
-      // This will trigger the combinedReports memo to recalculate
-      setRefreshKey((prev) => prev + 1);
-    } catch (error) {
-      console.error("Error refreshing reports:", error);
-      Alert.alert("Refresh Error", "Failed to refresh reports");
+      refreshAll();
+    } catch (e) {
+      Alert.alert("Refresh error", "Failed to refresh the reports!");
+      console.error(e);
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  const fetchUnverifiedReports = async (): Promise<PreverifiedReport[]> => {
-    try {
-      const response = await fetch(`${SERVER_LINK}/reports/preverified/all`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      return data.map((report: any) => ({
-        PR_report_id: report["PR_report_id"],
-        PR_user_id: report["PR_user_id"],
-        PR_image_url: report["PR_image_url"],
-        PR_video_url: report["PR_video_url"],
-        PR_latitude: parseFloat(report["PR_latitude"]),
-        PR_longitude: parseFloat(report["PR_longitude"]),
-        PR_address: report["PR_address"],
-        PR_timestamp: new Date(report["PR_timestamp"]),
-        PR_verified: report["PR_verified"] === 1,
-        PR_report_status: report["PR_report_status"] as
-          | "pending"
-          | "verified"
-          | "false_alarm"
-          | "resolved",
-      }));
-    } catch (error) {
-      console.error("Failed to fetch unverified reports:", error);
-      throw error;
-    }
-  };
-
-  const fetchVerifiedReports = async (): Promise<PostverifiedReport[]> => {
-    const response = await fetch(`${SERVER_LINK}/reports/postverified/all`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (!response.ok) throw new Error("Failed to fetch verified reports");
-
-    const data = await response.json();
-
-    return data.map((report: any) => ({
-      VR_verification_id: report["VR_verification_id"],
-      VR_report_id: report["VR_report_id"],
-      VR_confidence_score: parseFloat(report["VR_confidence_score"]),
-      VR_detected: report["VR_detected"] === 1,
-      VR_verification_timestamp: new Date(report["VR_verification_timestamp"]),
-      VR_severity_level: report["VR_severity_level"] as
-        | "low"
-        | "moderate"
-        | "high"
-        | "critical",
-      VR_spread_potential: report["VR_spread_potential"] as
-        | "low"
-        | "moderate"
-        | "high",
-      VR_fire_type: report["VR_fire_type"],
-    }));
-  };
-
-  const combinedReports = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-
-    const filteredPreverified = preverifiedReports.filter((preverified) => {
-      const prDate = new Date(preverified.PR_timestamp)
-        .toISOString()
-        .slice(0, 10);
-      const isToday = prDate === today;
-      return isToday;
-    });
-
-    const result = filteredPreverified.map((preverified) => {
-      const prDate = new Date(preverified.PR_timestamp)
-        .toISOString()
-        .slice(0, 10);
-
-      const verified = verifiedReports.find((v) => {
-        const vrDate = new Date(v.VR_verification_timestamp)
-          .toISOString()
-          .slice(0, 10);
-        const idMatch = v.VR_report_id === preverified.PR_report_id;
-        const dateMatch = vrDate === prDate;
-
-        return idMatch && dateMatch;
-      });
-
-      return [preverified, verified ?? null] as [
-        PreverifiedReport,
-        PostverifiedReport | null,
-      ];
-    });
-
-    return result;
-  }, [preverifiedReports, verifiedReports, showPreverified]);
-
   // EFFECT HOOKS
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         setLoading(true);
-
-        // Request location permission
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          Alert.alert("Permission Denied", "Location permission is required.");
-          setLoading(false);
+          if (isMounted) setLoading(false);
           return;
         }
 
-        // Fetch user location
+        await refreshAll();
+
         const userLocation = await Location.getCurrentPositionAsync({});
-        setLocation({
-          latitude: userLocation.coords.latitude,
-          longitude: userLocation.coords.longitude,
-        });
-
-        setLoading(false);
-
-        // Fetch reports
-        const [preverified, postverified] = await Promise.all([
-          fetchUnverifiedReports(),
-          fetchVerifiedReports(),
-        ]);
-
-        setPreverifiedReports(preverified);
-        setVerifiedReports(postverified);
+        if (isMounted) {
+          setLocation({
+            latitude: userLocation.coords.latitude,
+            longitude: userLocation.coords.longitude,
+          });
+          setLoading(false);
+        }
       } catch (error) {
-        console.error("Error in fetching location or reports:", error);
+        if (isMounted) setLoading(false);
       }
     })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -371,95 +265,195 @@ const GuestLogin = () => {
             . Guests are allowed to view this map, but cannot submit reports to
             the system.
           </Text>
+          {/* MAIN MAP VIEW */}
           {loading ? (
             <LoadingMapPanel />
           ) : (
-            <MapView
-              style={{ flex: 1, backgroundColor: "#11162B", width: "100%" }}
-              initialRegion={{
-                latitude: location?.latitude || 0,
-                longitude: location?.longitude || 0,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-            >
-              <UrlTile
-                urlTemplate="https://a.tile.openstreetmap.org/10/511/511.png"
-                maximumZ={19}
-                tileSize={256}
-              />
+            <>
+              <View style={{ flex: 1, width: "100%", height: height * 0.95 }}>
+                <MapView
+                  style={{ flex: 1, backgroundColor: "#11162B", width: "100%" }}
+                  initialRegion={{
+                    latitude: location?.latitude || 0,
+                    longitude: location?.longitude || 0,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                >
+                  <UrlTile
+                    urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    maximumZ={19}
+                    tileSize={256}
+                  />
 
-              <View key={refreshKey}>
-                {combinedReports.map(([preverified, verified], index) => {
-                  if (verified) {
-                    return (
-                      <Marker
-                        key={`marker-ID#${preverified.PR_report_id}-postverified`}
-                        coordinate={{
-                          latitude: preverified.PR_latitude,
-                          longitude: preverified.PR_longitude,
-                        }}
-                        onPress={() =>
-                          Alert.alert(
-                            "You pressed a marker for a verified report!"
-                          )
-                        }
-                      >
-                        <PulsatingMarker>
-                          <View
-                            style={{
-                              width: 32,
-                              height: 32,
-                              backgroundColor: "#2F855A",
-                              padding: 2,
-                              borderRadius: 20,
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
+                  {/* Marker Rendering */}
+                  {dailyCombinedReports.map(
+                    ([preverified, verified], index) => {
+                      const coordinatesFloat = {
+                        latitude:
+                          typeof preverified.PR_latitude == "string"
+                            ? parseFloat(preverified.PR_latitude)
+                            : preverified.PR_latitude,
+                        longitude:
+                          typeof preverified.PR_longitude == "string"
+                            ? parseFloat(preverified.PR_longitude)
+                            : preverified.PR_longitude,
+                      };
+
+                      if (verified) {
+                        return (
+                          <Marker
+                            key={`marker-ID#${preverified.PR_report_id}-postverified`}
+                            coordinate={coordinatesFloat}
+                            onPress={() =>
+                              Alert.alert(
+                                "You pressed a marker for a verified report!"
+                              )
+                            }
                           >
-                            <FontAwesome name="exclamation" color="#FFFFFF" />
-                          </View>
-                        </PulsatingMarker>
-                      </Marker>
-                    );
-                  }
-                  return (
-                    <Marker
-                      key={`marker-ID#${preverified.PR_report_id}-preverified`}
-                      coordinate={{
-                        latitude: preverified.PR_latitude,
-                        longitude: preverified.PR_longitude,
-                      }}
-                      onPress={() =>
-                        Alert.alert(
-                          "You pressed a marker for a unverified report!"
-                        )
+                            <PulsatingMarker>
+                              <View
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  backgroundColor: "#2F855A",
+                                  padding: 2,
+                                  borderRadius: 20,
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <FontAwesome
+                                  name="exclamation"
+                                  color="#FFFFFF"
+                                />
+                              </View>
+                            </PulsatingMarker>
+                          </Marker>
+                        );
                       }
-                    >
-                      <PulsatingMarker>
-                        <View
-                          style={{
-                            width: 35,
-                            height: 35,
-                            backgroundColor: "#C53030",
-                            padding: 2,
-                            borderRadius: 20,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
+                      return (
+                        <Marker
+                          key={`marker-ID#${preverified.PR_report_id}-preverified`}
+                          coordinate={coordinatesFloat}
+                          onPress={() =>
+                            Alert.alert(
+                              "You pressed a marker for a unverified report!"
+                            )
+                          }
                         >
-                          <FontAwesome
-                            name="question"
-                            size={24}
-                            color="#FFFFFF"
-                          />
-                        </View>
-                      </PulsatingMarker>
-                    </Marker>
-                  );
-                })}
+                          <PulsatingMarker>
+                            <View
+                              style={{
+                                width: 35,
+                                height: 35,
+                                backgroundColor: "#C53030",
+                                padding: 2,
+                                borderRadius: 20,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <FontAwesome
+                                name="question"
+                                size={24}
+                                color="#FFFFFF"
+                              />
+                            </View>
+                          </PulsatingMarker>
+                        </Marker>
+                      );
+                    }
+                  )}
+                </MapView>
+
+                {/* Map Buttons */}
+                <View
+                  pointerEvents="box-none"
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    right: 8,
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    zIndex: 10,
+                  }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      width: height * 0.05,
+                      height: height * 0.05,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 8,
+                      marginRight: 8,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }}
+                    onPress={handleRefresh}
+                    disabled={isRefreshing}
+                  >
+                    {isRefreshing ? (
+                      <ActivityIndicator size="small" color="#F97316" />
+                    ) : (
+                      <FontAwesome
+                        name="refresh"
+                        size={height * 0.04}
+                        color="#F97316"
+                      />
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      width: height * 0.05,
+                      height: height * 0.05,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 8,
+                      marginRight: 8,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }}
+                    onPress={() =>
+                      Alert.alert("Info", "Map info button pressed")
+                    }
+                  >
+                    <FontAwesome
+                      name="info"
+                      size={height * 0.04}
+                      color="#F97316"
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      width: height * 0.05,
+                      height: height * 0.05,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 8,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }}
+                    onPress={() =>
+                      Alert.alert("Settings", "Map settings button pressed")
+                    }
+                  >
+                    <FontAwesome
+                      name="gear"
+                      size={height * 0.04}
+                      color="#F97316"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </MapView>
+            </>
           )}
         </View>
         {/* Role Information */}

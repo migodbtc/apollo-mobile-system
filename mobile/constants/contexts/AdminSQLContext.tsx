@@ -29,7 +29,7 @@ interface AdminSQLState {
   responseLogs: ResponseLog[];
   userAccounts: UserAccount[];
   mediaStorage: MediaStorage[];
-  combinedReports: CombinedReport[] | null;
+  combinedReports: CombinedReport[];
   loading: {
     fireStatistics: boolean;
     postverifiedReports: boolean;
@@ -195,14 +195,49 @@ export const AdminSQLProvider = ({
     [fetchData]
   );
 
-  const fetchPreverifiedReports = useCallback(
-    () =>
-      fetchData<PreverifiedReport>(
-        "preverifiedReports",
-        "reports/preverified/all"
-      ),
-    [fetchData]
-  );
+  // modified to autoconvert coordinates from str to number
+  const fetchPreverifiedReports = useCallback(async () => {
+    try {
+      setState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, preverifiedReports: true },
+        errors: { ...prev.errors, preverifiedReports: null },
+      }));
+
+      const response = await api.get<PreverifiedReport[]>(
+        "/reports/preverified/all"
+      );
+
+      const fixedData = response.data.map((item) => ({
+        ...item,
+        PR_latitude:
+          typeof item.PR_latitude === "string"
+            ? parseFloat(item.PR_latitude)
+            : item.PR_latitude,
+        PR_longitude:
+          typeof item.PR_longitude === "string"
+            ? parseFloat(item.PR_longitude)
+            : item.PR_longitude,
+      }));
+
+      setState((prev) => ({
+        ...prev,
+        preverifiedReports: fixedData,
+        loading: { ...prev.loading, preverifiedReports: false },
+      }));
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, preverifiedReports: false },
+        errors: {
+          ...prev.errors,
+          preverifiedReports:
+            error instanceof Error ? error.message : "Unknown error",
+        },
+      }));
+      console.error(`Error fetching preverifiedReports:`, error);
+    }
+  }, [api]);
 
   const fetchResponseLogs = useCallback(
     () => fetchData<ResponseLog>("responseLogs", "response-logs"),
@@ -271,7 +306,17 @@ export const AdminSQLProvider = ({
     }));
   }, [state.preverifiedReports, state.postverifiedReports]);
 
-  // Call combineReports whenever the source reports change
+  // Remove combinedReports from AdminSQLState and setState
+  const combinedReports = useMemo(() => {
+    return state.preverifiedReports.map((preReport) => {
+      const postReport =
+        state.postverifiedReports.find(
+          (post) => post.VR_report_id === preReport.PR_report_id
+        ) || null;
+      return [preReport, postReport] as CombinedReport;
+    });
+  }, [state.preverifiedReports, state.postverifiedReports]);
+
   useEffect(() => {
     if (state.preverifiedReports.length > 0) {
       combineReports();
@@ -370,17 +415,14 @@ export const AdminSQLProvider = ({
             "postverifiedReports",
             "reports/postverified/all"
           ),
-        fetchPreverifiedReports: () =>
-          fetchData<PreverifiedReport>(
-            "preverifiedReports",
-            "reports/preverified/all"
-          ),
+        fetchPreverifiedReports,
         fetchResponseLogs: () =>
           fetchData<ResponseLog>("responseLogs", "response-logs"),
         fetchUserAccounts: () =>
           fetchData<UserAccount>("userAccounts", "user/get/all"),
         fetchMediaById,
         combineReports,
+        combinedReports,
         refreshAll: async () => {
           await Promise.all([
             // fetchData<FireStatistic>("fireStatistics", "fire-statistics"), // Disabled

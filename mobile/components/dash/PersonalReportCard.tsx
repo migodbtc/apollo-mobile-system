@@ -42,14 +42,14 @@ const PersonalReportCard: React.FC<PersonalReportCardProps> = ({
             <>
               <Text>{userSubmittedReport.PR_address} </Text>
               <Text style={{ color: "#9CA3AF", fontSize: width * 0.03 }}>
-                ({userSubmittedReport.PR_latitude.toFixed(4)},{" "}
-                {userSubmittedReport.PR_longitude.toFixed(4)})
+                ({userSubmittedReport.PR_latitude},{" "}
+                {userSubmittedReport.PR_longitude})
               </Text>
             </>
           ) : (
             <Text style={{ color: "#F59E0B" }}>
-              {userSubmittedReport.PR_latitude.toFixed(4)},{" "}
-              {userSubmittedReport.PR_longitude.toFixed(4)}
+              {userSubmittedReport.PR_latitude},{" "}
+              {userSubmittedReport.PR_longitude}
             </Text>
           )}
         </Text>
@@ -70,8 +70,8 @@ const PersonalReportCard: React.FC<PersonalReportCardProps> = ({
             {userSubmittedReport.PR_image
               ? "Image"
               : userSubmittedReport.PR_video
-              ? "Video"
-              : "None"}
+                ? "Video"
+                : "None"}
           </Text>
         </Text>
         <Text
@@ -88,8 +88,8 @@ const PersonalReportCard: React.FC<PersonalReportCardProps> = ({
                 userSubmittedReport.PR_report_status === "verified"
                   ? "#10B981"
                   : userSubmittedReport.PR_report_status === "pending"
-                  ? "#F59E0B"
-                  : "#EF4444",
+                    ? "#F59E0B"
+                    : "#EF4444",
               fontWeight: "bold",
             }}
           >

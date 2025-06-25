@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import axios from "axios";
 import {
@@ -96,13 +97,17 @@ export const AdminSQLProvider = ({
   children: React.ReactNode;
   serverUrl: string;
 }) => {
-  const api = axios.create({
-    baseURL: serverUrl,
-    timeout: 10000,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  const api = useMemo(
+    () =>
+      axios.create({
+        baseURL: serverUrl.replace(/\/+$/, ""),
+        timeout: 10000,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    [serverUrl]
+  );
 
   const [state, setState] = useState<AdminSQLState>({
     fireStatistics: [],
@@ -140,6 +145,13 @@ export const AdminSQLProvider = ({
   const fetchData = useCallback(
     async <T,>(tableName: keyof AdminSQLState, endpoint: string) => {
       try {
+        // console.log(
+        //   `[API Request] Preparing to fetch ${tableName}:`,
+        //   `\n- Full URL: ${api.defaults.baseURL}/${endpoint}`,
+        //   `\n- Method: GET`,
+        //   `\n- Headers: ${JSON.stringify(api.defaults.headers, null, 2)}`
+        // );
+
         setState((prev) => ({
           ...prev,
           loading: { ...prev.loading, [tableName]: true },
@@ -178,7 +190,7 @@ export const AdminSQLProvider = ({
     () =>
       fetchData<PostverifiedReport>(
         "postverifiedReports",
-        "/reports/postverified/all"
+        "reports/postverified/all"
       ),
     [fetchData]
   );
@@ -187,7 +199,7 @@ export const AdminSQLProvider = ({
     () =>
       fetchData<PreverifiedReport>(
         "preverifiedReports",
-        "/reports/preverified/all"
+        "reports/preverified/all"
       ),
     [fetchData]
   );
@@ -198,7 +210,7 @@ export const AdminSQLProvider = ({
   );
 
   const fetchUserAccounts = useCallback(
-    () => fetchData<UserAccount>("userAccounts", "/user/get/all"),
+    () => fetchData<UserAccount>("userAccounts", "user/get/all"),
     [fetchData]
   );
 
@@ -271,17 +283,17 @@ export const AdminSQLProvider = ({
    */
   const refreshAll = useCallback(async () => {
     await Promise.all([
-      fetchFireStatistics(),
+      // fetchFireStatistics(),
       fetchPostverifiedReports(),
       fetchPreverifiedReports(),
-      fetchResponseLogs(),
+      // fetchResponseLogs(),
       fetchUserAccounts(),
     ]);
   }, [
-    fetchFireStatistics,
+    // fetchFireStatistics,
     fetchPostverifiedReports,
     fetchPreverifiedReports,
-    fetchResponseLogs,
+    // fetchResponseLogs,
     fetchUserAccounts,
   ]);
 
@@ -331,28 +343,59 @@ export const AdminSQLProvider = ({
   // Initial data load - fetches essential data on first render
   useEffect(() => {
     const loadInitialData = async () => {
-      await Promise.all([
-        fetchFireStatistics(),
-        fetchPreverifiedReports(),
-        fetchUserAccounts(),
-      ]);
+      try {
+        await Promise.all([
+          fetchData<PreverifiedReport>(
+            "preverifiedReports",
+            "reports/preverified/all"
+          ),
+          fetchData<UserAccount>("userAccounts", "user/get/all"),
+        ]);
+      } catch (error) {
+        console.error("Initial data load failed:", error);
+      }
     };
 
     loadInitialData();
-  }, [fetchFireStatistics, fetchPreverifiedReports, fetchUserAccounts]);
+  }, []); // Empty dependency array - runs once on mount
 
   return (
     <AdminSQLContext.Provider
       value={{
         ...state,
-        fetchFireStatistics,
-        fetchPostverifiedReports,
-        fetchPreverifiedReports,
-        fetchResponseLogs,
-        fetchUserAccounts,
+        fetchFireStatistics: () =>
+          fetchData<FireStatistic>("fireStatistics", "fire-statistics"),
+        fetchPostverifiedReports: () =>
+          fetchData<PostverifiedReport>(
+            "postverifiedReports",
+            "reports/postverified/all"
+          ),
+        fetchPreverifiedReports: () =>
+          fetchData<PreverifiedReport>(
+            "preverifiedReports",
+            "reports/preverified/all"
+          ),
+        fetchResponseLogs: () =>
+          fetchData<ResponseLog>("responseLogs", "response-logs"),
+        fetchUserAccounts: () =>
+          fetchData<UserAccount>("userAccounts", "user/get/all"),
         fetchMediaById,
         combineReports,
-        refreshAll,
+        refreshAll: async () => {
+          await Promise.all([
+            // fetchData<FireStatistic>("fireStatistics", "fire-statistics"), // Disabled
+            fetchData<PostverifiedReport>(
+              "postverifiedReports",
+              "reports/postverified/all"
+            ),
+            fetchData<PreverifiedReport>(
+              "preverifiedReports",
+              "reports/preverified/all"
+            ),
+            // fetchData<ResponseLog>("responseLogs", "response-logs"), // Disabled
+            fetchData<UserAccount>("userAccounts", "user/get/all"),
+          ]);
+        },
         getPreverifiedReportById,
         getPostverifiedReportById,
         getUserAccountById,

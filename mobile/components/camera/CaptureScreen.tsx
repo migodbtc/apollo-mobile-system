@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Dimensions, StyleSheet, ActivityIndicator } from "react-native";
-import CameraPanel from "./CameraPanel";
+import CameraPanel from "../panels/CameraPanel";
 import { useRouter } from "expo-router";
 import { CameraType, CameraView } from "expo-camera";
 import { Video } from "expo-av";

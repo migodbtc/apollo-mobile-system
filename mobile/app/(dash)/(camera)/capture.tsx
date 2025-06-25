@@ -1,11 +1,9 @@
 import { Dimensions, StyleSheet, View } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { CameraType, CameraView } from "expo-camera";
-import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
-import CameraPanel from "@/components/camera/CameraPanel";
-import { VideoMetadata } from "@/constants/interfaces/media";
+import CameraPanel from "@/components/panels/CameraPanel";
 import { useImageUri } from "@/constants/contexts/ImageURIContext";
 
 const { height } = Dimensions.get("window");

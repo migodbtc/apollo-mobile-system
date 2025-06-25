@@ -1,5 +1,5 @@
 import React from "react";
-import PreviewPanel from "@/components/camera/PreviewPanel";
+import PreviewPanel from "@/components/panels/PreviewPanel";
 
 const PreviewPage = () => {
   return <PreviewPanel />;

@@ -6,23 +6,33 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { useSession } from "@/constants/contexts/SessionContext";
 import UserProfileCard from "../dash/UserProfileCard";
 import { Picker } from "@react-native-picker/picker";
 import PersonalReportCard from "../dash/PersonalReportCard";
-import SERVER_LINK from "@/constants/netvar";
-import { PreverifiedReport } from "@/constants/interfaces/database";
+import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
+import { PreverifiedReport } from "@/constants/types/database";
 
 const { width, height } = Dimensions.get("window");
 
 const HomePanel = () => {
   const { sessionData } = useSession();
-  const [sessionReports, setSessionReports] = useState<PreverifiedReport[]>();
+  const {
+    preverifiedReports,
+    loading,
+    errors,
+    fetchPreverifiedReports,
+    getPreverifiedReportById,
+  } = useAdminSQL();
+
   const [searchType, setSearchType] = useState<string>("id");
   const [searchQuery, setSearchQuery] = useState("");
   const [subSelection, setSubSelection] = useState<number>(0);
+  const [filteredReports, setFilteredReports] = useState<PreverifiedReport[]>(
+    []
+  );
 
   const buttonData = useMemo(
     () => [
@@ -32,60 +42,69 @@ const HomePanel = () => {
     []
   );
 
-  const retrieveUnverifiedReports = async () => {
-    const payload = { UA_user_id: sessionData?.UA_user_id };
+  // Use a ref to track if we should fetch reports
+  const shouldFetchReports = useRef(true);
 
-    try {
-      const endpoint = `${SERVER_LINK}/reports/preverified/session`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const reports: PreverifiedReport[] = data.map((report: any) => ({
-          PR_report_id: report.PR_report_id,
-          PR_user_id: report.PR_user_id,
-          PR_image_url: report.PR_image,
-          PR_video_url: report.PR_video,
-          PR_latitude: parseFloat(report.PR_latitude),
-          PR_longitude: parseFloat(report.PR_longitude),
-          PR_address: report.PR_address,
-          PR_timestamp: new Date(report.PR_timestamp),
-          PR_verified: report.PR_verified === 1,
-          PR_report_status: report.PR_report_status as
-            | "pending"
-            | "verified"
-            | "false_alarm"
-            | "resolved",
-        }));
-
-        setSessionReports(reports);
-      }
-    } catch (error) {
-      console.error("Failed to fetch session reports:", error);
-      throw error; // Re-throw to be caught by the main error handler
-    }
-  };
-
+  // Filter reports by current user
   useEffect(() => {
-    if (sessionData?.UA_user_id) {
-      retrieveUnverifiedReports();
+    if (preverifiedReports && sessionData?.UA_user_id) {
+      const userReports = preverifiedReports.filter(
+        (report) => report.PR_user_id === sessionData.UA_user_id
+      );
+      setFilteredReports(userReports);
     }
-  }, []);
+  }, [preverifiedReports, sessionData?.UA_user_id]);
+
+  // Fetch reports only when needed
+  useEffect(() => {
+    if (sessionData?.UA_user_id && shouldFetchReports.current) {
+      fetchPreverifiedReports();
+      shouldFetchReports.current = false; // Prevent subsequent fetches
+    }
+  }, [sessionData?.UA_user_id, fetchPreverifiedReports]);
 
   const handleSelectionButton = (index: number) => {
     if (index !== subSelection) setSubSelection(index);
     if (index === 1) {
-      retrieveUnverifiedReports(); // re-fetch reports when "REPORTS SUBMITTED" is selected
+      shouldFetchReports.current = true; // Allow refresh when tab is selected
+      fetchPreverifiedReports();
     }
   };
 
   const handleSearchReport = (query: string) => {
-    // Search logic implementation
+    if (!query.trim()) {
+      // If query is empty, show all user reports
+      setFilteredReports(
+        preverifiedReports?.filter(
+          (report) => report.PR_user_id === sessionData?.UA_user_id
+        ) || []
+      );
+      return;
+    }
+
+    const filtered =
+      preverifiedReports
+        ?.filter((report) => report.PR_user_id === sessionData?.UA_user_id)
+        ?.filter((report) => {
+          switch (searchType) {
+            case "id":
+              return report.PR_report_id.toString().includes(query);
+            case "date":
+              return report.PR_timestamp.toString().includes(query);
+            case "address":
+              return report.PR_address.toLowerCase().includes(
+                query.toLowerCase()
+              );
+            case "status":
+              return report.PR_report_status.toLowerCase().includes(
+                query.toLowerCase()
+              );
+            default:
+              return true;
+          }
+        }) || [];
+
+    setFilteredReports(filtered);
   };
 
   const renderAccountDetails = useMemo(() => {
@@ -188,7 +207,11 @@ const HomePanel = () => {
 
           <Picker
             selectedValue={searchType}
-            onValueChange={setSearchType}
+            onValueChange={(itemValue) => {
+              setSearchType(itemValue);
+              setSearchQuery(""); // Reset search query when type changes
+              handleSearchReport(""); // Reset filtered results
+            }}
             style={{
               flex: 1,
               color: "white",
@@ -220,15 +243,35 @@ const HomePanel = () => {
           />
         </View>
 
-        {sessionReports?.map((report, index) => (
-          <PersonalReportCard
-            key={`PRC#${index}`}
-            userSubmittedReport={report}
-          />
-        ))}
+        {loading.preverifiedReports ? (
+          <Text style={{ color: "white", textAlign: "center", padding: 20 }}>
+            Loading reports...
+          </Text>
+        ) : errors.preverifiedReports ? (
+          <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
+            Error: {errors.preverifiedReports}
+          </Text>
+        ) : filteredReports.length === 0 ? (
+          <Text style={{ color: "white", textAlign: "center", padding: 20 }}>
+            No reports found
+          </Text>
+        ) : (
+          filteredReports.map((report, index) => (
+            <PersonalReportCard
+              key={`PRC#${index}`}
+              userSubmittedReport={report}
+            />
+          ))
+        )}
       </View>
     );
-  }, [searchType, searchQuery, sessionReports]);
+  }, [
+    searchType,
+    searchQuery,
+    filteredReports,
+    loading.preverifiedReports,
+    errors.preverifiedReports,
+  ]);
 
   return (
     <ScrollView

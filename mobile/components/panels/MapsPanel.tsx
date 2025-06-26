@@ -216,11 +216,6 @@ const MapsPanel = () => {
                   justifyContent: "center",
                   borderRadius: 8,
                   marginRight: 8,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 8,
-                  elevation: 8,
                 }}
                 onPress={handleRefresh}
                 disabled={isRefreshing}
@@ -232,6 +227,12 @@ const MapsPanel = () => {
                     name="refresh"
                     size={height * 0.04}
                     color="#F97316"
+                    style={{
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }}
                   />
                 )}
               </TouchableOpacity>
@@ -243,15 +244,20 @@ const MapsPanel = () => {
                   justifyContent: "center",
                   borderRadius: 8,
                   marginRight: 8,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 8,
-                  elevation: 8,
                 }}
                 onPress={() => Alert.alert("Info", "Map info button pressed")}
               >
-                <FontAwesome name="info" size={height * 0.04} color="#F97316" />
+                <FontAwesome
+                  name="info"
+                  size={height * 0.04}
+                  color="#F97316"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                    elevation: 8,
+                  }}
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
@@ -260,17 +266,22 @@ const MapsPanel = () => {
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: 8,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 8,
-                  elevation: 8,
                 }}
                 onPress={() =>
                   Alert.alert("Settings", "Map settings button pressed")
                 }
               >
-                <FontAwesome name="gear" size={height * 0.04} color="#F97316" />
+                <FontAwesome
+                  name="gear"
+                  size={height * 0.04}
+                  color="#F97316"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                    elevation: 8,
+                  }}
+                />
               </TouchableOpacity>
             </View>
           </View>

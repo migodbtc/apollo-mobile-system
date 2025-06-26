@@ -1,159 +1,20 @@
 import React, { useState } from "react";
 import MapReportCard from "./MapReportCard";
-import type {
-  PostverifiedReport,
-  PreverifiedReport,
-} from "../../constants/interfaces/interface";
 import { useGeolocated } from "react-geolocated";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSquare, faSquareCheck } from "@fortawesome/free-solid-svg-icons";
 import ReportCard from "./ReportCard";
 import SelectedReportModal from "./SelectedReportModal";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
+import type {
+  PostverifiedReport,
+  PreverifiedReport,
+} from "../../constants/types/database";
 
 interface MapVisualPageProps {
   activeTab: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
 }
-
-const verifiedReports: PostverifiedReport[] = [
-  {
-    VR_verification_id: 1,
-    VR_report_id: 101,
-    VR_confidence_score: 0.92,
-    VR_detected: true,
-    VR_verification_timestamp: "2025-06-21T09:45:00Z",
-    VR_severity_level: "moderate",
-    VR_spread_potential: "high",
-    VR_fire_type: "medium",
-  },
-  {
-    VR_verification_id: 2,
-    VR_report_id: 102,
-    VR_confidence_score: 0.87,
-    VR_detected: true,
-    VR_verification_timestamp: "2025-06-21T11:25:00Z",
-    VR_severity_level: "mild",
-    VR_spread_potential: "high",
-    VR_fire_type: "large",
-  },
-  {
-    VR_verification_id: 3,
-    VR_report_id: 105,
-    VR_confidence_score: 0.95,
-    VR_detected: false,
-    VR_verification_timestamp: "2025-06-21T14:25:00Z",
-    VR_severity_level: undefined,
-    VR_spread_potential: undefined,
-    VR_fire_type: undefined,
-  },
-];
-
-const preverifiedReports: PreverifiedReport[] = [
-  {
-    PR_report_id: 103,
-    PR_user_id: 3,
-    PR_image: 1001,
-    PR_video: 1002,
-    PR_latitude: 14.582,
-    PR_longitude: 121.041,
-    PR_address: "San Miguel Avenue, near Kai Garden Residences, Mandaluyong",
-    PR_timestamp: "2025-06-21T10:15:00Z",
-    PR_verified: false,
-    PR_report_status: "pending",
-  },
-  {
-    PR_report_id: 104,
-    PR_user_id: 4,
-    PR_image: 1003,
-    PR_video: 1004,
-    PR_latitude: 14.5805,
-    PR_longitude: 121.0398,
-    PR_address: "J.P. Rizal Street, Mandaluyong (near Kai Garden)",
-    PR_timestamp: "2025-06-21T12:30:00Z",
-    PR_verified: false,
-    PR_report_status: "pending",
-  },
-  {
-    PR_report_id: 101,
-    PR_user_id: 1,
-    PR_image: 123,
-    PR_video: 456,
-    PR_latitude: 14.5815,
-    PR_longitude: 121.0405,
-    PR_address: "Kai Garden Residences, Mandaluyong City",
-    PR_timestamp: "2025-06-21T09:30:00Z",
-    PR_verified: true,
-    PR_report_status: "verified",
-  },
-  {
-    PR_report_id: 102,
-    PR_user_id: 2,
-    PR_image: 789,
-    PR_video: 101112,
-    PR_latitude: 14.5818,
-    PR_longitude: 121.0412,
-    PR_address: "Adjacent building to Kai Garden Residences",
-    PR_timestamp: "2025-06-21T11:10:00Z",
-    PR_verified: true,
-    PR_report_status: "verified",
-  },
-  {
-    PR_report_id: 105,
-    PR_user_id: 5,
-    PR_image: 1005,
-    PR_video: 1006,
-    PR_latitude: 14.579,
-    PR_longitude: 121.038,
-    PR_address: "Boni Avenue, Mandaluyong",
-    PR_timestamp: "2025-06-21T14:05:00Z",
-    PR_verified: true,
-    PR_report_status: "false_alarm",
-  },
-];
-
-const combinedReports = preverifiedReports.map(
-  (preverified: PreverifiedReport) => {
-    const prDate = new Date(preverified.PR_timestamp)
-      .toISOString()
-      .slice(0, 10);
-
-    const verified = verifiedReports.find((v) => {
-      const vrDate = new Date(v.VR_verification_timestamp)
-        .toISOString()
-        .slice(0, 10);
-      const idMatch = v.VR_report_id === preverified.PR_report_id;
-      const dateMatch = vrDate === prDate;
-
-      return idMatch && dateMatch;
-    });
-
-    return [preverified, verified ?? null] as [
-      PreverifiedReport,
-      PostverifiedReport | null
-    ];
-  }
-);
-
-const combinedReportsToday = combinedReports
-  .filter(([preverified]) => {
-    const reportDate = new Date(preverified.PR_timestamp)
-      .toISOString()
-      .slice(0, 10);
-    const today = new Date().toISOString().slice(0, 10);
-    return reportDate === today;
-  })
-  .map(([preverified, verified]) => {
-    const verifiedToday = verified
-      ? new Date(verified.VR_verification_timestamp)
-          .toISOString()
-          .slice(0, 10) === new Date().toISOString().slice(0, 10)
-      : null;
-
-    return [preverified, verifiedToday ? verified : null] as [
-      PreverifiedReport,
-      PostverifiedReport | null
-    ];
-  });
 
 const MapVisualPage = ({}: MapVisualPageProps) => {
   const [selectedReport, setSelectedReport] = useState<{
@@ -168,6 +29,9 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
     },
     userDecisionTimeout: 10000,
   });
+
+  const { preverifiedReports, postverifiedReports, combinedReports } =
+    useAdminSQL();
 
   const handleClickEvent = (data: {
     report: PreverifiedReport;
@@ -184,6 +48,43 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
     setSelectedReport({ report: null, verificationStatus: null });
     setShowSelectedModal(false);
   };
+
+  const dailyCombinedReports = combinedReports.filter(([report]) => {
+    if (!report) return false;
+
+    const reportDateObj = new Date(report.PR_timestamp);
+    const today = new Date();
+
+    const comparisonDate =
+      reportDateObj.getUTCFullYear() === today.getUTCFullYear() &&
+      reportDateObj.getUTCMonth() === today.getUTCMonth() &&
+      reportDateObj.getUTCDate() === today.getUTCDate();
+
+    // console.log(
+    //   "Daily combined reports report #" +
+    //     report.PR_report_id +
+    //     ": " +
+    //     comparisonDate
+    // );
+    // console.log(
+    //   "└── Report Date: " +
+    //     reportDateObj.getUTCDate() +
+    //     " of " +
+    //     reportDateObj.getUTCMonth() +
+    //     ", " +
+    //     reportDateObj.getUTCFullYear()
+    // );
+    // console.log(
+    //   "└── Current Date: " +
+    //     today.getUTCDate() +
+    //     " of " +
+    //     today.getUTCMonth() +
+    //     ", " +
+    //     today.getUTCFullYear()
+    // );
+
+    return comparisonDate;
+  });
 
   return (
     <>
@@ -245,7 +146,7 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
               className="pt-3 my-3"
               style={{ height: "auto", overflowY: "scroll" }}
             >
-              {combinedReportsToday.map(
+              {dailyCombinedReports.map(
                 (
                   value: [PreverifiedReport, PostverifiedReport | null],
                   _: number
@@ -255,6 +156,8 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
                   if (!showUnvalidated && vr == null) {
                     return;
                   }
+
+                  console.log(value);
 
                   return (
                     <ReportCard
@@ -272,7 +175,7 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
               <MapReportCard
                 userLocation={[coords?.longitude, coords?.latitude]}
                 preverifiedReports={preverifiedReports}
-                verifiedReports={verifiedReports}
+                verifiedReports={postverifiedReports}
                 onMarkerClick={handleClickEvent}
                 showUnvalidated={showUnvalidated}
               />

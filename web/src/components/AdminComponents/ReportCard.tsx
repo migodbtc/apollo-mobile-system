@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type {
   PostverifiedReport,
   PreverifiedReport,
-} from "../../constants/interfaces/interface";
+} from "../../constants/types/database";
 
 interface ReportCardProps {
   pr: PreverifiedReport;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import SubmissionDateChart from "./SubmissionDateChart";
 import UserRolesDonut from "./UserRolesDonut";
 import RecentReportsTable from "./RecentReportsTable";
@@ -13,7 +13,7 @@ interface DashboardPageProps {
 }
 
 const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
-  const [selectionOne, setSelectionOne] = useState<number>(1);
+  const [selectionOne, setSelectionOne] = useState<number>(4);
 
   return (
     <div
@@ -22,12 +22,14 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
     >
       <div className="row">
         <div className="col-md-6 py-2">
-          <GeneralReports
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            selectionOne={selectionOne}
-            setSelectionOne={setSelectionOne}
-          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <GeneralReports
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              selectionOne={selectionOne}
+              setSelectionOne={setSelectionOne}
+            />
+          </Suspense>
         </div>
         <div className="col-md-3 py-2">
           <div
@@ -47,7 +49,9 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
             }}
           >
             <div style={{ height: "60%", width: "100%" }}>
-              <SubmissionDateChart />
+              <Suspense fallback={<div>Loading...</div>}>
+                <SubmissionDateChart />
+              </Suspense>
             </div>
             <span className="text-muted text-sm text-bold mt-2">
               REPORT FREQUENCY
@@ -76,7 +80,9 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
             }}
           >
             <div style={{ height: "60%", width: "100%" }}>
-              <UserRolesDonut />
+              <Suspense fallback={<div>Loading...</div>}>
+                <UserRolesDonut />
+              </Suspense>
             </div>
             <span className="text-muted text-sm text-bold pt-3">
               ROLE COUNT
@@ -114,8 +120,9 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
               full reports, visit the reports table found on the sidebar, seen
               at the left side of the screen.
             </p>
-
-            <RecentReportsTable />
+            <Suspense fallback={<div>Loading...</div>}>
+              <RecentReportsTable />
+            </Suspense>
           </div>
         </div>
         <div className="col-md-4">
@@ -156,7 +163,9 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
               {"  "}
               View all users
             </a>
-            <PersonnelPreview />
+            <Suspense fallback={<div>Loading...</div>}>
+              <PersonnelPreview />
+            </Suspense>
           </div>
         </div>
       </div>

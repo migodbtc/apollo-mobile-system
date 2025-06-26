@@ -10,7 +10,9 @@ import {
   faCheckCircle,
   faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
+// Use the PreverifiedReport type from your shared types if available
 type PreverifiedReportType = {
   PR_report_id: number;
   PR_user_id: number;
@@ -66,138 +68,27 @@ const columns: ColumnDef<PreverifiedReportType>[] = [
   },
 ];
 
-const data: PreverifiedReportType[] = [
-  {
-    PR_report_id: 1,
-    PR_user_id: 101,
-    PR_image: undefined,
-    PR_video: 301,
-    PR_latitude: 37.774929,
-    PR_longitude: -122.419418,
-    PR_address: "123 Market St, San Francisco, CA",
-    PR_timestamp: "2023-10-01 12:00:00",
-    PR_verified: true,
-    PR_report_status: "verified",
-  },
-  {
-    PR_report_id: 2,
-    PR_user_id: 102,
-    PR_image: 202,
-    PR_video: undefined,
-    PR_latitude: 34.052235,
-    PR_longitude: -118.243683,
-    PR_address: "456 Sunset Blvd, Los Angeles, CA",
-    PR_timestamp: "2023-10-02 14:30:00",
-    PR_verified: false,
-    PR_report_status: "pending",
-  },
-  {
-    PR_report_id: 3,
-    PR_user_id: 103,
-    PR_image: undefined,
-    PR_video: 302,
-    PR_latitude: 40.712776,
-    PR_longitude: -74.005974,
-    PR_address: "789 Broadway, New York, NY",
-    PR_timestamp: "2023-10-03 09:15:00",
-    PR_verified: true,
-    PR_report_status: "resolved",
-  },
-  {
-    PR_report_id: 4,
-    PR_user_id: 104,
-    PR_image: 203,
-    PR_video: undefined,
-    PR_latitude: 41.878113,
-    PR_longitude: -87.629799,
-    PR_address: "101 Michigan Ave, Chicago, IL",
-    PR_timestamp: "2023-10-04 11:45:00",
-    PR_verified: false,
-    PR_report_status: "false_alarm",
-  },
-  {
-    PR_report_id: 5,
-    PR_user_id: 105,
-    PR_image: undefined,
-    PR_video: 420,
-    PR_latitude: 29.760427,
-    PR_longitude: -95.369804,
-    PR_address: "202 Main St, Houston, TX",
-    PR_timestamp: "2023-10-05 08:30:00",
-    PR_verified: true,
-    PR_report_status: "verified",
-  },
-  {
-    PR_report_id: 6,
-    PR_user_id: 106,
-    PR_image: 305,
-    PR_video: undefined,
-    PR_latitude: 34.052235,
-    PR_longitude: -118.243683,
-    PR_address: "200 N Spring St, Los Angeles, CA",
-    PR_timestamp: "2023-10-06 14:15:00",
-    PR_verified: true,
-    PR_report_status: "verified",
-  },
-  {
-    PR_report_id: 7,
-    PR_user_id: 107,
-    PR_image: undefined,
-    PR_video: 421,
-    PR_latitude: 40.712776,
-    PR_longitude: -74.005974,
-    PR_address: "1 Police Plaza, New York, NY",
-    PR_timestamp: "2023-10-07 09:20:00",
-    PR_verified: false,
-    PR_report_status: "pending",
-  },
-  {
-    PR_report_id: 8,
-    PR_user_id: 108,
-    PR_image: 206,
-    PR_video: undefined,
-    PR_latitude: 39.952583,
-    PR_longitude: -75.165222,
-    PR_address: "1401 John F Kennedy Blvd, Philadelphia, PA",
-    PR_timestamp: "2023-10-08 16:45:00",
-    PR_verified: true,
-    PR_report_status: "verified",
-  },
-  {
-    PR_report_id: 9,
-    PR_user_id: 109,
-    PR_image: undefined,
-    PR_video: 422,
-    PR_latitude: 32.715738,
-    PR_longitude: -117.161084,
-    PR_address: "1600 Pacific Highway, San Diego, CA",
-    PR_timestamp: "2023-10-09 10:10:00",
-    PR_verified: false,
-    PR_report_status: "pending",
-  },
-  {
-    PR_report_id: 10,
-    PR_user_id: 110,
-    PR_image: 207,
-    PR_video: 423,
-    PR_latitude: 39.739236,
-    PR_longitude: -104.990251,
-    PR_address: "1331 17th St, Denver, CO",
-    PR_timestamp: "2023-10-10 13:25:00",
-    PR_verified: true,
-    PR_report_status: "resolved",
-  },
-];
-
 const RecentReportsTable = () => {
+  const { combinedReports } = useAdminSQL();
+
+  // Get the most recent 10 reports, sorted by timestamp descending
+  const recentReports: PreverifiedReportType[] = [...combinedReports]
+    .sort((a, b) => {
+      const dateA = new Date(a[0].PR_timestamp).getTime();
+      const dateB = new Date(b[0].PR_timestamp).getTime();
+      return dateB - dateA;
+    })
+    .slice(0, 10)
+    .map(([pre]) => pre);
+
   const table = useReactTable({
-    data,
+    data: recentReports,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
 
   return (
-    <div className="table-container mb-4" style={{ width: "100%" }}>
+    <div className="table-container mb-4 pb-5" style={{ width: "100%" }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

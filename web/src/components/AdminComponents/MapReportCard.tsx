@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from "react";
+import { ApolloMapHandler } from "../../constants/ApolloMapHandler";
+import "ol/ol.css";
 import type {
   PostverifiedReport,
   PreverifiedReport,
-} from "../../constants/interfaces/interface";
-import { ApolloMapHandler } from "../../constants/ApolloMapHandler";
-import "ol/ol.css";
+} from "../../constants/types/database";
 
 interface MapReportCardProps {
   userLocation: [number, number];

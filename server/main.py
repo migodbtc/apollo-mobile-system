@@ -951,9 +951,9 @@ def route_get_users_responders():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/user/get/one', methods=['GET'])
+@app.route('/user/get/one', methods=['POST'])
 def route_get_one_user():
-    if request.method != 'GET':
+    if request.method != 'POST':
         return jsonify({"error": "Invalid request method. Expected GET method."}), 405
     
     try:

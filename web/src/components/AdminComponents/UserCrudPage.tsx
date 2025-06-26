@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { UserRole } from "../../constants/types/types";
 import {
   flexRender,
   getCoreRowModel,
@@ -19,91 +18,8 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import UserEditModal from "./UserEditModal";
-
-type UserType = {
-  UA_user_id: number;
-  UA_username: string;
-  UA_password?: string;
-  UA_user_role: UserRole;
-  UA_created_at: string;
-  UA_last_name: string;
-  UA_first_name: string;
-  UA_middle_name?: string;
-  UA_suffix?: string;
-  UA_email_address: string;
-  UA_phone_number: string;
-  UA_reputation_score: number;
-  UA_id_picture_front?: number;
-  UA_id_picture_back?: number;
-};
-
-const data: UserType[] = [
-  {
-    UA_user_id: 25060001,
-    UA_username: "johndoe",
-    UA_user_role: "responder",
-    UA_created_at: "2024-01-20T12:00:00Z",
-    UA_last_name: "Doe",
-    UA_first_name: "John",
-    UA_middle_name: "M",
-    UA_suffix: "Jr.",
-    UA_email_address: "john.doe@example.com",
-    UA_phone_number: "123-456-7890",
-    UA_reputation_score: 75,
-  },
-  {
-    UA_user_id: 25060002,
-    UA_username: "janedoe",
-    UA_user_role: "admin",
-    UA_created_at: "2024-02-15T14:30:00Z",
-    UA_last_name: "Doe",
-    UA_first_name: "Jane",
-    UA_middle_name: "A",
-    UA_suffix: "Sr.",
-    UA_email_address: "jane.doe@example.com",
-    UA_phone_number: "987-654-3210",
-    UA_reputation_score: 92,
-  },
-  {
-    UA_user_id: 25060003,
-    UA_username: "peterparker",
-    UA_user_role: "superadmin",
-    UA_created_at: "2024-03-01T09:00:00Z",
-    UA_last_name: "Parker",
-    UA_first_name: "Peter",
-    UA_middle_name: "",
-    UA_suffix: "",
-    UA_email_address: "peter.parker@example.com",
-    UA_phone_number: "555-123-4567",
-    UA_reputation_score: 88,
-  },
-  {
-    UA_user_id: 25060004,
-    UA_username: "clarkkent",
-    UA_user_role: "responder",
-    UA_created_at: "2024-03-15T16:45:00Z",
-    UA_last_name: "Kent",
-    UA_first_name: "Clark",
-    UA_middle_name: "J",
-    UA_suffix: "",
-    UA_email_address: "clark.kent@example.com",
-    UA_phone_number: "111-222-3333",
-    UA_reputation_score: 65,
-  },
-  {
-    UA_user_id: 25060005,
-    UA_username: "brucewayne",
-    UA_user_role: "admin",
-    UA_created_at: "2024-04-01T11:15:00Z",
-    UA_last_name: "Wayne",
-    UA_first_name: "Bruce",
-    UA_middle_name: "T",
-    UA_suffix: "",
-    UA_email_address: "bruce.wayne@example.com",
-    UA_phone_number: "444-555-6666",
-    UA_reputation_score: 95,
-  },
-];
+import type { UserAccount } from "../../constants/types/database";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 const renderRoleBadge = (role: string | undefined) => {
   let badgeStyle: { backgroundColor: string; color: string } = {
@@ -176,7 +92,7 @@ const UserCrudPage = () => {
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
 
-  const [selectedRow, setSelectedRow] = useState<UserType | null>(null);
+  const [selectedRow, setSelectedRow] = useState<UserAccount | null>(null);
   const [showSelectedModal, setShowSelectedModal] = useState<boolean>(false);
 
   const handleExitClick = () => {
@@ -184,7 +100,11 @@ const UserCrudPage = () => {
     setSelectedRow(null);
   };
 
-  const columns: ColumnDef<UserType>[] = [
+  const { userAccounts } = useAdminSQL();
+
+  const data: UserAccount[] = userAccounts;
+
+  const columns: ColumnDef<UserAccount>[] = [
     {
       id: "selection-id",
       accessorKey: "UA_user_id",
@@ -269,7 +189,7 @@ const UserCrudPage = () => {
       enableColumnFilter: false,
       cell: ({ row }) => {
         return (
-          <>
+          <div style={{ minWidth: 150 }}>
             <button
               className="btn btn-md btn-primary p-1 px-2"
               style={{ backgroundColor: "rgb(249, 115, 22)", border: "none" }}
@@ -286,7 +206,7 @@ const UserCrudPage = () => {
               className="ml-3 text-muted"
               style={{ cursor: "pointer" }}
             />
-          </>
+          </div>
         );
       },
     },

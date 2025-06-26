@@ -7,6 +7,8 @@ import {
   useSession,
 } from "./constants/context/SessionContext";
 import AdminSegment from "./components/AdminSegment";
+import { AdminSQLProvider } from "./constants/context/AdminSQLContext";
+import { SERVER_LINK } from "./constants/netvar";
 
 function AppContent() {
   const [segment, setSegment] = useState<string>("public");
@@ -25,7 +27,13 @@ function AppContent() {
         <NavigationBar segment={segment} setSegment={setSegment} />
       </div>
 
-      {segment === "public" ? <PublicSegment /> : <AdminSegment />}
+      {segment === "public" ? (
+        <PublicSegment />
+      ) : (
+        <AdminSQLProvider serverUrl={SERVER_LINK}>
+          <AdminSegment />
+        </AdminSQLProvider>
+      )}
     </div>
   );
 }

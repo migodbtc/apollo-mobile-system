@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type {
   PostverifiedReport,
   PreverifiedReport,
-} from "../../constants/interfaces/interface";
+} from "../../constants/types/database";
 
 const renderReportStatusBadge = (role: string | undefined) => {
   let badgeStyle: { backgroundColor: string; color: string } = {

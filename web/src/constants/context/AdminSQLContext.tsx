@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import axios from "axios";
-import {
+import type {
   CombinedReport,
   FireStatistic,
   MediaStorage,
@@ -16,7 +16,6 @@ import {
   ResponseLog,
   UserAccount,
 } from "../types/database";
-import SERVER_LINK from "../netvar";
 
 /**
  * Represents the state structure for the database context

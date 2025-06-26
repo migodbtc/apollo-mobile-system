@@ -1,10 +1,4 @@
 import { useState } from "react";
-import type {
-  FireType,
-  ReportStatus,
-  SeverityLevel,
-  SpreadPotential,
-} from "../../constants/types/types";
 import {
   flexRender,
   getCoreRowModel,
@@ -22,185 +16,23 @@ import {
   faBellSlash,
   faCheck,
   faCheckCircle,
-  faClock,
   faEdit,
-  faFlagCheckered,
   faHourglass,
   faPlus,
   faQuestion,
   faThumbsUp,
   faTimes,
-  faTimesCircle,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-
-type PreverifiedReportType = {
-  PR_report_id: number;
-  PR_user_id: number;
-  PR_image?: number;
-  PR_video?: number;
-  PR_latitude: number;
-  PR_longitude: number;
-  PR_address: string;
-  PR_timestamp: string;
-  PR_verified: boolean;
-  PR_report_status: ReportStatus;
-};
-
-type PostverifiedReportType = {
-  VR_verification_id: number;
-  VR_report_id: number;
-  VR_confidence_score: number;
-  VR_detected: boolean;
-  VR_verification_timestamp: string;
-  VR_severity_level?: SeverityLevel;
-  VR_spread_potential?: SpreadPotential;
-  VR_fire_type?: FireType;
-};
-
-type CombinedReportType = [
-  PreverifiedReportType,
-  PostverifiedReportType | null
-];
-
-const data: CombinedReportType[] = [
-  [
-    {
-      PR_report_id: 1,
-      PR_user_id: 101,
-      PR_latitude: 34.0522,
-      PR_longitude: -118.2437,
-      PR_address: "123 Main St, Los Angeles, CA",
-      PR_timestamp: "2024-07-01T10:00:00Z",
-      PR_verified: false,
-      PR_report_status: "pending",
-    },
-    {
-      VR_verification_id: 1,
-      VR_report_id: 1,
-      VR_confidence_score: 0.85,
-      VR_detected: true,
-      VR_verification_timestamp: "2024-07-01T12:00:00Z",
-      VR_severity_level: "mild",
-      VR_spread_potential: "medium",
-      VR_fire_type: "large",
-    },
-  ],
-  [
-    {
-      PR_report_id: 2,
-      PR_user_id: 102,
-      PR_latitude: 37.7749,
-      PR_longitude: -122.4194,
-      PR_address: "456 Oak Ave, San Francisco, CA",
-      PR_timestamp: "2024-07-02T14:30:00Z",
-      PR_verified: true,
-      PR_report_status: "verified",
-    },
-    null,
-  ],
-  [
-    {
-      PR_report_id: 3,
-      PR_user_id: 103,
-      PR_latitude: 40.7128,
-      PR_longitude: -74.006,
-      PR_address: "789 Pine Ln, New York, NY",
-      PR_timestamp: "2024-07-03T08:15:00Z",
-      PR_verified: false,
-      PR_report_status: "false_alarm",
-    },
-    {
-      VR_verification_id: 3,
-      VR_report_id: 3,
-      VR_confidence_score: 0.92,
-      VR_detected: false,
-      VR_verification_timestamp: "2024-07-03T10:00:00Z",
-      VR_severity_level: "mild",
-      VR_spread_potential: "low",
-      VR_fire_type: "large",
-    },
-  ],
-  [
-    {
-      PR_report_id: 4,
-      PR_user_id: 104,
-      PR_latitude: 47.6062,
-      PR_longitude: -122.3321,
-      PR_address: "101 Elm St, Seattle, WA",
-      PR_timestamp: "2024-07-04T16:45:00Z",
-      PR_verified: true,
-      PR_report_status: "resolved",
-    },
-    null,
-  ],
-  [
-    {
-      PR_report_id: 5,
-      PR_user_id: 105,
-      PR_latitude: 39.7392,
-      PR_longitude: -104.9903,
-      PR_address: "222 Cherry Ave, Denver, CO",
-      PR_timestamp: "2024-07-05T11:30:00Z",
-      PR_verified: false,
-      PR_report_status: "pending",
-    },
-    {
-      VR_verification_id: 5,
-      VR_report_id: 5,
-      VR_confidence_score: 0.78,
-      VR_detected: true,
-      VR_verification_timestamp: "2024-07-05T13:00:00Z",
-      VR_severity_level: "mild",
-      VR_spread_potential: "high",
-      VR_fire_type: "large",
-    },
-  ],
-  [
-    {
-      PR_report_id: 6,
-      PR_user_id: 106,
-      PR_latitude: 33.4484,
-      PR_longitude: -112.074,
-      PR_address: "333 Palm Ln, Phoenix, AZ",
-      PR_timestamp: "2024-07-06T09:00:00Z",
-      PR_verified: true,
-      PR_report_status: "pending",
-    },
-    null,
-  ],
-  [
-    {
-      PR_report_id: 7,
-      PR_user_id: 107,
-      PR_latitude: 32.7157,
-      PR_longitude: -117.1611,
-      PR_address: "444 Maple Dr, San Diego, CA",
-      PR_timestamp: "2024-07-07T15:45:00Z",
-      PR_verified: false,
-      PR_report_status: "resolved",
-    },
-    {
-      VR_verification_id: 7,
-      VR_report_id: 7,
-      VR_confidence_score: 0.65,
-      VR_detected: true,
-      VR_verification_timestamp: "2024-07-07T17:00:00Z",
-      VR_severity_level: "moderate",
-      VR_spread_potential: "high",
-      VR_fire_type: "medium",
-    },
-  ],
-];
+import type { CombinedReport } from "../../constants/types/database";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 const ReportsCrudPage = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
 
-  const [selectedRow, setSelectedRow] = useState<CombinedReportType | null>(
-    null
-  );
+  const [selectedRow, setSelectedRow] = useState<CombinedReport | null>(null);
   const [showSelectedModal, setShowSelectedModal] = useState<boolean>(false);
 
   const handleExitClick = () => {
@@ -346,7 +178,11 @@ const ReportsCrudPage = () => {
     );
   };
 
-  const columns: ColumnDef<CombinedReportType>[] = [
+  const { combinedReports, userAccounts } = useAdminSQL();
+
+  const data: CombinedReport[] = combinedReports;
+
+  const columns: ColumnDef<CombinedReport>[] = [
     {
       accessorKey: "0.PR_report_id",
       header: ({ table }) => (
@@ -378,7 +214,23 @@ const ReportsCrudPage = () => {
     },
     {
       accessorKey: "0.PR_user_id",
-      header: "User ID",
+      header: "Name",
+      cell: ({ row }) => {
+        const userId = row.original[0].PR_user_id;
+        const userAccount = userAccounts.find(
+          (account) => account.UA_user_id === userId
+        );
+
+        return (
+          <span>
+            {"@" + userAccount?.UA_username ||
+              `${userAccount?.UA_first_name || ""} ${
+                userAccount?.UA_last_name || ""
+              }`.trim() ||
+              `User ${userId}`}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "0.coordinates",
@@ -404,6 +256,7 @@ const ReportsCrudPage = () => {
     },
     {
       accessorKey: "0.PR_timestamp",
+      accessorFn: (row) => new Date(row[0].PR_timestamp).getTime(),
       header: "Timestamp",
       cell: ({ row }) => {
         const date = new Date(row.original[0].PR_timestamp).toLocaleString();

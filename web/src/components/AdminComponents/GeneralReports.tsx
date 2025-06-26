@@ -1,6 +1,7 @@
 import { faFire, faTable } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 interface GeneralReportsProps {
   selectionOne: number;
@@ -14,6 +15,8 @@ const GeneralReports = ({
   setSelectionOne,
   setActiveTab,
 }: GeneralReportsProps) => {
+  const { combinedReports } = useAdminSQL();
+
   const selectionOneStringMap: { [key: number]: string } = {
     1: "today",
     2: "this past week",
@@ -21,13 +24,58 @@ const GeneralReports = ({
     4: "since start of records",
   };
 
+  // SIMPLIFIED FILTERING - NO MEMO
+  const getFilteredReports = () => {
+    if (!combinedReports?.length) return [];
+    if (selectionOne === 4) return combinedReports;
+
+    const now = Date.now();
+    const cutoffDays = [1, 7, 30][selectionOne - 1] || 0;
+    return combinedReports.filter(([pre]) => {
+      const reportTime = new Date(pre.PR_timestamp).getTime();
+      return (now - reportTime) / 86400000 < cutoffDays;
+    });
+  };
+
+  const filteredReports = getFilteredReports();
+
+  // SIMPLIFIED METRICS - NO MEMO
+  const getMetrics = () => {
+    const imageSubmissions = filteredReports.filter(
+      ([pre]) => pre.PR_image !== undefined && pre.PR_image !== null
+    ).length;
+
+    const videoSubmissions = filteredReports.filter(
+      ([pre]) => pre.PR_video !== undefined && pre.PR_video !== null
+    ).length;
+
+    const pendingReports = filteredReports.filter(
+      ([pre]) => pre.PR_report_status === "pending"
+    ).length;
+
+    const usersReported = new Set(
+      filteredReports.map(([pre]) => pre.PR_user_id)
+    ).size;
+
+    return {
+      imageSubmissions,
+      videoSubmissions,
+      pendingReports,
+      usersReported,
+    };
+  };
+
+  const { imageSubmissions, videoSubmissions, pendingReports, usersReported } =
+    getMetrics();
+
+  // DEBOUNCED HANDLER
   const handleSelectionOneChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    // 1 signifies today, 2 signifies past week, 3 signifies past month, 4 signifies all time
-    const val = event.target.value;
-    console.log("selectionOne changed to value " + val);
-    setSelectionOne(parseInt(val, 10));
+    const val = parseInt(event.target.value, 10);
+    requestAnimationFrame(() => {
+      setSelectionOne(val);
+    });
   };
 
   return (
@@ -47,11 +95,10 @@ const GeneralReports = ({
               border: "none",
               borderRadius: "1rem",
             }}
-            onChange={(e) => handleSelectionOneChange(e)}
+            onChange={handleSelectionOneChange}
+            value={selectionOne}
           >
-            <option value="1" selected>
-              Today
-            </option>
+            <option value="1">Today</option>
             <option value="2">Past Week</option>
             <option value="3">Past Month</option>
             <option value="4">All-Time</option>
@@ -73,10 +120,12 @@ const GeneralReports = ({
             </span>
             <h1 style={{ color: "#c2410c" }}>
               <FontAwesomeIcon icon={faFire} />
-              {"  "}32
+              {"  "}
+              {filteredReports.length}
             </h1>
             <p className="mt-1">
-              The system has received 32 report submissions.{" "}
+              The system has received {filteredReports.length} report
+              submissions.{" "}
             </p>
             <a
               className="btn btn-sm mt-3 text-white w-100"
@@ -96,19 +145,19 @@ const GeneralReports = ({
             <span className="text-muted text-sm text-bold">
               REPORT IMAGE SUBMISSIONS
             </span>
-            <h3 className="mb-3">19</h3>
+            <h3 className="mb-3">{imageSubmissions}</h3>
             <span className="text-muted text-sm text-bold">
               REPORT VIDEO SUBMISSIONS
             </span>
-            <h3 className="mb-3">13</h3>
+            <h3 className="mb-3">{videoSubmissions}</h3>
             <span className="text-muted text-sm text-bold">
               PENDING REPORT VALIDATIONS
             </span>
-            <h3 className="mb-3">8</h3>
+            <h3 className="mb-3">{pendingReports}</h3>
             <span className="text-muted text-sm text-bold">
               NO. OF USERS REPORTED
             </span>
-            <h3 className="mb-3">7</h3>
+            <h3 className="mb-3">{usersReported}</h3>
           </div>
         </div>
       </div>

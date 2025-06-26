@@ -388,10 +388,6 @@ const GuestLogin = () => {
                       justifyContent: "center",
                       borderRadius: 8,
                       marginRight: 8,
-                      shadowColor: "#000",
-                      shadowOpacity: 0.15,
-                      shadowRadius: 8,
-                      elevation: 8,
                     }}
                     onPress={handleRefresh}
                     disabled={isRefreshing}
@@ -403,6 +399,12 @@ const GuestLogin = () => {
                         name="refresh"
                         size={height * 0.04}
                         color="#F97316"
+                        style={{
+                          shadowColor: "#000",
+                          shadowOpacity: 0.15,
+                          shadowRadius: 8,
+                          elevation: 8,
+                        }}
                       />
                     )}
                   </TouchableOpacity>
@@ -414,10 +416,6 @@ const GuestLogin = () => {
                       justifyContent: "center",
                       borderRadius: 8,
                       marginRight: 8,
-                      shadowColor: "#000",
-                      shadowOpacity: 0.15,
-                      shadowRadius: 8,
-                      elevation: 8,
                     }}
                     onPress={() =>
                       Alert.alert("Info", "Map info button pressed")
@@ -427,6 +425,12 @@ const GuestLogin = () => {
                       name="info"
                       size={height * 0.04}
                       color="#F97316"
+                      style={{
+                        shadowColor: "#000",
+                        shadowOpacity: 0.15,
+                        shadowRadius: 8,
+                        elevation: 8,
+                      }}
                     />
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -436,10 +440,6 @@ const GuestLogin = () => {
                       alignItems: "center",
                       justifyContent: "center",
                       borderRadius: 8,
-                      shadowColor: "#000",
-                      shadowOpacity: 0.15,
-                      shadowRadius: 8,
-                      elevation: 8,
                     }}
                     onPress={() =>
                       Alert.alert("Settings", "Map settings button pressed")
@@ -449,6 +449,12 @@ const GuestLogin = () => {
                       name="gear"
                       size={height * 0.04}
                       color="#F97316"
+                      style={{
+                        shadowColor: "#000",
+                        shadowOpacity: 0.15,
+                        shadowRadius: 8,
+                        elevation: 8,
+                      }}
                     />
                   </TouchableOpacity>
                 </View>

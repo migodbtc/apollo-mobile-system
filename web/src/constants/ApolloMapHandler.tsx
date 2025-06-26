@@ -4,10 +4,7 @@ import OSM from "ol/source/OSM";
 import View from "ol/View";
 import Overlay from "ol/Overlay";
 import { fromLonLat } from "ol/proj";
-import type {
-  PostverifiedReport,
-  PreverifiedReport,
-} from "./interfaces/interface";
+import type { PostverifiedReport, PreverifiedReport } from "./types/database";
 
 export class ApolloMapHandler {
   private map: ol.Map;

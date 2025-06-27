@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MapReportCard from "./MapReportCard";
 import { useGeolocated } from "react-geolocated";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -30,7 +30,7 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
     userDecisionTimeout: 10000,
   });
 
-  const { preverifiedReports, postverifiedReports, combinedReports } =
+  const { combinedReports, fetchPreverifiedReports, fetchPostverifiedReports } =
     useAdminSQL();
 
   const handleClickEvent = (data: {
@@ -85,6 +85,11 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
 
     return comparisonDate;
   });
+
+  useEffect(() => {
+    fetchPreverifiedReports();
+    fetchPostverifiedReports();
+  }, []);
 
   return (
     <>
@@ -157,8 +162,6 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
                     return;
                   }
 
-                  console.log(value);
-
                   return (
                     <ReportCard
                       vr={vr}
@@ -174,8 +177,6 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
             {coords && (
               <MapReportCard
                 userLocation={[coords?.longitude, coords?.latitude]}
-                preverifiedReports={preverifiedReports}
-                verifiedReports={postverifiedReports}
                 onMarkerClick={handleClickEvent}
                 showUnvalidated={showUnvalidated}
               />

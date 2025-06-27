@@ -1,7 +1,15 @@
 import LoginForm from "./LoginForm";
 import AdminMockup from "../../assets/admindisplay.png";
+import { useEffect } from "react";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 const AdminLoginPage = () => {
+  const { refreshAll } = useAdminSQL();
+
+  useEffect(() => {
+    refreshAll();
+  }, [refreshAll]);
+
   return (
     <div id="adminLoginPage" className="row" style={{ height: "90vh" }}>
       <div className="col-md-8 d-flex justify-content-center align-items-center">

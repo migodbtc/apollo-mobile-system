@@ -65,6 +65,7 @@ export class ApolloMapHandler {
     marker.style.color = "#ffffff";
     marker.style.zIndex = "1000";
     marker.style.fontSize = "1.5rem";
+    marker.style.cursor = "pointer";
 
     marker.setAttribute("data-toggle", "modal");
     marker.setAttribute("data-target", "#modal-render-marker");
@@ -119,7 +120,7 @@ export class ApolloMapHandler {
       }
     });
 
-    console.log("Current overlays on map:", this.map.getOverlays());
+    // console.log("Current overlays on map:", this.map.getOverlays());
   }
 
   loadReportsToday() {
@@ -127,17 +128,7 @@ export class ApolloMapHandler {
       this.verified_reports.map((vReport) => [vReport.VR_report_id, vReport])
     );
 
-    const today = new Date().toLocaleDateString();
-    // console.log("Today's date is " + today);
-
     this.preverified_reports.forEach((report) => {
-      if (today != new Date(report.PR_timestamp).toLocaleDateString()) {
-        // console.log(
-        //   "Report does not match the date today. Iterating to next report..."
-        // );
-        return;
-      }
-
       const verification = verifiedMap.get(report.PR_report_id) || null;
       const isVerified = !!verification;
 
@@ -175,10 +166,30 @@ export class ApolloMapHandler {
     verified_reports: PostverifiedReport[],
     preverified_reports: PreverifiedReport[]
   ) {
-    // console.log("Updating all reports!");
+    function isTodayUTC(dateString: string) {
+      const date = new Date(dateString);
+      const now = new Date();
+      return (
+        date.getUTCFullYear() === now.getUTCFullYear() &&
+        date.getUTCMonth() === now.getUTCMonth() &&
+        date.getUTCDate() === now.getUTCDate()
+      );
+    }
+
+    const todayPreverified = preverified_reports.filter((pre) =>
+      isTodayUTC(pre.PR_timestamp)
+    );
+    const todayPostverified = verified_reports.filter((post) =>
+      isTodayUTC(post.VR_verification_timestamp)
+    );
+
+    // console.log("Updating all reports (today only)!");
+    // console.log("Preverified Reports (today):", todayPreverified);
+    // console.log("Postverified Reports (today):", todayPostverified);
+
     this.clearOverlays();
-    this.verified_reports = verified_reports;
-    this.preverified_reports = preverified_reports;
+    this.verified_reports = todayPostverified;
+    this.preverified_reports = todayPreverified;
 
     this.loadReportsToday();
     // console.log("Done updating reports!");

@@ -5,11 +5,10 @@ import type {
   PostverifiedReport,
   PreverifiedReport,
 } from "../../constants/types/database";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 interface MapReportCardProps {
   userLocation: [number, number];
-  verifiedReports: PostverifiedReport[];
-  preverifiedReports: PreverifiedReport[];
   onMarkerClick: (data: {
     report: PreverifiedReport;
     verificationStatus: PostverifiedReport | null;
@@ -19,15 +18,23 @@ interface MapReportCardProps {
 
 const MapReportCard: React.FC<MapReportCardProps> = ({
   userLocation,
-  verifiedReports,
-  preverifiedReports,
   onMarkerClick,
   showUnvalidated,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapHandlerRef = useRef<ApolloMapHandler | null>(null);
 
+  const {
+    preverifiedReports,
+    postverifiedReports,
+    fetchPostverifiedReports,
+    fetchPreverifiedReports,
+  } = useAdminSQL();
+
   useEffect(() => {
+    fetchPreverifiedReports();
+    fetchPostverifiedReports();
+
     if (mapContainerRef.current) {
       mapHandlerRef.current = new ApolloMapHandler(
         mapContainerRef.current.id,
@@ -36,14 +43,14 @@ const MapReportCard: React.FC<MapReportCardProps> = ({
         showUnvalidated
       );
       mapHandlerRef.current.updateAllReportsToday(
-        verifiedReports,
+        postverifiedReports,
         preverifiedReports
       );
     }
 
     if (mapHandlerRef.current) {
       mapHandlerRef.current.updateAllReportsToday(
-        verifiedReports,
+        postverifiedReports,
         preverifiedReports
       );
     }

@@ -8,28 +8,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import type { UserRole } from "../../constants/types/types";
 import { useSession } from "../../constants/context/SessionContext";
-
-type UserType = {
-  UA_user_id: number;
-  UA_username: string;
-  UA_password?: string;
-  UA_user_role: UserRole;
-  UA_created_at: string;
-  UA_last_name: string;
-  UA_first_name: string;
-  UA_middle_name?: string;
-  UA_suffix?: string;
-  UA_email_address: string;
-  UA_phone_number: string;
-  UA_reputation_score: number;
-  UA_id_picture_front?: number;
-  UA_id_picture_back?: number;
-};
+import type { UserAccount } from "../../constants/types/database";
 
 interface UserEditModalProps {
   showSelectedModal: boolean;
-  selectedRow: UserType | null;
-  setSelectedRow: React.Dispatch<React.SetStateAction<UserType | null>>;
+  selectedRow: UserAccount | null;
+  setSelectedRow: React.Dispatch<React.SetStateAction<UserAccount | null>>;
   handleExitClick: () => void;
 }
 
@@ -40,7 +24,7 @@ const UserEditModal = ({
 }: UserEditModalProps) => {
   const { sessionData } = useSession();
 
-  const [modifiedData, setModifiedData] = useState<UserType | null>(
+  const [modifiedData, setModifiedData] = useState<UserAccount | null>(
     selectedRow
   );
   const [hasChanges, setHasChanges] = useState(false);
@@ -58,7 +42,7 @@ const UserEditModal = ({
   ) => {
     if (!modifiedData) return;
     const { id, value } = e.target;
-    const keyMap: Record<string, keyof UserType> = {
+    const keyMap: Record<string, keyof UserAccount> = {
       inputFirstName: "UA_first_name",
       inputMiddleName: "UA_middle_name",
       inputLastName: "UA_last_name",
@@ -306,15 +290,6 @@ const UserEditModal = ({
           >
             <div className="col d-flex justify-content-end">
               <button
-                className={`btn btm-sm btn-muted bg-dark ml-2 ${
-                  !hasChanges ? "disabled" : ""
-                }`}
-                onClick={handleReset}
-              >
-                <FontAwesomeIcon icon={faRotateLeft} className="mr-2" />
-                Reset
-              </button>
-              <button
                 className={`btn btm-sm btn-muted bg-orange ml-2 ${
                   !hasChanges ? "disabled" : ""
                 }`}
@@ -323,6 +298,16 @@ const UserEditModal = ({
                 <FontAwesomeIcon icon={faFloppyDisk} className="mr-2" />
                 Save
               </button>
+              <button
+                className={`btn btm-sm btn-muted bg-dark ml-2 ${
+                  !hasChanges ? "disabled" : ""
+                }`}
+                onClick={handleReset}
+              >
+                <FontAwesomeIcon icon={faRotateLeft} className="mr-2" />
+                Reset
+              </button>
+
               <button
                 type="button"
                 className="btn btn-sm btn-secondary ml-2"

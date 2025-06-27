@@ -3,12 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { useSession } from "../../constants/context/SessionContext";
 import { SERVER_LINK } from "../../constants/netvar";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 const LoginForm = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememebrMe] = useState<boolean>(false);
   const { setSessionData } = useSession();
+  const { refreshAll } = useAdminSQL();
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -65,6 +67,7 @@ const LoginForm = () => {
           UA_id_picture_front,
           UA_id_picture_back,
         });
+        await refreshAll();
       } else {
         alert("Authentication failed. Please try again!");
       }

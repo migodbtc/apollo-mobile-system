@@ -26,6 +26,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import type { CombinedReport } from "../../constants/types/database";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
+import ReportEditModal from "./ReportEditModal";
 
 const ReportsCrudPage = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -579,6 +580,12 @@ const ReportsCrudPage = () => {
           </div>
         </div>
       </div>
+      <ReportEditModal
+        showSelectedModal={showSelectedModal}
+        selectedRow={selectedRow}
+        setSelectedRow={setSelectedRow}
+        handleExitClick={handleExitClick}
+      />
     </>
   );
 };

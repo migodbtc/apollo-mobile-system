@@ -62,6 +62,7 @@ interface AdminSQLContextProps extends AdminSQLState {
   fetchResponseLogs: () => Promise<void>;
   /** Fetches latest user accounts */
   fetchUserAccounts: () => Promise<void>;
+  fetchMediaStorageDetails: () => Promise<void>;
   /** Fetches media storage row by its ID */
   fetchMediaById: (id: number) => Promise<void>;
   /** Merges preverified and postverified reports */
@@ -74,6 +75,7 @@ interface AdminSQLContextProps extends AdminSQLState {
   getPostverifiedReportById: (id: number) => PostverifiedReport | undefined;
   /** Finds a user account by its ID */
   getUserAccountById: (id: number) => UserAccount | undefined;
+  fetchMediaBlobById: (id: number) => Promise<any>;
 }
 
 /**
@@ -248,6 +250,11 @@ export const AdminSQLProvider = ({
     [fetchData]
   );
 
+  const fetchMediaStorageDetails = useCallback(
+    () => fetchData<MediaStorage>("mediaStorage", "media/details/get/all"),
+    [fetchData]
+  );
+
   /**
    * Fetches a single media item by ID and caches it
    * @param id - The MS_media_id to fetch
@@ -332,6 +339,7 @@ export const AdminSQLProvider = ({
       fetchPreverifiedReports(),
       // fetchResponseLogs(),
       fetchUserAccounts(),
+      fetchMediaStorageDetails(),
     ]);
   }, [
     // fetchFireStatistics,
@@ -339,6 +347,7 @@ export const AdminSQLProvider = ({
     fetchPreverifiedReports,
     // fetchResponseLogs,
     fetchUserAccounts,
+    fetchMediaStorageDetails,
   ]);
 
   /**
@@ -384,62 +393,50 @@ export const AdminSQLProvider = ({
     [state.userAccounts]
   );
 
-  // Initial data load - fetches essential data on first render
-  useEffect(() => {
-    const loadInitialData = async () => {
+  /**
+   * Finds a media storage item by its ID
+   *
+   * @param id - The MS_media_id to search for
+   * @returns The matching media item or undefined if not found
+   */
+  const fetchMediaBlobById = useCallback(
+    async (id: number) => {
       try {
-        await Promise.all([
-          fetchData<PreverifiedReport>(
-            "preverifiedReports",
-            "reports/preverified/all"
-          ),
-          fetchData<UserAccount>("userAccounts", "user/get/all"),
-        ]);
+        const response = await api.post(
+          "media/blob/get/one",
+          {
+            MS_media_id: id,
+          },
+          { responseType: "blob" }
+        );
+        const blob = response.data;
+        return blob;
       } catch (error) {
-        console.error("Initial data load failed:", error);
+        console.error(`Error fetching media blob for id ${id}:`, error);
+        return undefined;
       }
-    };
-
-    loadInitialData();
-  }, []); // Empty dependency array - runs once on mount
+    },
+    [api]
+  );
 
   return (
     <AdminSQLContext.Provider
       value={{
         ...state,
-        fetchFireStatistics: () =>
-          fetchData<FireStatistic>("fireStatistics", "fire-statistics"),
-        fetchPostverifiedReports: () =>
-          fetchData<PostverifiedReport>(
-            "postverifiedReports",
-            "reports/postverified/all"
-          ),
+        combinedReports,
+        fetchFireStatistics,
+        fetchPostverifiedReports,
         fetchPreverifiedReports,
-        fetchResponseLogs: () =>
-          fetchData<ResponseLog>("responseLogs", "response-logs"),
-        fetchUserAccounts: () =>
-          fetchData<UserAccount>("userAccounts", "user/get/all"),
+        fetchResponseLogs,
+        fetchUserAccounts,
+        fetchMediaStorageDetails,
         fetchMediaById,
         combineReports,
-        combinedReports,
-        refreshAll: async () => {
-          await Promise.all([
-            // fetchData<FireStatistic>("fireStatistics", "fire-statistics"), // Disabled
-            fetchData<PostverifiedReport>(
-              "postverifiedReports",
-              "reports/postverified/all"
-            ),
-            fetchData<PreverifiedReport>(
-              "preverifiedReports",
-              "reports/preverified/all"
-            ),
-            // fetchData<ResponseLog>("responseLogs", "response-logs"), // Disabled
-            fetchData<UserAccount>("userAccounts", "user/get/all"),
-          ]);
-        },
+        refreshAll,
         getPreverifiedReportById,
         getPostverifiedReportById,
         getUserAccountById,
+        fetchMediaBlobById,
       }}
     >
       {children}

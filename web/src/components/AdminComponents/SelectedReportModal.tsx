@@ -1,17 +1,22 @@
 import {
+  faBan,
   faBellSlash,
+  faCamera,
   faCheckCircle,
   faFileAlt,
   faHourglass,
   faQuestion,
   faThumbsUp,
   faTimes,
+  faVideo,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type {
   PostverifiedReport,
   PreverifiedReport,
 } from "../../constants/types/database";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
+import { useEffect, useState } from "react";
 
 const renderReportStatusBadge = (role: string | undefined) => {
   let badgeStyle: { backgroundColor: string; color: string } = {
@@ -79,6 +84,111 @@ const renderReportStatusBadge = (role: string | undefined) => {
   );
 };
 
+const renderRoleBadge = (role: string | undefined) => {
+  let badgeStyle: { backgroundColor: string; color: string } = {
+    backgroundColor: "",
+    color: "",
+  };
+  let badgeText = "";
+
+  switch (role) {
+    case "guest":
+      badgeStyle = {
+        backgroundColor: "#111827", // GRAY
+        color: "#FFFFFF",
+      };
+      badgeText = "Guest";
+      break;
+    case "civilian":
+      badgeStyle = {
+        backgroundColor: "#3B82F6", // BLUE
+        color: "#FFFFFF",
+      };
+      badgeText = "Civilian";
+      break;
+    case "responder":
+      badgeStyle = {
+        backgroundColor: "#F59E0B", // AMBER
+        color: "#FFFFFF",
+      };
+      badgeText = "Responder";
+      break;
+    case "admin":
+      badgeStyle = {
+        backgroundColor: "#EF4444", // RED
+        color: "#FFFFFF",
+      };
+      badgeText = "Administrator";
+      break;
+    case "superadmin":
+      badgeStyle = {
+        backgroundColor: "#01B073", // TEAL
+        color: "#FFFFFF",
+      };
+      badgeText = "Superadministrator";
+      break;
+    default:
+      badgeStyle = {
+        backgroundColor: "#6B7280", // CYAN
+        color: "#FFFFFF",
+      };
+      badgeText = "Unknown Role";
+      break;
+  }
+
+  return (
+    <span
+      style={{
+        backgroundColor: badgeStyle.backgroundColor,
+        borderRadius: "1rem",
+        color: badgeStyle.color,
+      }}
+      className="badge badge-xs text-bold px-2 py-1"
+    >
+      {badgeText}
+    </span>
+  );
+};
+
+const renderMediaTypeBadge = (mediaType?: string) => {
+  let badgeStyle: { backgroundColor: string; color: string } = {
+    backgroundColor: "#6B7280", // Default gray
+    color: "#fff",
+  };
+  let badgeText = "Unknown";
+  let badgeIcon = faQuestion;
+
+  if (mediaType?.startsWith("image/")) {
+    badgeStyle = {
+      backgroundColor: "#22C55E", // emerald green
+      color: "#fff",
+    };
+    badgeText = "Image";
+    badgeIcon = faCamera;
+  } else if (mediaType?.startsWith("video/")) {
+    badgeStyle = {
+      backgroundColor: "#7C3AED", // purple
+      color: "#fff",
+    };
+    badgeText = "Video";
+    badgeIcon = faVideo;
+  }
+
+  return (
+    <span
+      style={{
+        backgroundColor: badgeStyle.backgroundColor,
+        borderRadius: "1rem",
+        color: badgeStyle.color,
+      }}
+      className="badge badge-xs text-bold px-2 py-1"
+    >
+      <FontAwesomeIcon icon={badgeIcon} className="mr-2" />
+      {badgeText}
+    </span>
+  );
+};
+
 interface SelectedReportModalProps {
   selectedReport: {
     report: PreverifiedReport | null;
@@ -93,6 +203,40 @@ const SelectedReportModal = ({
   showSelectedModal,
   handleMarkerExit,
 }: SelectedReportModalProps) => {
+  const { userAccounts, mediaStorage, fetchMediaBlobById } = useAdminSQL();
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+
+  const associatedReporter = userAccounts.find(
+    (account) => account.UA_user_id === selectedReport.report?.PR_user_id
+  );
+
+  const associatedMedia = mediaStorage.find(
+    (media) =>
+      media.MS_media_id === selectedReport.report?.PR_image ||
+      media.MS_media_id === selectedReport.report?.PR_video
+  );
+
+  useEffect(() => {
+    let url: string | null = null;
+    setMediaUrl(null);
+
+    const fetchBlob = async () => {
+      if (associatedMedia) {
+        const blob = await fetchMediaBlobById(associatedMedia.MS_media_id);
+        if (blob) {
+          url = URL.createObjectURL(blob);
+          setMediaUrl(url);
+        }
+      }
+    };
+
+    fetchBlob();
+
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [associatedMedia, fetchMediaBlobById]);
+
   return (
     <div
       className={`modal fade ${
@@ -158,9 +302,9 @@ const SelectedReportModal = ({
                     {selectedReport.report?.PR_address}
                   </div>
                 </div>
-                <div className="row">
+                <div className="row mb-3">
                   <div className="col-md-6">Coordinates</div>
-                  <div className="col-md-6">
+                  <div className="col-md-6 text-sm text-muted">
                     <span>
                       {"("}
                       {selectedReport.report?.PR_latitude}
@@ -172,11 +316,31 @@ const SelectedReportModal = ({
                 </div>
                 <div className="row mb-2">
                   <div className="col-md-6">Date & Time</div>
-                  <div className="col-md-6">
-                    {selectedReport.report?.PR_timestamp &&
-                      new Date(
-                        selectedReport.report?.PR_timestamp
-                      ).toLocaleString()}
+                  <div className="col-md-6 text-sm">
+                    {selectedReport.report?.PR_timestamp ? (
+                      <>
+                        <div>
+                          {new Date(
+                            selectedReport.report.PR_timestamp
+                          ).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </div>
+                        <div>
+                          {new Date(
+                            selectedReport.report.PR_timestamp
+                          ).toLocaleTimeString(undefined, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      ""
+                    )}
                   </div>
                 </div>
                 <div className="row">
@@ -188,16 +352,58 @@ const SelectedReportModal = ({
                 <div className="row">
                   <div className="col-md-6">Name (ID)</div>
                   <div className="col-md-6">
-                    -- ({selectedReport.report?.PR_user_id})
+                    {associatedReporter === undefined ? (
+                      <FontAwesomeIcon
+                        icon={faHourglass}
+                        size="sm"
+                        className="mr-2"
+                      />
+                    ) : associatedReporter ? (
+                      <>
+                        {`${associatedReporter.UA_first_name || ""} ${
+                          associatedReporter.UA_last_name || ""
+                        }`.trim()}
+                        {associatedReporter.UA_username && (
+                          <span style={{ color: "rgb(249, 115, 22)" }}>
+                            {" "}
+                            (@{associatedReporter.UA_username})
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      `(${selectedReport.report?.PR_user_id})`
+                    )}
                   </div>
                 </div>
                 <div className="row">
                   <div className="col-md-6">Role</div>
-                  <div className="col-md-6">--</div>
+                  <div className="col-md-6">
+                    {associatedReporter === undefined ? (
+                      <FontAwesomeIcon
+                        icon={faHourglass}
+                        size="sm"
+                        className="mr-2"
+                      />
+                    ) : (
+                      renderRoleBadge(associatedReporter?.UA_user_role)
+                    )}
+                  </div>
                 </div>
                 <div className="row mb-2">
                   <div className="col-md-6">Reputation</div>
-                  <div className="col-md-6">--</div>
+                  <div className="col-md-6">
+                    {associatedReporter === undefined ? (
+                      <FontAwesomeIcon
+                        icon={faHourglass}
+                        size="sm"
+                        className="mr-2"
+                      />
+                    ) : (
+                      associatedReporter?.UA_reputation_score || (
+                        <FontAwesomeIcon icon={faBan} />
+                      )
+                    )}
+                  </div>
                 </div>
                 <div className="row">
                   <span className="text-muted text-sm text-bold mt-2 mx-2">
@@ -207,7 +413,13 @@ const SelectedReportModal = ({
                 {/* Media data should also be analyzed by the report using third party modules */}
                 <div className="row">
                   <div className="col-md-6">Media</div>
-                  <div className="col-md-6">--</div>
+                  <div className="col-md-6">
+                    {associatedMedia ? (
+                      renderMediaTypeBadge(associatedMedia.MS_file_type)
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </div>
                 </div>
                 <div className="row mb-2">
                   <div className="col-md-6">File Size</div>
@@ -240,12 +452,40 @@ const SelectedReportModal = ({
                 <div
                   className="card bg-dark mb-0 flex-grow-1"
                   style={{
-                    height: "100%",
                     width: "100%",
+                    aspectRatio: 9 / 16,
                     borderRadius: "1rem",
                     overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
-                ></div>
+                >
+                  {!associatedMedia ? (
+                    <span className="text-muted">No media available</span>
+                  ) : !mediaUrl ? (
+                    <FontAwesomeIcon
+                      icon={faHourglass}
+                      spin
+                      size="2x"
+                      className="text-muted"
+                    />
+                  ) : associatedMedia.MS_file_type.startsWith("image/") ? (
+                    <img
+                      src={mediaUrl}
+                      alt="Report Media"
+                      style={{ maxWidth: "100%", maxHeight: "100%" }}
+                    />
+                  ) : associatedMedia.MS_file_type.startsWith("video/") ? (
+                    <video
+                      src={mediaUrl}
+                      controls
+                      style={{ maxWidth: "100%", maxHeight: "100%" }}
+                    />
+                  ) : (
+                    <span className="text-muted">Unsupported media type</span>
+                  )}
+                </div>
               </div>
             </div>
             <div>

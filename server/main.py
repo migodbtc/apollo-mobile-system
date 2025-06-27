@@ -458,7 +458,30 @@ def delete_fire_statistic(request):
 def get_all_media_files():
     pass
 
-def get_media_file_details(request):
+def get_all_media_file_details():
+    conn = None
+    cursor = None
+
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+
+        cursor.execute("SELECT MS_media_id, MS_user_owner, MS_file_name, MS_file_type FROM media_storage")
+        media_rows = cursor.fetchall()
+        if not media_rows:
+            return jsonify({"error": "No media files found"}), 404
+
+        return jsonify(media_rows), 200
+    except Exception as e:
+        print(str(e))
+        return {"error": str(e)}, 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close() 
+
+def get_one_media_file_details(request):
     conn = None
     cursor = None
 
@@ -488,7 +511,7 @@ def get_media_file_details(request):
         if conn:
             conn.close()
 
-def get_media_file_blob(request):
+def get_one_media_file_blob(request):
     conn = None
     cursor = None
     data = request.json
@@ -522,7 +545,7 @@ def get_media_file_blob(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
-def get_media_file_blob_download(request):
+def get_one_media_file_blob_download(request):
     data = request.json
     MS_media_id = data.get("MS_media_id")
 
@@ -1133,6 +1156,15 @@ def route_get_postverified_reports():
         return jsonify({"error": str(e)}), 500
     
 ## === MEDIA RESOURCE ===
+@app.route('/media/details/get/all', methods=["GET"])
+def route_get_all_media_details():
+    if request.method != 'GET':
+        return jsonify({"error": "Invalid request method. Expected GET method."}), 405
+
+    try:
+        return get_all_media_file_details()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/media/details/get/one', methods=['POST'])
 def route_get_one_media_detail():
@@ -1140,7 +1172,7 @@ def route_get_one_media_detail():
         return jsonify({"error": "Invalid request method."}), 405
     
     try: 
-        return get_media_file_details(request)
+        return get_one_media_file_details(request)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -1150,7 +1182,7 @@ def route_get_one_media_blob():
         return jsonify({"error": "Invalid request method."}), 405
     
     try: 
-        return get_media_file_blob(request)
+        return get_one_media_file_blob(request)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1160,7 +1192,7 @@ def route_get_one_media_blob_download():
         return jsonify({"error": "Invalid request method."}), 405
     
     try: 
-        return get_media_file_blob_download(request)
+        return get_one_media_file_blob_download(request)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -412,7 +412,6 @@ export const AdminSQLProvider = ({
         const blob = response.data;
         return blob;
       } catch (error) {
-        console.error(`Error fetching media blob for id ${id}:`, error);
         return undefined;
       }
     },

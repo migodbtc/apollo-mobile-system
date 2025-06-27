@@ -203,7 +203,8 @@ const SelectedReportModal = ({
   showSelectedModal,
   handleMarkerExit,
 }: SelectedReportModalProps) => {
-  const { userAccounts, mediaStorage, fetchMediaBlobById } = useAdminSQL();
+  const { userAccounts, mediaStorage, fetchMediaBlobById, refreshAll } =
+    useAdminSQL();
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
 
   const associatedReporter = userAccounts.find(
@@ -217,12 +218,17 @@ const SelectedReportModal = ({
   );
 
   useEffect(() => {
+    refreshAll();
+  }, []);
+
+  useEffect(() => {
     let url: string | null = null;
     setMediaUrl(null);
 
     const fetchBlob = async () => {
-      if (associatedMedia) {
+      if (associatedMedia && associatedMedia.MS_media_id !== undefined) {
         const blob = await fetchMediaBlobById(associatedMedia.MS_media_id);
+        console.log(`Blob status: ${blob ? "fetched" : "not found"}`);
         if (blob) {
           url = URL.createObjectURL(blob);
           setMediaUrl(url);
@@ -317,30 +323,22 @@ const SelectedReportModal = ({
                 <div className="row mb-2">
                   <div className="col-md-6">Date & Time</div>
                   <div className="col-md-6 text-sm">
-                    {selectedReport.report?.PR_timestamp ? (
-                      <>
-                        <div>
-                          {new Date(
-                            selectedReport.report.PR_timestamp
-                          ).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </div>
-                        <div>
-                          {new Date(
-                            selectedReport.report.PR_timestamp
-                          ).toLocaleTimeString(undefined, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
-                        </div>
-                      </>
-                    ) : (
-                      ""
-                    )}
+                    {selectedReport.report?.PR_timestamp
+                      ? (() => {
+                          // Example: "Fri, 27 Jun 2025 23:04:35 GMT"
+                          const ts = selectedReport.report.PR_timestamp;
+                          const parts = ts.split(" ");
+                          // parts = ["Fri,", "27", "Jun", "2025", "23:04:35", "GMT"]
+                          const datePart = `${parts[1]} ${parts[2]}, ${parts[3]}`;
+                          const timePart = parts[4];
+                          return (
+                            <>
+                              <div>{datePart}</div>
+                              <div>{timePart}</div>
+                            </>
+                          );
+                        })()
+                      : ""}
                   </div>
                 </div>
                 <div className="row">
@@ -350,7 +348,7 @@ const SelectedReportModal = ({
                 </div>
                 {/* Report data should fetch details to server */}
                 <div className="row">
-                  <div className="col-md-6">Name (ID)</div>
+                  <div className="col-md-6">Name</div>
                   <div className="col-md-6">
                     {associatedReporter === undefined ? (
                       <FontAwesomeIcon
@@ -445,6 +443,7 @@ const SelectedReportModal = ({
                   </div>
                 </div>
               </div>
+              {/* MEDIA PREVIEW */}
               <div
                 className="col-md-4 d-flex flex-column p-0"
                 style={{ height: "" }}
@@ -488,6 +487,7 @@ const SelectedReportModal = ({
                 </div>
               </div>
             </div>
+            {/* POST VALIDATION */}
             <div>
               <div className="row w-100 mt-4 mx-0">
                 <span className="text-muted text-sm text-bold">

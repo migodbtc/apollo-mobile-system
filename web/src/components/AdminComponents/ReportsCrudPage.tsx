@@ -327,6 +327,7 @@ const ReportsCrudPage = () => {
               className="btn btn-md btn-primary p-1 px-2 d-flex flex-row"
               style={{ backgroundColor: "rgb(249, 115, 22)", border: "none" }}
               onClick={() => {
+                console.log("Edit button clicked for row:", row.original);
                 setSelectedRow(row.original);
                 setShowSelectedModal(true);
               }}
@@ -580,12 +581,14 @@ const ReportsCrudPage = () => {
           </div>
         </div>
       </div>
-      <ReportEditModal
-        showSelectedModal={showSelectedModal}
-        selectedRow={selectedRow}
-        setSelectedRow={setSelectedRow}
-        handleExitClick={handleExitClick}
-      />
+      {selectedRow && (
+        <ReportEditModal
+          showSelectedModal={showSelectedModal}
+          selectedRow={selectedRow}
+          setSelectedRow={setSelectedRow}
+          handleExitClick={handleExitClick}
+        />
+      )}
     </>
   );
 };

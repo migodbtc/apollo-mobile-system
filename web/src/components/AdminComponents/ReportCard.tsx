@@ -93,20 +93,7 @@ const ReportCard = ({ pr, vr, handleCardClick }: ReportCardProps) => {
           ) : (
             <span className="badge badge-success w-50 mt-2">Validated</span>
           )}
-          <span className="text-xs text-muted mt-2">
-            {(() => {
-              const date = new Date(pr.PR_timestamp);
-              date.setHours(date.getHours() + 8);
-              return date.toLocaleString("en-PH", {
-                timeZone: "Asia/Manila",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-            })()}
-          </span>
+          <span className="text-xs text-muted mt-2">{pr.PR_timestamp}</span>
         </div>
         <div className="col-md-5 p-3 d-flex flex-column justify-content-center align-items-center text-center">
           {vr == null && (

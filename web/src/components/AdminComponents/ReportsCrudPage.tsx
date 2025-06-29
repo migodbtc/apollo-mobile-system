@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -27,6 +27,8 @@ import {
 import type { CombinedReport } from "../../constants/types/database";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 import ReportEditModal from "./ReportEditModal";
+import { SERVER_LINK } from "../../constants/netvar";
+import axios from "axios";
 
 const ReportsCrudPage = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -88,7 +90,7 @@ const ReportsCrudPage = () => {
       return <span className="text-muted">N/A</span>;
     }
 
-    const percentage = confidence * 100;
+    const percentage = confidence;
 
     if (percentage >= 0 && percentage <= 40) {
       return <span className="text-danger">{percentage}%</span>;
@@ -179,7 +181,12 @@ const ReportsCrudPage = () => {
     );
   };
 
-  const { combinedReports, userAccounts } = useAdminSQL();
+  const {
+    combinedReports,
+    userAccounts,
+    fetchPreverifiedReports,
+    fetchPostverifiedReports,
+  } = useAdminSQL();
 
   const data: CombinedReport[] = combinedReports;
 
@@ -339,6 +346,9 @@ const ReportsCrudPage = () => {
               icon={faTrash}
               className="ml-3 text-muted"
               style={{ cursor: "pointer" }}
+              onClick={() => {
+                deletePreverifiedReport(row.original[0].PR_report_id);
+              }}
             />
           </div>
         );
@@ -367,6 +377,41 @@ const ReportsCrudPage = () => {
       },
     },
   });
+
+  const deletePreverifiedReport = async (reportId: number) => {
+    if (!reportId) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this preverified report? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await axios.post(
+        `${SERVER_LINK}/reports/preverified/one/delete`,
+        { PR_report_id: reportId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        alert("Preverified report deleted successfully!");
+        fetchPostverifiedReports();
+        fetchPreverifiedReports();
+      } else {
+        alert("Failed to delete preverified report.");
+      }
+    } catch (error) {
+      console.error("Failed to delete preverified report:", error);
+      alert("Failed to delete preverified report. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    fetchPreverifiedReports();
+    fetchPostverifiedReports();
+  }, []);
 
   return (
     <>

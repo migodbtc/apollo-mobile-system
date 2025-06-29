@@ -8,24 +8,29 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSession } from "../../constants/context/SessionContext";
 import type { UserAccount } from "../../constants/interfaces/interface";
 import { useEffect, useState } from "react";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 const AdminProfilePage = () => {
   const { sessionData } = useSession();
+  const { userAccounts } = useAdminSQL();
+  const userSessionData = userAccounts.find(
+    (user) => user.UA_user_id === sessionData?.UA_user_id
+  );
 
   const [modifiedData, setModifiedData] = useState<UserAccount>(
-    sessionData
+    userSessionData
       ? {
-          UA_user_id: sessionData.UA_user_id,
-          UA_username: sessionData.UA_username,
-          UA_user_role: sessionData.UA_user_role,
-          UA_created_at: sessionData.UA_created_at,
-          UA_last_name: sessionData.UA_last_name,
-          UA_first_name: sessionData.UA_first_name,
-          UA_middle_name: sessionData.UA_middle_name,
-          UA_suffix: sessionData.UA_suffix,
-          UA_email_address: sessionData.UA_email_address,
-          UA_phone_number: sessionData.UA_phone_number,
-          UA_reputation_score: sessionData.UA_reputation_score,
+          UA_user_id: userSessionData.UA_user_id,
+          UA_username: userSessionData.UA_username,
+          UA_user_role: userSessionData.UA_user_role,
+          UA_created_at: userSessionData.UA_created_at,
+          UA_last_name: userSessionData.UA_last_name,
+          UA_first_name: userSessionData.UA_first_name,
+          UA_middle_name: userSessionData.UA_middle_name,
+          UA_suffix: userSessionData.UA_suffix,
+          UA_email_address: userSessionData.UA_email_address,
+          UA_phone_number: userSessionData.UA_phone_number,
+          UA_reputation_score: userSessionData.UA_reputation_score,
         }
       : {
           UA_user_id: -1,
@@ -44,6 +49,7 @@ const AdminProfilePage = () => {
   const [frontIdFile, setFrontIdFile] = useState<File | null>(null);
   const [backIdFile, setBackIdFile] = useState<File | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasSuffix, setHasSuffix] = useState(!!userSessionData?.UA_suffix);
 
   const renderRoleBadge = (role: string | undefined) => {
     let badgeStyle: { backgroundColor: string; color: string } = {
@@ -159,22 +165,23 @@ const AdminProfilePage = () => {
   };
 
   const handleReset = () => {
-    if (sessionData) {
+    if (userSessionData) {
       setModifiedData({
-        UA_user_id: sessionData.UA_user_id,
-        UA_username: sessionData.UA_username,
-        UA_user_role: sessionData.UA_user_role,
-        UA_created_at: sessionData.UA_created_at,
-        UA_last_name: sessionData.UA_last_name,
-        UA_first_name: sessionData.UA_first_name,
-        UA_middle_name: sessionData.UA_middle_name,
-        UA_suffix: sessionData.UA_suffix,
-        UA_email_address: sessionData.UA_email_address,
-        UA_phone_number: sessionData.UA_phone_number,
-        UA_reputation_score: sessionData.UA_reputation_score,
-        UA_id_picture_front: sessionData.UA_id_picture_front,
-        UA_id_picture_back: sessionData.UA_id_picture_back,
+        UA_user_id: userSessionData.UA_user_id,
+        UA_username: userSessionData.UA_username,
+        UA_user_role: userSessionData.UA_user_role,
+        UA_created_at: userSessionData.UA_created_at,
+        UA_last_name: userSessionData.UA_last_name,
+        UA_first_name: userSessionData.UA_first_name,
+        UA_middle_name: userSessionData.UA_middle_name,
+        UA_suffix: userSessionData.UA_suffix,
+        UA_email_address: userSessionData.UA_email_address,
+        UA_phone_number: userSessionData.UA_phone_number,
+        UA_reputation_score: userSessionData.UA_reputation_score,
+        UA_id_picture_front: userSessionData.UA_id_picture_front,
+        UA_id_picture_back: userSessionData.UA_id_picture_back,
       });
+      setHasSuffix(!!userSessionData.UA_suffix);
     }
     setFrontIdFile(null);
     setBackIdFile(null);
@@ -207,8 +214,34 @@ const AdminProfilePage = () => {
   };
 
   useEffect(() => {
-    handleComparison();
-  }, [modifiedData, sessionData, frontIdFile, backIdFile]);
+    if (!userSessionData) {
+      setHasChanges(false);
+      return;
+    }
+    const safeCompare = (a: any, b: any) => (a || "") === (b || "");
+    const changed =
+      !safeCompare(userSessionData.UA_first_name, modifiedData.UA_first_name) ||
+      !safeCompare(
+        userSessionData.UA_middle_name,
+        modifiedData.UA_middle_name
+      ) ||
+      !safeCompare(userSessionData.UA_last_name, modifiedData.UA_last_name) ||
+      !safeCompare(userSessionData.UA_suffix, modifiedData.UA_suffix) ||
+      !safeCompare(
+        userSessionData.UA_email_address,
+        modifiedData.UA_email_address
+      ) ||
+      !safeCompare(
+        userSessionData.UA_phone_number,
+        modifiedData.UA_phone_number
+      ) ||
+      !safeCompare(userSessionData.UA_user_role, modifiedData.UA_user_role) ||
+      Number(userSessionData.UA_reputation_score) !==
+        Number(modifiedData.UA_reputation_score) ||
+      frontIdFile !== null ||
+      backIdFile !== null;
+    setHasChanges(changed);
+  }, [modifiedData, userSessionData, frontIdFile, backIdFile]);
 
   return (
     <div
@@ -249,7 +282,7 @@ const AdminProfilePage = () => {
                 <FontAwesomeIcon icon={faStar} />
               </div>
               <div className="col-md-10 text-left">
-                {sessionData?.UA_reputation_score}
+                {modifiedData?.UA_reputation_score}
               </div>
             </div>
             <div className="row w-100 text-right">
@@ -260,7 +293,7 @@ const AdminProfilePage = () => {
                 <FontAwesomeIcon icon={faEnvelope} />
               </div>
               <div className="col-md-10 text-left">
-                {sessionData?.UA_email_address}
+                {modifiedData?.UA_email_address}
               </div>
             </div>
           </div>
@@ -287,6 +320,7 @@ const AdminProfilePage = () => {
                     !hasChanges ? "disabled" : ""
                   }`}
                   onClick={handleReset}
+                  disabled={!hasChanges}
                 >
                   <FontAwesomeIcon icon={faRotateLeft} className="mr-2" />
                   Reset
@@ -296,6 +330,7 @@ const AdminProfilePage = () => {
                     !hasChanges ? "disabled" : ""
                   }`}
                   onClick={handleNewDataSubmission}
+                  disabled={!hasChanges}
                 >
                   <FontAwesomeIcon icon={faFloppyDisk} className="mr-2" />
                   Save
@@ -352,19 +387,48 @@ const AdminProfilePage = () => {
             </div>
             <div className="row w-100 d-flex justify-content-center align-items-center text-left py-0 mt-1">
               <div className="col-md-6">
-                <div style={{ height: "100%" }}>Suffix</div>
+                <div style={{ height: "100%" }}>Has Suffix?</div>
               </div>
-              <div className="col-md-6 form-group d-flex justify-content-center align-items-center mb-0">
+              <div className="col-md-6 form-group d-flex justify-content-start align-items-center mb-0">
                 <input
-                  type="text"
-                  className="form-control w-100 custom-input text-sm text-white"
-                  id="inputSuffix"
-                  placeholder="Suffix..."
-                  value={modifiedData.UA_suffix || ""}
-                  onChange={handleChange}
+                  type="checkbox"
+                  id="hasSuffix"
+                  checked={hasSuffix}
+                  onChange={(e) => {
+                    setHasSuffix(e.target.checked);
+                    setModifiedData((prev) => ({
+                      ...prev,
+                      UA_suffix: e.target.checked
+                        ? prev.UA_suffix && prev.UA_suffix !== ""
+                          ? prev.UA_suffix
+                          : " "
+                        : "",
+                    }));
+                  }}
+                  style={{ width: "1.2em", height: "1.2em" }}
                 />
+                <label htmlFor="hasSuffix" className="ml-2 mb-0 text-sm">
+                  Yes
+                </label>
               </div>
             </div>
+            {hasSuffix && (
+              <div className="row w-100 d-flex justify-content-center align-items-center text-left py-0 mt-1">
+                <div className="col-md-6">
+                  <div style={{ height: "100%" }}>Suffix</div>
+                </div>
+                <div className="col-md-6 form-group d-flex justify-content-center align-items-center mb-0">
+                  <input
+                    type="text"
+                    className="form-control w-100 custom-input text-sm text-white"
+                    id="inputSuffix"
+                    placeholder="Suffix (e.g. Jr, Sr, III)..."
+                    value={modifiedData.UA_suffix || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            )}
             <div className="my-2" />
             <div className="row w-100">
               <span className="text-muted text-sm text-bold">
@@ -396,8 +460,8 @@ const AdminProfilePage = () => {
                   className="form-control w-100 custom-input text-sm text-white"
                   id="inputPhoneNumber"
                   placeholder="Phone number..."
-                  value={modifiedData.UA_phone_number || ""}
                   onChange={handleChange}
+                  value={modifiedData.UA_phone_number || ""}
                 />
               </div>
             </div>
@@ -412,12 +476,7 @@ const AdminProfilePage = () => {
                 <div style={{ height: "100%" }}>Role</div>
               </div>
               <div className="col-md-6 form-group d-flex justify-content-start align-items-center mb-0">
-                <span
-                  className="text-left text-sm my-2"
-                  style={{ width: "40%" }}
-                >
-                  {renderRoleBadge(sessionData?.UA_user_role)}
-                </span>
+                {renderRoleBadge(sessionData?.UA_user_role)}
               </div>
             </div>
             <div className="row w-100 d-flex justify-content-center align-items-center text-left py-0 mt-1">
@@ -433,7 +492,7 @@ const AdminProfilePage = () => {
               </div>
               <div className="col-md-6 form-group d-flex justify-content-center align-items-start mb-0">
                 <span className="text-left w-100 text-sm mb-2 mt-1">
-                  {sessionData?.UA_reputation_score}
+                  {userSessionData?.UA_reputation_score}
                 </span>
               </div>
             </div>
@@ -467,7 +526,7 @@ const AdminProfilePage = () => {
                 />
                 <span className="text-green-500 w-100 text-xs ml-2 pl-2">
                   Uploaded:{" "}
-                  {sessionData?.UA_id_picture_front ? "<file name>" : "none!"}
+                  {modifiedData?.UA_id_picture_front ? "<file name>" : "none!"}
                 </span>
               </div>
             </div>
@@ -489,7 +548,7 @@ const AdminProfilePage = () => {
                 />
                 <span className="text-green-500 w-100 text-xs ml-2 pl-2">
                   Uploaded:{" "}
-                  {sessionData?.UA_id_picture_back ? "<file name>" : "none!"}
+                  {modifiedData?.UA_id_picture_back ? "<file name>" : "none!"}
                 </span>
               </div>
             </div>

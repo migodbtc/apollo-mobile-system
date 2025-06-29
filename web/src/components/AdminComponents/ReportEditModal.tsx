@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type {
   PostverifiedReport,
   CombinedReport,
+  PreverifiedReport,
 } from "../../constants/types/database";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -22,6 +23,8 @@ import type {
   SeverityLevel,
   SpreadPotential,
 } from "../../constants/types/types";
+import axios from "axios";
+import { SERVER_LINK } from "../../constants/netvar";
 
 const REPORT_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
@@ -195,7 +198,13 @@ const ReportEditModal = ({
   );
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const { userAccounts, mediaStorage, fetchMediaBlobById } = useAdminSQL();
+  const {
+    userAccounts,
+    mediaStorage,
+    fetchMediaBlobById,
+    fetchPreverifiedReports,
+    fetchPostverifiedReports,
+  } = useAdminSQL();
 
   const [manualPostverified, setManualPostverified] =
     useState<PostverifiedReport>(
@@ -213,11 +222,172 @@ const ReportEditModal = ({
   );
 
   const handleReset = () => {
+    setHasChanges(false);
+    setMediaUrl(null);
+    setManualPostverified(blankPostverifiedReport(selectedRow[0].PR_report_id));
     setModifiedData(selectedRow);
   };
 
-  const handleNewDataSubmission = () => {
-    // Submit logic here
+  const handleInvalidation = async () => {
+    if (!modifiedData || !modifiedData[1]) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to invalidate this existing validation? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    const updatedPreverified: PreverifiedReport = {
+      PR_report_id: modifiedData[0].PR_report_id,
+      PR_user_id: modifiedData[0].PR_user_id,
+      PR_image: modifiedData[0].PR_image,
+      PR_video: modifiedData[0].PR_video,
+      PR_latitude: modifiedData[0].PR_latitude,
+      PR_longitude: modifiedData[0].PR_longitude,
+      PR_address: modifiedData[0].PR_address,
+      PR_timestamp: new Date(modifiedData[0].PR_timestamp)
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " "),
+      PR_verified: false,
+      PR_report_status: "pending" as ReportStatus,
+    };
+
+    const newPostverified: PostverifiedReport = {
+      VR_verification_id: modifiedData[1].VR_verification_id,
+      VR_report_id: modifiedData[0].PR_report_id,
+      VR_confidence_score: modifiedData[1].VR_confidence_score,
+      VR_detected: false,
+      VR_verification_timestamp: new Date().toISOString(),
+      VR_severity_level: undefined,
+      VR_spread_potential: undefined,
+      VR_fire_type: undefined,
+    };
+
+    const payload: [PreverifiedReport, PostverifiedReport] = [
+      updatedPreverified,
+      newPostverified,
+    ];
+
+    try {
+      const response = await axios.post(
+        `${SERVER_LINK}/reports/postverified/one/delete`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error("Failed to update report");
+      }
+
+      alert("Validation reset successfully!");
+      fetchPreverifiedReports();
+      fetchPostverifiedReports();
+      handleExitClick();
+    } catch (error) {
+      console.error("Failed to invalidate post-verification:", error);
+      alert("Failed to invalidate post-verification. Please try again.");
+    }
+  };
+
+  const handleNewDataSubmission = async () => {
+    if (!modifiedData) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to submit these changes? This action will update the report and cannot be undone."
+    );
+    if (!confirmed) return;
+
+    const isFalseAlarm = modifiedData[0].PR_report_status === "false_alarm";
+
+    if (
+      (modifiedData[0].PR_report_status === "verified" ||
+        modifiedData[0].PR_report_status === "resolved") &&
+      (manualPostverified.VR_severity_level === undefined ||
+        manualPostverified.VR_spread_potential === undefined ||
+        manualPostverified.VR_fire_type === undefined)
+    ) {
+      alert(
+        "Please select Severity Level, Spread Potential, and Fire Type before saving."
+      );
+      return;
+    }
+
+    const updatedPreverified: PreverifiedReport = {
+      PR_report_id: modifiedData[0].PR_report_id,
+      PR_user_id: modifiedData[0].PR_user_id,
+      PR_image: modifiedData[0].PR_image,
+      PR_video: modifiedData[0].PR_video,
+      PR_latitude: modifiedData[0].PR_latitude,
+      PR_longitude: modifiedData[0].PR_longitude,
+      PR_address: modifiedData[0].PR_address,
+      PR_timestamp: selectedRow[0].PR_timestamp,
+      PR_verified:
+        modifiedData[0].PR_report_status === "verified" ||
+        modifiedData[0].PR_report_status === "resolved" ||
+        modifiedData[0].PR_report_status === "false_alarm"
+          ? true
+          : false,
+      PR_report_status: modifiedData[0].PR_report_status,
+    };
+
+    const newPostverified: PostverifiedReport = {
+      ...manualPostverified,
+      VR_report_id: modifiedData[0].PR_report_id,
+      VR_verification_timestamp: new Date().toISOString(),
+      VR_detected: isFalseAlarm
+        ? false
+        : modifiedData[0].PR_report_status === "verified" ||
+          modifiedData[0].PR_report_status === "resolved"
+        ? true
+        : manualPostverified.VR_detected,
+      VR_severity_level: isFalseAlarm
+        ? undefined
+        : manualPostverified.VR_severity_level,
+      VR_spread_potential: isFalseAlarm
+        ? undefined
+        : manualPostverified.VR_spread_potential,
+      VR_fire_type: isFalseAlarm ? undefined : manualPostverified.VR_fire_type,
+    };
+
+    const payload: [PreverifiedReport, PostverifiedReport] = [
+      updatedPreverified,
+      newPostverified,
+    ];
+
+    console.log("Submission payload:", payload);
+
+    try {
+      const response = await axios.post(
+        `${SERVER_LINK}/reports/preverified/one/verify`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error("Failed to update report");
+      }
+
+      alert("Report updated successfully!");
+      fetchPreverifiedReports();
+      fetchPostverifiedReports();
+      handleExitClick();
+    } catch (error) {
+      console.error("Failed to update report:", error);
+      alert("Failed to update report. Please try again.");
+    }
+  };
+
+  const handleInvalidatePostverification = async () => {
+    if (!modifiedData || !modifiedData[1]) return;
+    handleInvalidation();
   };
 
   useEffect(() => {
@@ -445,33 +615,43 @@ const ReportEditModal = ({
                   <div className="row mb-2">
                     <div className="col-md-6">Status</div>
                     <div className="col-md-6">
-                      <select
-                        className="form-control w-75 text-xs m-0 text-white"
-                        id="reportStatus"
-                        style={{
-                          height: "100%",
-                          backgroundColor: "#1E293B",
-                          border: "none",
-                          borderRadius: "1rem",
-                          padding: "0.25rem 0.5rem",
-                        }}
-                        value={modifiedData[0].PR_report_status}
-                        onChange={(e) =>
-                          setModifiedData([
-                            {
-                              ...modifiedData[0],
-                              PR_report_status: e.target.value as ReportStatus,
-                            },
-                            modifiedData[1],
-                          ])
-                        }
-                      >
-                        {REPORT_STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      {modifiedData[0].PR_report_status === "pending" ? (
+                        <select
+                          className="form-control w-75 text-xs m-0 text-white"
+                          id="reportStatus"
+                          style={{
+                            height: "100%",
+                            backgroundColor: "#1E293B",
+                            border: "none",
+                            borderRadius: "1rem",
+                            padding: "0.25rem 0.5rem",
+                          }}
+                          value={modifiedData[0].PR_report_status}
+                          onChange={(e) =>
+                            setModifiedData([
+                              {
+                                ...modifiedData[0],
+                                PR_report_status: e.target
+                                  .value as ReportStatus,
+                              },
+                              modifiedData[1],
+                            ])
+                          }
+                        >
+                          {REPORT_STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span>
+                          {REPORT_STATUS_OPTIONS.find(
+                            (opt) =>
+                              opt.value === modifiedData[0].PR_report_status
+                          )?.label || modifiedData[0].PR_report_status}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="row">
@@ -548,7 +728,6 @@ const ReportEditModal = ({
                   style={{
                     background: "#181f3a",
                     borderRadius: "1rem",
-                    border: "1px solid #232b4d",
                     color: "#fff",
                     fontSize: "0.95rem",
                   }}
@@ -560,8 +739,7 @@ const ReportEditModal = ({
                         <span
                           className="badge px-2 py-1"
                           style={{
-                            background:
-                              "linear-gradient(90deg, #334155 70%, #f97316 100%)",
+                            backgroundColor: "#334155",
                             color: "#fff",
                             fontWeight: 600,
                             borderRadius: "0.5rem",
@@ -653,7 +831,15 @@ const ReportEditModal = ({
                       ) : null}
                     </div>
                   </div>
-                  <div className="row mb-2 align-items-center">
+                  <div
+                    className="row mb-2 align-items-center"
+                    style={{
+                      display:
+                        modifiedData[0].PR_report_status === "false_alarm"
+                          ? "none"
+                          : undefined,
+                    }}
+                  >
                     <div className="col-md-6 text-sm">Severity Level</div>
                     <div className="col-md-6 text-sm">
                       {modifiedData[1] ? (
@@ -686,7 +872,15 @@ const ReportEditModal = ({
                       )}
                     </div>
                   </div>
-                  <div className="row mb-2 align-items-center">
+                  <div
+                    className="row mb-2 align-items-center"
+                    style={{
+                      display:
+                        modifiedData[0].PR_report_status === "false_alarm"
+                          ? "none"
+                          : undefined,
+                    }}
+                  >
                     <div className="col-md-6 text-sm">Spread Potential</div>
                     <div className="col-md-6 text-sm">
                       {modifiedData[1] ? (
@@ -719,16 +913,19 @@ const ReportEditModal = ({
                       )}
                     </div>
                   </div>
-                  <div className="row mb-2 align-items-center">
+                  <div
+                    className="row mb-2 align-items-center"
+                    style={{
+                      display:
+                        modifiedData[0].PR_report_status === "false_alarm"
+                          ? "none"
+                          : undefined,
+                    }}
+                  >
                     <div className="col-md-6 text-sm">Fire Type</div>
                     <div className="col-md-6 text-sm">
                       {modifiedData[1] ? (
-                        <span
-                          className="badge badge-secondary px-2 py-1"
-                          style={{ background: "#334155", color: "#fff" }}
-                        >
-                          {generateVisualBadge(modifiedData[1].VR_fire_type)}
-                        </span>
+                        generateVisualBadge(modifiedData[1].VR_fire_type)
                       ) : (
                         <div>
                           {FIRE_TYPE_OPTIONS.map((opt) => (
@@ -768,6 +965,7 @@ const ReportEditModal = ({
                 !hasChanges ? "disabled" : ""
               }`}
               onClick={handleNewDataSubmission}
+              disabled={!hasChanges}
             >
               <FontAwesomeIcon icon={faFloppyDisk} className="mr-2" />
               Save
@@ -777,9 +975,20 @@ const ReportEditModal = ({
                 !hasChanges ? "disabled" : ""
               }`}
               onClick={handleReset}
+              disabled={!hasChanges}
             >
               <FontAwesomeIcon icon={faRotateLeft} className="mr-2" />
               Reset
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-danger ml-2"
+              style={{ backgroundColor: "#dc3545", border: "none" }}
+              onClick={handleInvalidatePostverification}
+              disabled={!modifiedData || !modifiedData[1]}
+            >
+              <FontAwesomeIcon icon={faBan} className="mr-2" />
+              Invalidate
             </button>
             <button
               type="button"

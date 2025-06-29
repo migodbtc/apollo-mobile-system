@@ -13,7 +13,7 @@ interface DashboardPageProps {
 }
 
 const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
-  const [selectionOne, setSelectionOne] = useState<number>(4);
+  const [selectionOne, setSelectionOne] = useState<number>(1);
 
   return (
     <div

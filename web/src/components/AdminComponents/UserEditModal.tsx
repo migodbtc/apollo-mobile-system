@@ -9,6 +9,9 @@ import React, { useEffect, useState } from "react";
 import type { UserRole } from "../../constants/types/types";
 import { useSession } from "../../constants/context/SessionContext";
 import type { UserAccount } from "../../constants/types/database";
+import axios from "axios";
+import { SERVER_LINK } from "../../constants/netvar";
+import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 interface UserEditModalProps {
   showSelectedModal: boolean;
@@ -23,6 +26,7 @@ const UserEditModal = ({
   handleExitClick,
 }: UserEditModalProps) => {
   const { sessionData } = useSession();
+  const { refreshAll } = useAdminSQL();
 
   const [modifiedData, setModifiedData] = useState<UserAccount | null>(
     selectedRow
@@ -87,12 +91,114 @@ const UserEditModal = ({
     setHasChanges(changed);
   };
 
+  const renderRoleBadge = (role: string | undefined) => {
+    let badgeStyle: { backgroundColor: string; color: string } = {
+      backgroundColor: "",
+      color: "",
+    };
+    let badgeText = "";
+
+    switch (role) {
+      case "guest":
+        badgeStyle = {
+          backgroundColor: "#111827", // GRAY
+          color: "#FFFFFF",
+        };
+        badgeText = "Guest";
+        break;
+      case "civilian":
+        badgeStyle = {
+          backgroundColor: "#3B82F6", // BLUE
+          color: "#FFFFFF",
+        };
+        badgeText = "Civilian";
+        break;
+      case "responder":
+        badgeStyle = {
+          backgroundColor: "#F59E0B", // AMBER
+          color: "#FFFFFF",
+        };
+        badgeText = "Responder";
+        break;
+      case "admin":
+        badgeStyle = {
+          backgroundColor: "#EF4444", // RED
+          color: "#FFFFFF",
+        };
+        badgeText = "Administrator";
+        break;
+      case "superadmin":
+        badgeStyle = {
+          backgroundColor: "#01B073", // TEAL
+          color: "#FFFFFF",
+        };
+        badgeText = "Superadministrator";
+        break;
+      default:
+        badgeStyle = {
+          backgroundColor: "#6B7280", // CYAN
+          color: "#FFFFFF",
+        };
+        badgeText = "Unknown Role";
+        break;
+    }
+
+    return (
+      <span
+        style={{
+          backgroundColor: badgeStyle.backgroundColor,
+          borderRadius: "1rem",
+          color: badgeStyle.color,
+        }}
+        className="badge badge-xs text-bold px-2 py-1"
+      >
+        {badgeText}
+      </span>
+    );
+  };
+
   const handleReset = () => {
     setModifiedData(selectedRow);
   };
 
-  const handleNewDataSubmission = () => {
-    // Submit logic here
+  const handleNewDataSubmission = async () => {
+    if (!modifiedData) return;
+
+    const payload = {
+      UA_user_id: modifiedData.UA_user_id,
+      UA_username: modifiedData.UA_username || "",
+      UA_first_name: modifiedData.UA_first_name || "",
+      UA_middle_name: modifiedData.UA_middle_name || "",
+      UA_last_name: modifiedData.UA_last_name || "",
+      UA_suffix: modifiedData.UA_suffix || "",
+      UA_email_address: modifiedData.UA_email_address || null,
+      UA_phone_number: modifiedData.UA_phone_number || null,
+      UA_reputation_score: modifiedData.UA_reputation_score || 0,
+      UA_user_role: modifiedData.UA_user_role || "civilian",
+      UA_created_at:
+        new Date(modifiedData.UA_created_at)
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ") || "",
+    };
+
+    try {
+      const response = await axios.post(`${SERVER_LINK}/user/update`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 200) {
+        alert("User updated successfully!");
+        refreshAll();
+        handleExitClick();
+      } else {
+        alert("Failed to update user.");
+      }
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      alert("Failed to update user. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -200,6 +306,54 @@ const UserEditModal = ({
                   />
                 </div>
               </div>
+              {/* Suffix Option */}
+              <div className="row w-100 px-2 d-flex justify-content-center align-items-center text-left py-0 mt-1">
+                <div className="col-md-6">
+                  <div style={{ height: "100%" }}>Has Suffix?</div>
+                </div>
+                <div className="col-md-6 form-group d-flex justify-content-start align-items-center mb-0">
+                  <input
+                    type="checkbox"
+                    id="hasSuffix"
+                    checked={!!modifiedData.UA_suffix}
+                    onChange={(e) => {
+                      setModifiedData((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              UA_suffix: e.target.checked
+                                ? prev.UA_suffix && prev.UA_suffix !== ""
+                                  ? prev.UA_suffix
+                                  : " "
+                                : "",
+                            }
+                          : prev
+                      );
+                    }}
+                    style={{ width: "1.2em", height: "1.2em" }}
+                  />
+                  <label htmlFor="hasSuffix" className="ml-2 mb-0 text-sm">
+                    Yes
+                  </label>
+                </div>
+              </div>
+              {modifiedData.UA_suffix && (
+                <div className="row w-100 px-2 d-flex justify-content-center align-items-center text-left py-0 mt-1">
+                  <div className="col-md-6">
+                    <div style={{ height: "100%" }}>Suffix</div>
+                  </div>
+                  <div className="col-md-6 form-group d-flex justify-content-center align-items-center mb-0">
+                    <input
+                      type="text"
+                      className="form-control w-100 custom-input text-sm text-white"
+                      id="inputSuffix"
+                      placeholder="Suffix (e.g. Jr, Sr, III)..."
+                      value={modifiedData.UA_suffix || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="my-2" />
               <div className="row w-100 px-2">
                 <span className="text-muted text-sm text-bold">
@@ -246,24 +400,30 @@ const UserEditModal = ({
                 <div className="col-md-6">
                   <div style={{ height: "100%" }}>Role</div>
                 </div>
-                <div className="col-md-6 form-group d-flex justify-content-center align-items-center mb-0">
-                  <select
-                    className="form-control w-100 text-sm text-white"
-                    id="userRole"
-                    style={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "1rem",
-                    }}
-                    value={modifiedData.UA_user_role}
-                    onChange={handleInputChange}
-                  >
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>
-                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                      </option>
-                    ))}
-                  </select>
+                <div className="col-md-6 form-group d-flex justify-content-start align-items-center text-left mb-0">
+                  {roleOptions.includes(
+                    modifiedData.UA_user_role as UserRole
+                  ) ? (
+                    <select
+                      className="form-control w-100 text-sm text-white"
+                      id="userRole"
+                      style={{
+                        backgroundColor: "#1E293B",
+                        border: "none",
+                        borderRadius: "1rem",
+                      }}
+                      value={modifiedData.UA_user_role}
+                      onChange={handleInputChange}
+                    >
+                      {roleOptions.map((role) => (
+                        <option key={role} value={role}>
+                          {role.charAt(0).toUpperCase() + role.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    renderRoleBadge(modifiedData.UA_user_role)
+                  )}
                 </div>
               </div>
               <div className="row w-100 px-2 d-flex justify-content-center align-items-center text-left py-0">
@@ -271,14 +431,9 @@ const UserEditModal = ({
                   <div style={{ height: "100%" }}>Reputation Score</div>
                 </div>
                 <div className="col-md-6 form-group d-flex justify-content-center align-items-center mb-0">
-                  <input
-                    type="number"
-                    className="form-control w-100 custom-input text-sm text-white"
-                    id="inputReputationScore"
-                    placeholder="Reputation score..."
-                    value={modifiedData.UA_reputation_score}
-                    onChange={handleInputChange}
-                  />
+                  <span className="text-left w-100">
+                    {selectedRow?.UA_reputation_score}
+                  </span>
                 </div>
               </div>
               <div className="my-4" />
@@ -294,6 +449,7 @@ const UserEditModal = ({
                   !hasChanges ? "disabled" : ""
                 }`}
                 onClick={handleNewDataSubmission}
+                disabled={!hasChanges}
               >
                 <FontAwesomeIcon icon={faFloppyDisk} className="mr-2" />
                 Save
@@ -303,6 +459,7 @@ const UserEditModal = ({
                   !hasChanges ? "disabled" : ""
                 }`}
                 onClick={handleReset}
+                disabled={!hasChanges}
               >
                 <FontAwesomeIcon icon={faRotateLeft} className="mr-2" />
                 Reset
@@ -323,5 +480,4 @@ const UserEditModal = ({
     </div>
   );
 };
-
 export default UserEditModal;

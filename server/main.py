@@ -104,7 +104,6 @@ def add_user(request):
         if conn: conn.close()
 
 def update_user(request):
-    """DESC: Updates all fields of an existing user based on request data."""
     data = request.json
     UA_user_id = data.get("UA_user_id")
 
@@ -120,22 +119,35 @@ def update_user(request):
         if not user:
             return jsonify({"error": f"User with ID {UA_user_id} not found"}), 404
 
-        fields = [
+        update_fields = []
+        update_values = []
+
+        for field in [
             "UA_username", "UA_password", "UA_user_role", "UA_created_at",
             "UA_last_name", "UA_first_name", "UA_middle_name", "UA_suffix",
             "UA_email_address", "UA_phone_number", "UA_reputation_score",
             "UA_id_picture_front", "UA_id_picture_back"
-        ]
-        values = [data.get(field) for field in fields]
+        ]:
+            if field in data and data[field] is not None:
+                update_fields.append(f"{field} = %s")
+                update_values.append(data[field])
+
+        if not update_fields:
+            return jsonify({"error": "No fields to update"}), 400
+
         update_query = f"""
-            UPDATE `user_accounts` SET
-            {', '.join(f'{field} = %s' for field in fields)}
+            UPDATE `user_accounts`
+            SET {', '.join(update_fields)}
             WHERE UA_user_id = %s
         """
-        cursor.execute(update_query, (*values, UA_user_id))
+        update_values.append(UA_user_id)
+        cursor.execute(update_query, tuple(update_values))
+        conn.commit()
+        calculate_user_reputation_score(request) 
         conn.commit()
         return jsonify({"message": f"User {UA_user_id} updated successfully"}), 200
     except Exception as e:
+        print("[DEBUG] Exception in update_user:", str(e))
         return jsonify({"error": str(e)}), 500
     finally:
         if cursor: cursor.close()
@@ -252,6 +264,71 @@ def delete_user(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
+def calculate_user_reputation_score(request):
+    """DESC: Calculates the reputation score of a user based on filled profile fields and role."""
+    data = request.json if hasattr(request, "json") and request.json else request
+    UA_user_id = data.get("UA_user_id")
+
+    print("[DEBUG] calculate_user_reputation_score called")
+    print("[DEBUG] Incoming data:", data)
+
+    if not UA_user_id:
+        print("[DEBUG] Missing UA_user_id")
+        return jsonify({"error": "Missing UA_user_id"}), 400
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+        cursor.execute("SELECT * FROM user_accounts WHERE UA_user_id = %s", (UA_user_id,))
+        user = cursor.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        score = 0
+
+        role = user.get("UA_user_role")
+        if role == "responder":
+            score += 500
+        elif role == "admin":
+            score += 1000
+        elif role == "superadmin":
+            score += 5000
+        else:  
+            score += 0
+
+        # UA_last_name
+        if user.get("UA_last_name"): score += 50
+
+        # UA_first_name
+        if user.get("UA_first_name"): score += 50
+
+        # UA_email_address
+        if user.get("UA_email_address"): score += 100
+
+        # UA_phone_number
+        if user.get("UA_phone_number"): score += 100
+
+        # UA_id_picture_front
+        if user.get("UA_id_picture_front"): score += 250
+
+        # UA_id_picture_back
+        if user.get("UA_id_picture_back"): score += 250
+
+        cursor.execute(
+            "UPDATE user_accounts SET UA_reputation_score = %s WHERE UA_user_id = %s",
+            (score, UA_user_id)
+        )
+        conn.commit()
+
+        return jsonify({"reputation_score": score}), 200
+    except Exception as e:
+        print("[DEBUG] Exception in calculate_user_reputation_score:", str(e))
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
 ## === POSTVERIFIED REPORTS ===
 def get_postverified_reports():
     """DESC: Fetches all postverified reports from the database."""
@@ -272,7 +349,64 @@ def get_one_postverified_report(request):
     pass
 
 def add_postverified_report(request):
-    pass
+    """DESC: Adds a new postverified report to the database."""
+    data = request.json if hasattr(request, "json") and request.json else request
+
+    print("=== [DEBUG] add_postverified_report called ===")
+    print("[DEBUG] Incoming data:", data)
+
+    required_fields = [
+        "VR_report_id",
+        "VR_confidence_score",
+        "VR_detected",
+        "VR_verification_timestamp"
+    ]
+
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        print(f"[DEBUG] Missing fields: {missing_fields}")
+        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+
+    VR_severity_level = data.get("VR_severity_level")
+    VR_spread_potential = data.get("VR_spread_potential")
+    VR_fire_type = data.get("VR_fire_type")
+
+    print(request)
+
+    print("[DEBUG] VR_severity_level:", VR_severity_level)
+    print("[DEBUG] VR_spread_potential:", VR_spread_potential)
+    print("[DEBUG] VR_fire_type:", VR_fire_type)
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+        print("[DEBUG] Executing INSERT INTO postverified_reports ...")
+        cursor.execute("""
+            INSERT INTO postverified_reports
+            (VR_report_id, VR_confidence_score, VR_detected, VR_verification_timestamp, VR_severity_level, VR_spread_potential, VR_fire_type)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            data["VR_report_id"],
+            data["VR_confidence_score"],
+            data["VR_detected"],
+            data["VR_verification_timestamp"],
+            VR_severity_level,
+            VR_spread_potential,
+            VR_fire_type
+        ))
+        conn.commit()
+        print("[DEBUG] Insert successful, lastrowid:", cursor.lastrowid)
+        return jsonify({
+            "message": "Postverified report added",
+            "verification_id": cursor.lastrowid
+        }), 201
+    except Exception as e:
+        print("[DEBUG] Exception occurred:", str(e))
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 def update_postverified_report(request):
     pass
@@ -281,7 +415,41 @@ def patch_postverified_report(request):
     pass
 
 def delete_postverified_report(request):
-    pass
+    # DESC: Deletes a postverified report by VR_verification_id.
+    data = request.json if hasattr(request, "json") and request.json else request
+
+    if not isinstance(data, list) or len(data) < 2 or not isinstance(data[1], dict):
+        return jsonify({"error": "Invalid payload format. Expected [PreverifiedReport, PostverifiedReport]."}), 400
+
+    postverified = data[1]
+    VR_verification_id = postverified.get("VR_verification_id")
+
+    if not VR_verification_id:
+        return jsonify({"error": "Missing VR_verification_id in PostverifiedReport."}), 400
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+
+        cursor.execute("SELECT * FROM postverified_reports WHERE VR_verification_id = %s", (VR_verification_id,))
+        report = cursor.fetchone()
+        if not report:
+            return jsonify({"error": f"Postverified report with ID {VR_verification_id} not found"}), 404
+
+        cursor.execute("DELETE FROM postverified_reports WHERE VR_verification_id = %s", (VR_verification_id,))
+        conn.commit()
+
+        update_preverified_report(data[0])
+
+        return jsonify({"message": f"Postverified report {VR_verification_id} deleted successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 ## === PREVERIFIED REPORTS ===
 def get_preverified_reports():
@@ -378,13 +546,82 @@ def add_preverified_report(request):
         if conn: conn.close()
 
 def update_preverified_report(request):
-    pass
+    """DESC: Updates fields of a preverified report dynamically based on provided keys."""
+    data = request.json if hasattr(request, "json") and request.json else request
+
+    print(data)
+
+    PR_report_id = data.get("PR_report_id")
+    if not PR_report_id:
+        return jsonify({"error": "Missing PR_report_id"}), 400
+
+    allowed_fields = [
+        "PR_user_id", "PR_image", "PR_video", "PR_latitude", "PR_longitude",
+        "PR_address", "PR_timestamp", "PR_verified", "PR_report_status"
+    ]
+
+    update_fields = []
+    update_values = []
+
+    for field in allowed_fields:
+        if field in data:
+            update_fields.append(f"{field} = %s")
+            update_values.append(data[field])
+
+    if not update_fields:
+        return jsonify({"error": "No valid fields to update"}), 400
+
+    update_query = f"""
+        UPDATE preverified_reports
+        SET {', '.join(update_fields)}
+        WHERE PR_report_id = %s
+    """
+    update_values.append(PR_report_id)
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+        cursor.execute(update_query, tuple(update_values))
+        conn.commit()
+        message = jsonify({"message": f"Preverified report {PR_report_id} updated successfully."})
+        return message, 200
+    except Exception as e:
+        print(f"Error updating preverified report: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 def patch_preverified_report(request):
     pass
 
 def delete_preverified_report(request):
-    pass
+    """DESC: Deletes a preverified report by PR_report_id."""
+    data = request.json if hasattr(request, "json") and request.json else request
+
+    PR_report_id = data.get("PR_report_id")
+    if not PR_report_id:
+        return jsonify({"error": "Missing PR_report_id"}), 400
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+        cursor.execute("DELETE FROM postverified_reports WHERE VR_report_id = %s", (PR_report_id,))
+        cursor.execute("SELECT * FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
+        report = cursor.fetchone()
+        if not report:
+            return jsonify({"error": f"Report with ID {PR_report_id} not found"}), 404
+
+        cursor.execute("DELETE FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
+        conn.commit()
+        return jsonify({"message": f"Preverified report {PR_report_id} deleted successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 ### === RESPONSE LOGS ===
 def get_response_logs():
@@ -1008,6 +1245,18 @@ def route_update_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@app.route('/user/update/confidence', methods=['POST'])
+def route_update_user_confidence():
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method. Expected POST method."}), 405
+    
+    try:
+        return calculate_user_reputation_score(request=request)
+    except KeyError as e:
+        return jsonify({"error": f"Missing required data: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/user/patch', methods=["PUT"])
 def route_patch_user():
     if request.method != 'POST':
@@ -1135,6 +1384,45 @@ def route_get_preverified_reports():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/reports/preverified/one/delete', methods=['POST'])
+def route_delete_preverified_report():
+    """DESC: Deletes a preverified report by PR_report_id."""
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method. Expected POST method."}), 405
+    
+    try:
+        return delete_preverified_report(request)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/reports/preverified/one/verify', methods=['POST'])
+def route_verify_preverified_report():
+    """DESC: Verifies a preverified report by PR_report_id."""
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method. Expected POST method."}), 405
+    
+    try:
+        data = request.json
+
+        preverified_report = data[0]
+        del preverified_report["PR_user_id"]
+        del preverified_report["PR_image"]
+        del preverified_report["PR_video"]
+        del preverified_report["PR_latitude"]
+        del preverified_report["PR_longitude"]
+        del preverified_report["PR_address"]
+        del preverified_report["PR_timestamp"]
+        postverified_report = data[1]
+        del postverified_report["VR_verification_id"]
+
+        update_preverified_report(preverified_report)
+        add_postverified_report(postverified_report)
+        
+        return jsonify({"message": "Route finished execution!"}), 200
+    except Exception as e:
+        print(f"Error verifying preverified report: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/reports/preverified/session', methods=['POST'])
 def route_get_session_preverified_reports():
     if request.method != 'POST':
@@ -1154,7 +1442,17 @@ def route_get_postverified_reports():
         return get_postverified_reports()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/reports/postverified/one/delete', methods=['POST'])
+def route_delete_postverified_report():
+    if request.method != 'POST':
+        return jsonify({"error": "Invalid request method. Expected POST method."}), 405
     
+    try:
+        return delete_postverified_report(request)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 ## === MEDIA RESOURCE ===
 @app.route('/media/details/get/all', methods=["GET"])
 def route_get_all_media_details():

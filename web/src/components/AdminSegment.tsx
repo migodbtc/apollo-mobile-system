@@ -7,6 +7,7 @@ import MapVisualPage from "./AdminComponents/MapVisualPage";
 import AdminProfilePage from "./AdminComponents/AdminProfilePage";
 import UserCrudPage from "./AdminComponents/UserCrudPage";
 import ReportsCrudPage from "./AdminComponents/ReportsCrudPage";
+import MediaCrudPage from "./AdminComponents/MediaCrudPage";
 
 const AdminSegment = () => {
   const { sessionData } = useSession();
@@ -40,7 +41,7 @@ const AdminSegment = () => {
               {activeTab === "users" && <UserCrudPage />}
               {activeTab === "reports" && <ReportsCrudPage />}
               {activeTab === "responseLogs" && <div>Media Storage</div>}
-              {activeTab === "mediaStorage" && <div>Response Logs</div>}
+              {activeTab === "mediaStorage" && <MediaCrudPage />}
             </div>
           </div>
         </div>

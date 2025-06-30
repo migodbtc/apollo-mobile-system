@@ -20,6 +20,8 @@ import {
 import UserEditModal from "./UserEditModal";
 import type { UserAccount } from "../../constants/types/database";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
+import axios from "axios";
+import { SERVER_LINK } from "../../constants/netvar";
 
 const renderRoleBadge = (role: string | undefined) => {
   let badgeStyle: { backgroundColor: string; color: string } = {
@@ -100,7 +102,36 @@ const UserCrudPage = () => {
     setSelectedRow(null);
   };
 
-  const { userAccounts } = useAdminSQL();
+  const { userAccounts, fetchUserAccounts } = useAdminSQL();
+
+  const deleteUserAccount = async (userId: number) => {
+    if (!userId) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this user account? This action cannot be undone. Associated reports will be set to null, making the report contain missing information."
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await axios.post(
+        `${SERVER_LINK}/user/delete`,
+        { UA_user_id: userId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        alert("User account deleted successfully!");
+        fetchUserAccounts();
+      } else {
+        alert("User account preverified report.");
+      }
+    } catch (error) {
+      console.error("Failed to delete user account:", error);
+      alert("Failed to delete user account. Please try again.");
+    }
+  };
 
   const data: UserAccount[] = userAccounts;
 
@@ -205,6 +236,9 @@ const UserCrudPage = () => {
               icon={faTrash}
               className="ml-3 text-muted"
               style={{ cursor: "pointer" }}
+              onClick={() => {
+                deleteUserAccount(row.original.UA_user_id);
+              }}
             />
           </div>
         );

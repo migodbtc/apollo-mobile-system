@@ -253,12 +253,14 @@ def delete_user(request):
         user = cursor.fetchone()
         if not user:
             return jsonify({"error": f"User with ID {UA_user_id} not found"}), 404
+        
 
         cursor.execute("DELETE FROM `user_accounts` WHERE UA_user_id = %s", (UA_user_id,))
         conn.commit()
 
         return jsonify({"message": f"User {UA_user_id} deleted successfully."}), 200
     except Exception as e:
+        print("[DEBUG] Exception in delete_user:", str(e))
         return jsonify({"error": str(e)}), 500
     finally:
         if cursor: cursor.close()
@@ -588,6 +590,37 @@ def update_preverified_report(request):
         return message, 200
     except Exception as e:
         print(f"Error updating preverified report: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+def delete_preverified_report(request):
+    """DESC: Deletes a preverified report by PR_report_id."""
+    data = request.json if hasattr(request, "json") and request.json else request
+
+    PR_report_id = data.get("PR_report_id")
+    if not PR_report_id:
+        return jsonify({"error": "Missing PR_report_id"}), 400
+
+    conn, cursor = None, None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+
+        # Check if the report exists
+        cursor.execute("SELECT * FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
+        report = cursor.fetchone()
+        if not report:
+            return jsonify({"error": f"Report with ID {PR_report_id} not found"}), 404
+
+        # Delete the report
+        cursor.execute("DELETE FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
+        conn.commit()
+
+        return jsonify({"message": f"Preverified report {PR_report_id} deleted successfully."}), 200
+    except Exception as e:
+        print("[DEBUG] Exception in delete_preverified_report:", str(e))
         return jsonify({"error": str(e)}), 500
     finally:
         if cursor: cursor.close()
@@ -1269,7 +1302,7 @@ def route_patch_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/user/delete', methods=['DELETE'])
+@app.route('/user/delete', methods=['POST'])
 def route_delete_user():
     if request.method != 'POST':
         return jsonify({"error": "Invalid request method. Expected POST method."}), 405

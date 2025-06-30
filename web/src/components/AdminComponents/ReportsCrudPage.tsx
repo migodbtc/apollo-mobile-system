@@ -229,6 +229,10 @@ const ReportsCrudPage = () => {
           (account) => account.UA_user_id === userId
         );
 
+        if (userAccount === undefined) {
+          return <span className="text-muted text-bold">N/A</span>;
+        }
+
         return (
           <span>
             {"@" + userAccount?.UA_username ||

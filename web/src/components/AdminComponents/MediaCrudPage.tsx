@@ -77,6 +77,62 @@ const MediaCrudPage = () => {
     );
   };
 
+  const downloadMedia = async (mediaId: number) => {
+    if (!mediaId) return;
+    const confirmed = window.confirm(
+      `Downloading media with ID no. ${mediaId}. Are you sure you want to proceed?`
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await axios.post(
+        `${SERVER_LINK}/media/blob/get/one/dl`,
+        { MS_media_id: mediaId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          responseType: "blob",
+        }
+      );
+
+      if (response.status !== 200 || !response.data) {
+        console.error("Failed to retrieve media data:", response);
+        alert("Failed to retrieve media data. Please try again.");
+        return;
+      }
+
+      const details = await axios.post(
+        `${SERVER_LINK}/media/details/get/one`,
+        { MS_media_id: mediaId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (details.status !== 200 || !details.data) {
+        console.error("Failed to fetch media details:", details);
+        alert("Failed to fetch media details. Please try again.");
+        return;
+      }
+      const url = window.URL.createObjectURL(response.data);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = details.data.MS_file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download media:", error);
+      alert("Failed to download media. Please try again.");
+    }
+  };
+
   const deleteMedia = async (mediaId: number) => {
     if (!mediaId) return;
     const confirmed = window.confirm(
@@ -186,8 +242,6 @@ const MediaCrudPage = () => {
             style={{ border: "none" }}
             title="View"
             onClick={() => {
-              console.log("View media:", row.original);
-              console.log("Selected Media:", selectedMedia);
               setSelectedMedia(row.original);
               setShowMediaModal(true);
             }}
@@ -195,15 +249,10 @@ const MediaCrudPage = () => {
             <FontAwesomeIcon icon={faEye} />
           </a>
           <a
-            href={
-              typeof row.original.MS_file_data === "string"
-                ? row.original.MS_file_data
-                : "#"
-            }
-            download={row.original.MS_file_name}
             className="btn btn-sm btn-secondary mr-2"
             style={{ border: "none" }}
             title="Download"
+            onClick={() => downloadMedia(row.original.MS_media_id)}
           >
             <FontAwesomeIcon icon={faDownload} />
           </a>
@@ -273,9 +322,10 @@ const MediaCrudPage = () => {
               onChange={(e) => setGlobalFilter(e.target.value)}
             />
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary disabled btn-sm"
               style={{ backgroundColor: "rgb(249, 115, 22)", border: "none" }}
               // onClick={handleAddMedia} // Implement add media logic if needed
+              disabled
             >
               <FontAwesomeIcon icon={faPlus} className="mr-2" />
               Add New Media

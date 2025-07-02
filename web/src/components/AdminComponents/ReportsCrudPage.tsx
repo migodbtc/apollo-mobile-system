@@ -450,11 +450,12 @@ const ReportsCrudPage = () => {
                 onChange={(e) => setGlobalFilter(e.target.value)}
               />
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-primary btn-sm disabled"
                 style={{
                   backgroundColor: "rgb(249, 115, 22)",
                   border: "none",
                 }}
+                disabled
               >
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 Add New Report

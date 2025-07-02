@@ -78,6 +78,7 @@ def get_one_user(request):
 def add_user(request):
     """DESC: Adds a new user to the system."""
     data = request.json
+
     username = data.get("UA_username")
     password = data.get("UA_password")
     role = data.get("UA_user_role")
@@ -85,16 +86,35 @@ def add_user(request):
 
     if not all([username, password, role, created]):
         return jsonify({"error": "All fields are required"}), 400
-    
+
+    optional_fields = [
+        "UA_last_name", "UA_first_name", "UA_middle_name", "UA_suffix",
+        "UA_email_address", "UA_phone_number", "UA_reputation_score",
+        "UA_id_picture_front", "UA_id_picture_back"
+    ]
+
+    columns = ["UA_username", "UA_password", "UA_user_role", "UA_created_at"]
+    values = [username, password, role, created]
+    placeholders = ["%s", "%s", "%s", "%s"]
+
+    for field in optional_fields:
+        value = data.get(field)
+        if value is not None:
+            columns.append(field)
+            values.append(value)
+            placeholders.append("%s")
+
+    query = f"""
+        INSERT INTO user_accounts
+        ({', '.join(columns)})
+        VALUES ({', '.join(placeholders)})
+    """
+
     conn, cursor = None, None
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pms_DictCursor)
-        cursor.execute("""
-            INSERT INTO `user_accounts`
-            (UA_username, UA_password, UA_user_role, UA_created_at)
-            VALUES (%s, %s, %s, %s)
-        """, (username, password, role, created))
+        cursor.execute(query, tuple(values))
         conn.commit()
         return jsonify({"message": "User added", "user_id": cursor.lastrowid}), 201
     except Exception as e:
@@ -271,9 +291,6 @@ def calculate_user_reputation_score(request):
     data = request.json if hasattr(request, "json") and request.json else request
     UA_user_id = data.get("UA_user_id")
 
-    print("[DEBUG] calculate_user_reputation_score called")
-    print("[DEBUG] Incoming data:", data)
-
     if not UA_user_id:
         print("[DEBUG] Missing UA_user_id")
         return jsonify({"error": "Missing UA_user_id"}), 400
@@ -284,6 +301,9 @@ def calculate_user_reputation_score(request):
         cursor = conn.cursor(pms_DictCursor)
         cursor.execute("SELECT * FROM user_accounts WHERE UA_user_id = %s", (UA_user_id,))
         user = cursor.fetchone()
+
+        print("[DEBUG] Fetched user data:", user)
+
         if not user:
             return jsonify({"error": "User not found"}), 404
 
@@ -316,6 +336,9 @@ def calculate_user_reputation_score(request):
 
         # UA_id_picture_back
         if user.get("UA_id_picture_back"): score += 250
+
+        print("[DEBUG] Calculated reputation score:", score)
+        print("[DEBUG] User ID:", UA_user_id)
 
         cursor.execute(
             "UPDATE user_accounts SET UA_reputation_score = %s WHERE UA_user_id = %s",

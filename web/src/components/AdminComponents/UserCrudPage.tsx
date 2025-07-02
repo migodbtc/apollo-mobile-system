@@ -22,6 +22,7 @@ import type { UserAccount } from "../../constants/types/database";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 import axios from "axios";
 import { SERVER_LINK } from "../../constants/netvar";
+import UserCreateModal from "./UserCreateModal";
 
 const renderRoleBadge = (role: string | undefined) => {
   let badgeStyle: { backgroundColor: string; color: string } = {
@@ -96,6 +97,7 @@ const UserCrudPage = () => {
 
   const [selectedRow, setSelectedRow] = useState<UserAccount | null>(null);
   const [showSelectedModal, setShowSelectedModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
 
   const handleExitClick = () => {
     setShowSelectedModal(false);
@@ -303,6 +305,7 @@ const UserCrudPage = () => {
               <button
                 className="btn btn-primary btn-sm"
                 style={{ backgroundColor: "rgb(249, 115, 22)", border: "none" }}
+                onClick={() => setShowCreateModal(true)}
               >
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 Add New User
@@ -481,6 +484,10 @@ const UserCrudPage = () => {
         selectedRow={selectedRow}
         setSelectedRow={setSelectedRow}
         handleExitClick={handleExitClick}
+      />
+      <UserCreateModal
+        showCreateModal={showCreateModal}
+        handleExitClick={() => setShowCreateModal(false)}
       />
     </>
   );

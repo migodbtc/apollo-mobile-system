@@ -1,0 +1,5 @@
+image data: 
+D-Fire: An Image Dataset for Fire and Smoke Detection (https://github.com/gaiasd/DFireDataset?tab=readme-ov-file)
+
+video data: 
+MIVIA Fire Detection Dataset (https://mivia.unisa.it/datasets/video-analysis-datasets/fire-detection-dataset/)

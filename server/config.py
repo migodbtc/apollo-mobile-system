@@ -1,5 +1,7 @@
 import os
 from datetime import timedelta
+from celery import Celery, Task
+from flask import Flask
 
 # FlaskConfig Class
 # A class dedicated to the configuration of a Flask application, particularly
@@ -11,4 +13,7 @@ class FlaskConfig:
     MYSQL_DATABASE_PASSWORD = ""
     MYSQL_DATABASE_HOST = "localhost"
     MYSQL_DATABASE_DB = "apollo_system"
+
+
+
     

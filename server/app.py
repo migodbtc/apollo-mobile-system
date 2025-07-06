@@ -13,7 +13,7 @@ class FlaskApp:
         CORS(self.app)
 
         self.mysql = MySQL()
-        self.mysql.init_app(app=self.app)
+        self.mysql.init_app(app=self.app)        
 
     def run(self, *args, **kwargs):
         self.app.run(*args, **kwargs)

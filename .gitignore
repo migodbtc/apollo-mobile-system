@@ -12,6 +12,7 @@ server/__pycache__/
 server/.venv/
 server/.pytest_cache/
 server/*.pyc
+server/tmp/
 server/model/data/raw/img/fire/
 server/model/data/raw/img/no_fire/
 server/model/data/raw/video/fire/

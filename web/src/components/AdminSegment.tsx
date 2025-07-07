@@ -8,6 +8,7 @@ import AdminProfilePage from "./AdminComponents/AdminProfilePage";
 import UserCrudPage from "./AdminComponents/UserCrudPage";
 import ReportsCrudPage from "./AdminComponents/ReportsCrudPage";
 import MediaCrudPage from "./AdminComponents/MediaCrudPage";
+import AutomationPage from "./AdminComponents/AutomationPage";
 
 const AdminSegment = () => {
   const { sessionData } = useSession();
@@ -40,8 +41,10 @@ const AdminSegment = () => {
               )}
               {activeTab === "users" && <UserCrudPage />}
               {activeTab === "reports" && <ReportsCrudPage />}
-              {activeTab === "responseLogs" && <div>Media Storage</div>}
+              {activeTab === "responseLogs" && <div>Work in progress!</div>}
               {activeTab === "mediaStorage" && <MediaCrudPage />}
+              {activeTab === "machineLearning" && <AutomationPage />}
+              {activeTab === "documentation" && <div>Work in progress!</div>}
             </div>
           </div>
         </div>

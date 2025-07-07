@@ -1,8 +1,10 @@
 import {
+  faBook,
   faBullhorn,
   faClipboardList,
   faImagePortrait,
   faMapLocation,
+  faRobot,
   faTachometer,
   faUser,
   faUsers,
@@ -128,6 +130,35 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
                 <p>
                   <FontAwesomeIcon icon={faBullhorn} className="mr-2" />
                   Response Logs
+                </p>
+              </a>
+            </li>
+            <li className="nav-header text-bold">MISCELLANEOUS</li>
+            <li className="nav-item">
+              <a
+                href="#"
+                className={`nav-link ${
+                  activeTab === "machineLearning" ? "active" : ""
+                }`}
+                onClick={() => handleTabChange("machineLearning")}
+              >
+                <p>
+                  <FontAwesomeIcon icon={faRobot} className="mr-2" />
+                  Automation
+                </p>
+              </a>
+            </li>
+            <li className="nav-item">
+              <a
+                href="#"
+                className={`nav-link ${
+                  activeTab === "documentation" ? "active" : ""
+                }`}
+                onClick={() => handleTabChange("documentation")}
+              >
+                <p>
+                  <FontAwesomeIcon icon={faBook} className="mr-2" />
+                  Documentation
                 </p>
               </a>
             </li>

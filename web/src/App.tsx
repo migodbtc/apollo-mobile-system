@@ -9,6 +9,7 @@ import {
 import AdminSegment from "./components/AdminSegment";
 import { AdminSQLProvider } from "./constants/context/AdminSQLContext";
 import { SERVER_LINK } from "./constants/netvar";
+import { HermesProvider } from "./constants/context/HermesContext";
 
 function AppContent() {
   const [segment, setSegment] = useState<string>("public");
@@ -40,9 +41,11 @@ function AppContent() {
 
 function App() {
   return (
-    <SessionProvider>
-      <AppContent />
-    </SessionProvider>
+    <HermesProvider>
+      <SessionProvider>
+        <AppContent />
+      </SessionProvider>
+    </HermesProvider>
   );
 }
 

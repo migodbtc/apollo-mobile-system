@@ -30,6 +30,14 @@ const columns: ColumnDef<PreverifiedReportType>[] = [
   {
     accessorKey: "PR_user_id",
     header: "User",
+    cell: ({ row }) => {
+      const userId = row.original.PR_user_id;
+      return userId !== -1 ? (
+        { userId }
+      ) : (
+        <span className="badge text-muted">N/A</span>
+      );
+    },
   },
   {
     accessorKey: "PR_address",
@@ -80,6 +88,15 @@ const RecentReportsTable = () => {
     })
     .slice(0, 10)
     .map(([pre]) => pre);
+
+  recentReports.forEach((report) => {
+    // Ensure all fields are present, defaulting to empty strings if necessary
+    report.PR_user_id = report.PR_user_id || -1;
+    report.PR_address = report.PR_address || "N/A";
+    report.PR_timestamp = report.PR_timestamp || new Date().toISOString();
+    report.PR_verified = report.PR_verified ?? false;
+    report.PR_report_status = report.PR_report_status || "pending";
+  });
 
   const table = useReactTable({
     data: recentReports,

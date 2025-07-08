@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -269,6 +269,10 @@ const UserCrudPage = () => {
       },
     },
   });
+
+  useEffect(() => {
+    fetchUserAccounts();
+  }, [userAccounts, fetchUserAccounts]);
 
   return (
     <>

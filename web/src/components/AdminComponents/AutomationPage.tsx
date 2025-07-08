@@ -5,41 +5,15 @@ import {
   faCheckSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect, useRef, useState } from "react";
+import { useHermes } from "../../constants/context/HermesContext";
+import { SERVER_LINK } from "../../constants/netvar";
 
 const AutomationPage = () => {
-  const [toggleValidation, setToggleValidation] = useState<boolean>(false);
-  const [uptime, setUptime] = useState<number>(0);
-  const intervalRef = useRef<number | null>(null);
+  const { toggleValidation, uptime, setToggleValidation, setUptime } =
+    useHermes();
 
   const activeColor = "#22c55e";
   const inactiveColor = "#ef4444";
-
-  useEffect(() => {
-    if (toggleValidation) {
-      intervalRef.current = window.setInterval(() => {
-        setUptime((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-    return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [toggleValidation]);
-
-  const handleToggleValidation = () => {
-    setToggleValidation((prev) => {
-      if (!prev) setUptime(0);
-      return !prev;
-    });
-  };
 
   const formatUptime = (seconds: number) => {
     const h = Math.floor(seconds / 3600)
@@ -52,6 +26,30 @@ const AutomationPage = () => {
       .toString()
       .padStart(2, "0");
     return `${h}:${m}:${s}`;
+  };
+
+  const toggleHermesAutomation = async () => {
+    try {
+      const response = await fetch(`${SERVER_LINK}/verification/toggle`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ toggle_state: !toggleValidation }),
+      });
+
+      if (!response.ok) {
+        alert("Failed to toggle Hermes automation. Please try again later.");
+        throw new Error("Failed to toggle Hermes automation");
+      }
+
+      setToggleValidation((prev) => {
+        if (!prev) setUptime(0);
+        return !prev;
+      });
+    } catch (error) {
+      console.error("Error toggling Hermes automation:", error);
+    }
   };
 
   return (
@@ -91,7 +89,7 @@ const AutomationPage = () => {
                   color: toggleValidation ? activeColor : inactiveColor,
                   transition: "border-color 0.3s, color 0.3s",
                 }}
-                onClick={handleToggleValidation}
+                onClick={toggleHermesAutomation}
               >
                 <span style={{ transition: "color 0.3s" }}>
                   <FontAwesomeIcon

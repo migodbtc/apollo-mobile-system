@@ -415,6 +415,15 @@ const ReportsCrudPage = () => {
   useEffect(() => {
     fetchPreverifiedReports();
     fetchPostverifiedReports();
+
+    const REFRESH_IN_SECONDS = 5;
+
+    const interval = setInterval(() => {
+      fetchPreverifiedReports();
+      fetchPostverifiedReports();
+    }, REFRESH_IN_SECONDS * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (

@@ -303,7 +303,6 @@ def calculate_user_reputation_score(request):
         cursor.execute("SELECT * FROM user_accounts WHERE UA_user_id = %s", (UA_user_id,))
         user = cursor.fetchone()
 
-        print("[DEBUG] Fetched user data:", user)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -337,9 +336,6 @@ def calculate_user_reputation_score(request):
 
         # UA_id_picture_back
         if user.get("UA_id_picture_back"): score += 250
-
-        print("[DEBUG] Calculated reputation score:", score)
-        print("[DEBUG] User ID:", UA_user_id)
 
         cursor.execute(
             "UPDATE user_accounts SET UA_reputation_score = %s WHERE UA_user_id = %s",
@@ -1567,14 +1563,16 @@ def route_toggle_automated_verification():
             return jsonify({"error": "Invalid toggle state. Must be True or False."}), 400
 
         if toggle_state is True: 
+            print("[HERMES] Automated verification system is now enabled!")
             automated_verification_enabled.set()
         else:
+            print("[HERMES] Automated verification system is now disabled!")
             automated_verification_enabled.clear()
 
         return jsonify({"message": f"Automated verification toggled {'on' if toggle_state else 'off'}"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 ##### ===================[[ THREADS ]]=================== #####
 def start_background_verification(interval=10):
     print("[THREAD] Booting up verification background check with ML!")
@@ -1623,146 +1621,149 @@ def start_background_verification(interval=10):
                             
 
                     for report in five_pr_reports:
+                        if automated_verification_enabled.is_set():
+                            # dalawa lang naman yan
+                            media_type = report["PR_video"] or report["PR_image"]
+                            media_info = get_one_media_file_details({"MS_media_id": media_type})
 
-                        # dalawa lang naman yan
-                        media_type = report["PR_video"] or report["PR_image"]
-                        media_info = get_one_media_file_details({"MS_media_id": media_type})
+                            blob_response = get_one_media_file_blob({"MS_media_id": media_type})
 
-                        blob_response = get_one_media_file_blob({"MS_media_id": media_type})
-
-                        # response type debugging
-                        if isinstance(blob_response, tuple):
-                            resp_obj, status_code = blob_response
-                            if isinstance(resp_obj, Response):
+                            # response type debugging
+                            if isinstance(blob_response, tuple):
+                                resp_obj, status_code = blob_response
+                                if isinstance(resp_obj, Response):
+                                    try:
+                                        data = resp_obj.get_json(force=True, silent=True)
+                                        if data and "error" in data:
+                                            print(f"[THREAD] Error fetching BLOB for report {report['PR_report_id']}: {data['error']}")
+                                            continue
+                                        blob = resp_obj.get_data()
+                                    except Exception:
+                                        blob = resp_obj.get_data()
+                                else:
+                                    print(f"[THREAD] Error fetching BLOB for report {report['PR_report_id']}: {resp_obj}")
+                                    continue
+                            elif isinstance(blob_response, Response):
                                 try:
-                                    data = resp_obj.get_json(force=True, silent=True)
+                                    data = blob_response.get_json(force=True, silent=True)
                                     if data and "error" in data:
                                         print(f"[THREAD] Error fetching BLOB for report {report['PR_report_id']}: {data['error']}")
                                         continue
-                                    blob = resp_obj.get_data()
+                                    blob = blob_response.get_data()
                                 except Exception:
-                                    blob = resp_obj.get_data()
+                                    blob = blob_response.get_data()
                             else:
-                                print(f"[THREAD] Error fetching BLOB for report {report['PR_report_id']}: {resp_obj}")
+                                blob = blob_response
+
+                            if not blob or not isinstance(blob, (bytes, bytearray)):
+                                print(f"[THREAD] No valid BLOB data found for report {report['PR_report_id']}")
                                 continue
-                        elif isinstance(blob_response, Response):
-                            try:
-                                data = blob_response.get_json(force=True, silent=True)
-                                if data and "error" in data:
-                                    print(f"[THREAD] Error fetching BLOB for report {report['PR_report_id']}: {data['error']}")
-                                    continue
-                                blob = blob_response.get_data()
-                            except Exception:
-                                blob = blob_response.get_data()
-                        else:
-                            blob = blob_response
 
-                        if not blob or not isinstance(blob, (bytes, bytearray)):
-                            print(f"[THREAD] No valid BLOB data found for report {report['PR_report_id']}")
-                            continue
+                            file_path = save_blob_to_file(report, blob)
+                            if not file_path:
+                                print(f"[THREAD] Failed to save BLOB data for report {report['PR_report_id']}")
+                                continue    
 
-                        file_path = save_blob_to_file(report, blob)
-                        if not file_path:
-                            print(f"[THREAD] Failed to save BLOB data for report {report['PR_report_id']}")
-                            continue    
+                            # prediction area
+                            prediction_output = model.predict_from_path(file_path)
+                            print(f"[THREAD] Prediction output for report {report['PR_report_id']}")
 
-                        # prediction area
-                        prediction_output = model.predict_from_path(file_path)
-                        print(f"[THREAD] Prediction output for report {report['PR_report_id']}")
+                            if prediction_output is None:
+                                print(f"[THREAD] No prediction output for report {report['PR_report_id']}")
+                                continue
 
-                        if prediction_output is None:
-                            print(f"[THREAD] No prediction output for report {report['PR_report_id']}")
-                            continue
+                            # Update SQL with the output 
+                            fire_detected = prediction_output.get("fire_detected")
+                            confidence_percentage = prediction_output.get("confidence_percentage")
+                            fire_type = prediction_output.get("fire_type") 
+                            severity_level = prediction_output.get("severity_level")
+                            spread_potential = prediction_output.get("spread_potential")
 
-                        # Update SQL with the output 
-                        fire_detected = prediction_output.get("fire_detected")
-                        confidence_percentage = prediction_output.get("confidence_percentage")
-                        fire_type = prediction_output.get("fire_type") 
-                        severity_level = prediction_output.get("severity_level")
-                        spread_potential = prediction_output.get("spread_potential")
+                            tuple_outputs = (fire_detected, confidence_percentage, fire_type, severity_level, spread_potential)
+                            print(f"Predictions: {tuple_outputs}")
 
-                        tuple_outputs = (fire_detected, confidence_percentage, fire_type, severity_level, spread_potential)
-                        print(f"Predictions: {tuple_outputs}")
+                            # Case 1: If fire is detected
+                            if tuple_outputs[0] == True:
+                                add_new_postverified = add_postverified_report({
+                                    "VR_report_id": report["PR_report_id"],
+                                    "VR_detected": tuple_outputs[0],
+                                    "VR_confidence_score": tuple_outputs[1],
+                                    "VR_fire_type": tuple_outputs[2],
+                                    "VR_severity_level": tuple_outputs[3],
+                                    "VR_spread_potential": tuple_outputs[4],
+                                    "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                                })
 
-                        # Case 1: If fire is detected
-                        if tuple_outputs[0] == True:
-                            add_new_postverified = add_postverified_report({
-                                "VR_report_id": report["PR_report_id"],
-                                "VR_detected": tuple_outputs[0],
-                                "VR_confidence_score": tuple_outputs[1],
-                                "VR_fire_type": tuple_outputs[2],
-                                "VR_severity_level": tuple_outputs[3],
-                                "VR_spread_potential": tuple_outputs[4],
-                                "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
-                            })
+                                response_obj = add_new_postverified[0]  
+                                response_json = response_obj.get_data(as_text=True)  
+                                response_dict = json.loads(response_json)            
 
-                            response_obj = add_new_postverified[0]  
-                            response_json = response_obj.get_data(as_text=True)  
-                            response_dict = json.loads(response_json)            
+                                verification_id = response_dict.get("verification_id")
+                                print(f"Verification ID: {verification_id}")
 
-                            verification_id = response_dict.get("verification_id")
-                            print(f"Verification ID: {verification_id}")
+                                pr_update_status = "verified" if tuple_outputs[0] else "false_alarm"
+                                result = update_preverified_report({
+                                    "PR_report_id": report["PR_report_id"],
+                                    "PR_verified": 1,
+                                    "PR_report_status": pr_update_status
+                                })
 
-                            pr_update_status = "verified" if tuple_outputs[0] else "false_alarm"
-                            result = update_preverified_report({
-                                "PR_report_id": report["PR_report_id"],
-                                "PR_verified": 1,
-                                "PR_report_status": pr_update_status
-                            })
+                                if isinstance(result, tuple):
+                                    upd_pr_response, upd_pr_code = result
+                                else:
+                                    upd_pr_response = result
+                                    upd_pr_code = getattr(result, "status_code", None)
 
-                            if isinstance(result, tuple):
-                                upd_pr_response, upd_pr_code = result
-                            else:
-                                upd_pr_response = result
-                                upd_pr_code = getattr(result, "status_code", None)
+                                if upd_pr_code is None or not (200 <= upd_pr_code < 300):
+                                    try:
+                                        error_msg = upd_pr_response.get_data(as_text=True)
+                                    except Exception:
+                                        error_msg = str(upd_pr_response)
+                                    print(f"[THREAD] Failed to update preverified report {report['PR_report_id']}: {error_msg}")
+                                else:
+                                    print(f"[THREAD] Preverified report {report['PR_report_id']} updated successfully!")
 
-                            if upd_pr_code is None or not (200 <= upd_pr_code < 300):
-                                try:
-                                    error_msg = upd_pr_response.get_data(as_text=True)
-                                except Exception:
-                                    error_msg = str(upd_pr_response)
-                                print(f"[THREAD] Failed to update preverified report {report['PR_report_id']}: {error_msg}")
-                            else:
-                                print(f"[THREAD] Preverified report {report['PR_report_id']} updated successfully!")
-                                
-                        # Case 2: If fire is not detected
-                        else: 
-                            add_new_postverified = add_postverified_report({
-                                "VR_report_id": report["PR_report_id"],
-                                "VR_detected": tuple_outputs[0],
-                                "VR_confidence_score": tuple_outputs[1],
-                                "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
-                            }) 
-                            
-                            response_obj = add_new_postverified[0]  
-                            response_json = response_obj.get_data(as_text=True)  
-                            response_dict = json.loads(response_json)            
-
-                            verification_id = response_dict.get("verification_id")
-                            print(f"Verification ID: {verification_id}")
-
-                            pr_update_status = "verified" if tuple_outputs[0] else "false_alarm"
-                            result = update_preverified_report({
-                                "PR_report_id": report["PR_report_id"],
-                                "PR_verified": 1,
-                                "PR_report_status": pr_update_status
-                            })
-
-                            if isinstance(result, tuple):
-                                upd_pr_response, upd_pr_code = result
-                            else:
-                                upd_pr_response = result
-                                upd_pr_code = getattr(result, "status_code", None)
-
-                            if upd_pr_code is None or not (200 <= upd_pr_code < 300):
-                                try:
-                                    error_msg = upd_pr_response.get_data(as_text=True)
-                                except Exception:
-                                    error_msg = str(upd_pr_response)
-                                print(f"[THREAD] Failed to update preverified report {report['PR_report_id']}: {error_msg}")
+                                    print("Validation notification sent to frontend! Validation is complete.")
+                                    
+                            # Case 2: If fire is not detected
                             else: 
-                                print(f"[THREAD] Preverified report {report['PR_report_id']} updated successfully!")
+                                add_new_postverified = add_postverified_report({
+                                    "VR_report_id": report["PR_report_id"],
+                                    "VR_detected": tuple_outputs[0],
+                                    "VR_confidence_score": tuple_outputs[1],
+                                    "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                                }) 
                                 
+                                response_obj = add_new_postverified[0]  
+                                response_json = response_obj.get_data(as_text=True)  
+                                response_dict = json.loads(response_json)            
+
+                                verification_id = response_dict.get("verification_id")
+                                print(f"Verification ID: {verification_id}")
+
+                                pr_update_status = "verified" if tuple_outputs[0] else "false_alarm"
+                                result = update_preverified_report({
+                                    "PR_report_id": report["PR_report_id"],
+                                    "PR_verified": 1,
+                                    "PR_report_status": pr_update_status
+                                })
+
+                                if isinstance(result, tuple):
+                                    upd_pr_response, upd_pr_code = result
+                                else:
+                                    upd_pr_response = result
+                                    upd_pr_code = getattr(result, "status_code", None)
+
+                                if upd_pr_code is None or not (200 <= upd_pr_code < 300):
+                                    try:
+                                        error_msg = upd_pr_response.get_data(as_text=True)
+                                    except Exception:
+                                        error_msg = str(upd_pr_response)
+                                    print(f"[THREAD] Failed to update preverified report {report['PR_report_id']}: {error_msg}")
+                                else: 
+                                    print(f"[THREAD] Preverified report {report['PR_report_id']} updated successfully!")
+                                
+                                    print("Validation is complete! No fire detected.")
                     
                 except Exception as e:
                     print(f"[THREAD] Error during iteration {i}: {str(e)}")

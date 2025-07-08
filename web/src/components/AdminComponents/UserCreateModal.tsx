@@ -90,14 +90,8 @@ const UserCreateModal = ({
       return;
     }
 
-    if (
-      !newUser.UA_username ||
-      !newUser.UA_password ||
-      !newUser.UA_email_address
-    ) {
-      alert(
-        "Please fill in all required fields: Username, Password, and Email Address."
-      );
+    if (!newUser.UA_username || !newUser.UA_password) {
+      alert("Please fill in all required fields: Username and Password.");
       return;
     }
 
@@ -112,7 +106,7 @@ const UserCreateModal = ({
       alert("Username already exists. Please choose a different username.");
       return;
     }
-    if (existingEmail) {
+    if (existingEmail && newUser.UA_email_address != "") {
       alert("Email address already exists. Please use a different email.");
       return;
     }
@@ -120,6 +114,17 @@ const UserCreateModal = ({
     if (newUser.UA_password.length < 8) {
       alert("Password must be at least 8 characters long.");
       return;
+    }
+
+    // Utility function to convert "" to null in an object
+    function emptyStringsToNull<T extends Record<string, any>>(obj: T): T {
+      const result: Record<string, any> = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          result[key] = obj[key] === "" ? null : obj[key];
+        }
+      }
+      return result as T;
     }
 
     const confirmMsg = `
@@ -143,10 +148,11 @@ Is this information correct?
     try {
       console.log("[DEBUG] Creating user with data:", newUser);
 
-      const payload = {
+      const payload = emptyStringsToNull({
         ...newUser,
         UA_created_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-      };
+      });
+
       const response = await axios.post(`${SERVER_LINK}/user/add`, payload, {
         headers: {
           "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime, timedelta, timezone
+import queue
 import re
 import time
 import json
@@ -14,8 +15,10 @@ from app import app, mysql
 from pprint import pprint
 
 pms_DictCursor = pymysql.cursors.DictCursor
+
 philippines_timezone = timezone(timedelta(hours=8))  
 automated_verification_enabled = threading.Event()
+notifications_queue = queue.Queue()
 
 ##### ================[[ HANDLER FUNCTIONS ]]================ #####
 """See README for more information! - Migo"""
@@ -1204,6 +1207,31 @@ def log_report_details(report):
     print(f"File Received: {'Yes' if report.get('file_received') else 'No'}")
     print("======================\n")
 
+### === NOTIFICATIONS ===
+def queue_newly_validated_notification():
+    notifications_queue.put({
+        'title': 'Newly-validated Reports',
+        'body': 'New reports have been automatically validated by the system.'
+    })
+
+def queue_newly_submitted_notification():
+    notifications_queue.put({
+        'title': 'Newly-submitted Report',
+        'body': 'A report has been submitted on the location of (IDK what to put yet)'
+    })
+
+def event_stream():
+    while True:
+        if notifications_queue.empty():
+            yield ": keep-alive\n\n"
+        else:
+            while not notifications_queue.empty():
+                print("[EVENT_STREAM] Notifications queue is not empty, processing messages...")
+                message = notifications_queue.get()
+                print(f"[EVENT_STREAM] Sending message: {message}")
+                yield f"data: {json.dumps(message)}\n\n"
+        time.sleep(1)
+
 ##### ===================[[ ROUTES ]]=================== #####
 
 ## === DEFAULT ROUTE ===
@@ -1440,7 +1468,17 @@ def route_get_preverified_reports():
 
 @app.route('/reports/preverified/one/delete', methods=['POST'])
 def route_delete_preverified_report():
-    """DESC: Deletes a preverified report by PR_report_id."""
+    """
+    DESC: Deletes a preverified report by PR_report_id.
+    
+    Args: request (flask.Request): The incoming request containing the PR_report_id.
+        - Request.data contains the JSON payload with the following structure:
+        {
+            "PR_report_id": <int>  # The ID of the preverified report to delete
+        }
+
+    """
+    
     if request.method != 'POST':
         return jsonify({"error": "Invalid request method. Expected POST method."}), 405
     
@@ -1572,6 +1610,17 @@ def route_toggle_automated_verification():
         return jsonify({"message": f"Automated verification toggled {'on' if toggle_state else 'off'}"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+## === NOTIFICATIONS RESOURCE ===
+@app.route('/notifications/stream', methods=["GET"])
+def stream():
+    if request.method != 'GET':
+        return jsonify({'error': 'Request method not allowed'}), 405
+    
+    return Response(
+        event_stream(),
+        mimetype='text/event-stream'
+    ), 200
 
 ##### ===================[[ THREADS ]]=================== #####
 def start_background_verification(interval=10):
@@ -1765,6 +1814,9 @@ def start_background_verification(interval=10):
                                 
                                     print("Validation is complete! No fire detected.")
                     
+                    # Push notification for newly validated reports
+                    queue_newly_validated_notification()
+
                 except Exception as e:
                     print(f"[THREAD] Error during iteration {i}: {str(e)}")
                     time.sleep(interval)

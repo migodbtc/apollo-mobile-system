@@ -25,6 +25,8 @@ import {
 import SERVER_LINK from "@/constants/netvar";
 import PulsatingMarker from "../dash/PulsatingMarker";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
+import { CombinedReport } from "@/constants/types/database";
+import SelectedReportModal from "../dash/SelectedReportModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -37,6 +39,11 @@ const MapsPanel = () => {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [selectedReport, setSelectedReport] = useState<CombinedReport | null>(
+    null
+  );
+  const [isSelectedModalVisible, setIsSelectedModalVisible] =
+    useState<boolean>(false);
 
   const { combinedReports, refreshAll } = useAdminSQL();
 
@@ -64,6 +71,10 @@ const MapsPanel = () => {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const closeSelectedReportModal = () => {
+    setIsSelectedModalVisible(false);
   };
 
   // EFFECT HOOKS
@@ -137,11 +148,10 @@ const MapsPanel = () => {
                     <Marker
                       key={`marker-ID#${preverified.PR_report_id}-postverified`}
                       coordinate={coordinatesFloat}
-                      onPress={() =>
-                        Alert.alert(
-                          "You pressed a marker for a verified report!"
-                        )
-                      }
+                      onPress={() => {
+                        setSelectedReport([preverified, verified]);
+                        setIsSelectedModalVisible(true);
+                      }}
                     >
                       <PulsatingMarker>
                         <View
@@ -165,11 +175,10 @@ const MapsPanel = () => {
                   <Marker
                     key={`marker-ID#${preverified.PR_report_id}-preverified`}
                     coordinate={coordinatesFloat}
-                    onPress={() =>
-                      Alert.alert(
-                        "You pressed a marker for a unverified report!"
-                      )
-                    }
+                    onPress={() => {
+                      setSelectedReport([preverified, null]);
+                      setIsSelectedModalVisible(true);
+                    }}
                   >
                     <PulsatingMarker>
                       <View
@@ -285,6 +294,11 @@ const MapsPanel = () => {
               </TouchableOpacity>
             </View>
           </View>
+          <SelectedReportModal
+            visible={isSelectedModalVisible}
+            onClose={closeSelectedReportModal}
+            selectedReport={selectedReport}
+          />
         </>
       )}
     </>

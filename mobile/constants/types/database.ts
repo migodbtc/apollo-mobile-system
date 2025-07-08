@@ -3,6 +3,7 @@ export type ReportStatus = "pending" | "verified" | "false_alarm" | "resolved";
 export type SeverityLevel = "low" | "moderate" | "high" | "critical";
 export type SpreadPotential = "low" | "moderate" | "high";
 export type UserRole = "civilian" | "responder" | "admin" | "superadmin";
+export type FireType = "small" | "medium" | "large";
 
 export type FireStatistic = {
   FS_statistic_id: number;

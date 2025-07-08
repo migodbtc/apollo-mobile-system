@@ -252,6 +252,7 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                   alignItems: "center",
                   marginVertical: height * 0.015,
                   gap: 8,
+                  marginBottom: 0,
                 }}
               >
                 <TouchableOpacity
@@ -304,6 +305,32 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                         : ""}
                   </Text>
                 </TouchableOpacity>
+                {selectedReport[1] && (
+                  <TouchableOpacity
+                    style={{
+                      height: "100%",
+                      backgroundColor:
+                        subSelection === 2 ? "#f97316" : "#1E293B",
+                      paddingVertical: 4,
+                      paddingHorizontal: 8,
+                      borderRadius: 10,
+                      alignItems: "center",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignContent: "center",
+                    }}
+                    onPress={() => handleSelectionButton(2)}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        color: subSelection === 2 ? "#1E293B" : "#f97316",
+                      }}
+                    >
+                      VALIDATION
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* DETAILS SEGMENT */}
@@ -393,78 +420,16 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                         <Text style={[styles.verificationTitle]}>
                           VALIDATION DETAILS
                         </Text>
-
-                        <View style={styles.twoColumnContainer}>
-                          <View style={styles.labelColumn}>
-                            <Text style={styles.sectionTitle}>Severity</Text>
-                          </View>
-                          <View style={styles.contentColumn}>
-                            <View style={styles.badgeContent}>
-                              <View
-                                style={[
-                                  styles.badge,
-                                  {
-                                    backgroundColor: getSeverityColor(
-                                      selectedReport[1]?.VR_severity_level
-                                    ),
-                                  },
-                                ]}
-                              >
-                                <Text style={styles.badgeText}>
-                                  {selectedReport[1]?.VR_severity_level!.toUpperCase()}
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-
-                        <View style={styles.twoColumnContainer}>
-                          <View style={styles.labelColumn}>
-                            <Text style={styles.sectionTitle}>Confidence</Text>
-                          </View>
-                          <View style={styles.contentColumn}>
-                            <Text
-                              style={[
-                                styles.sectionText,
-                                {
-                                  color: getConfidenceColor(
-                                    selectedReport[1]?.VR_confidence_score
-                                  ),
-                                  fontWeight: "600",
-                                },
-                              ]}
-                            >
-                              {Math.round(
-                                selectedReport[1]?.VR_confidence_score
-                              )}
-                              %
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.twoColumnContainer}>
-                          <View style={styles.labelColumn}>
-                            <Text style={styles.sectionTitle}>Fire Type</Text>
-                          </View>
-                          <View style={styles.contentColumn}>
-                            <Text style={styles.sectionText}>
-                              {selectedReport[1]?.VR_fire_type!.toUpperCase()}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.twoColumnContainer}>
-                          <View style={styles.labelColumn}>
-                            <Text style={styles.sectionTitle}>
-                              Spread Potential
-                            </Text>
-                          </View>
-                          <View style={styles.contentColumn}>
-                            <Text style={styles.sectionText}>
-                              {selectedReport[1]?.VR_spread_potential!.toUpperCase()}
-                            </Text>
-                          </View>
-                        </View>
+                        <Text style={styles.sectionText}>
+                          The report has been validated, either by the system
+                          itself or by human validation.
+                        </Text>
+                        <Text
+                          style={{ color: "#94A3B8", fontSize: width * 0.032 }}
+                        >
+                          The details of the validation can be found within the
+                          third tab of the modal or the "Validation" tab.
+                        </Text>
                       </>
                     )}
                   {selectedReport[0].PR_report_status == "false_alarm" && (
@@ -498,73 +463,178 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                 </>
               )}
 
+              {/* MEDIA SEGMENT */}
               {subSelection == 1 && (
-                <View>
+                <View
+                  style={{
+                    width: VIDEO_WIDTH,
+                    height: VIDEO_HEIGHT,
+                    backgroundColor: imageUri || videoUri ? "black" : "#18181b",
+                    borderRadius: 14,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginVertical: height * 0.02,
+                    overflow: "hidden",
+                    alignSelf: "center",
+                  }}
+                >
+                  {selectedReport[0]?.PR_video ? (
+                    loadingVideo ? (
+                      <ActivityIndicator size="large" color="#f97316" />
+                    ) : videoUri ? (
+                      <VideoView
+                        style={{ width: "100%", height: "100%" }}
+                        player={player}
+                        allowsFullscreen
+                        allowsPictureInPicture
+                      />
+                    ) : (
+                      <MediaLoadButton
+                        onPress={handleFetchVideo}
+                        icon="play-circle"
+                        label="LOAD"
+                      />
+                    )
+                  ) : selectedReport[0]?.PR_image ? (
+                    loadingImage ? (
+                      <ActivityIndicator size="large" color="#f97316" />
+                    ) : imageUri ? (
+                      <Image
+                        source={{ uri: imageUri }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          resizeMode: "contain",
+                        }}
+                      />
+                    ) : (
+                      <MediaLoadButton
+                        onPress={handleFetchImage}
+                        icon="image"
+                        label="LOAD"
+                      />
+                    )
+                  ) : (
+                    <Text style={{ color: "#fff", textAlign: "center" }}>
+                      No media available.
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {/* VALIDATION SEGMENT ENHANCED */}
+              {subSelection == 2 && selectedReport[1] && (
+                <>
                   <Text
                     style={[
                       styles.verificationTitle,
-                      { marginTop: 0, textAlign: "center" },
+                      { marginTop: height * 0.015 },
                     ]}
                   >
-                    MEDIA PREVIEW
+                    DETECTION INFORMATION
                   </Text>
-                  <View
-                    style={{
-                      width: VIDEO_WIDTH,
-                      height: VIDEO_HEIGHT,
-                      backgroundColor:
-                        imageUri || videoUri ? "black" : "#18181b",
-                      borderRadius: 14,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginVertical: height * 0.02,
-                      overflow: "hidden",
-                      alignSelf: "center",
-                    }}
-                  >
-                    {selectedReport[0]?.PR_video ? (
-                      loadingVideo ? (
-                        <ActivityIndicator size="large" color="#f97316" />
-                      ) : videoUri ? (
-                        <VideoView
-                          style={{ width: "100%", height: "100%" }}
-                          player={player}
-                          allowsFullscreen
-                          allowsPictureInPicture
-                        />
-                      ) : (
-                        <MediaLoadButton
-                          onPress={handleFetchVideo}
-                          icon="play-circle"
-                          label="LOAD"
-                        />
-                      )
-                    ) : selectedReport[0]?.PR_image ? (
-                      loadingImage ? (
-                        <ActivityIndicator size="large" color="#f97316" />
-                      ) : imageUri ? (
-                        <Image
-                          source={{ uri: imageUri }}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            resizeMode: "contain",
-                          }}
-                        />
-                      ) : (
-                        <MediaLoadButton
-                          onPress={handleFetchImage}
-                          icon="image"
-                          label="LOAD"
-                        />
-                      )
-                    ) : (
-                      <Text style={{ color: "#fff", textAlign: "center" }}>
-                        No media available.
+                  <View style={styles.twoColumnContainer}>
+                    <View style={styles.labelColumn}>
+                      <Text style={styles.sectionTitle}>Fire?</Text>
+                    </View>
+                    <View style={styles.contentColumn}>
+                      <Text style={styles.sectionText}>
+                        {selectedReport[1]?.VR_detected ? "Yes" : "No"}
                       </Text>
-                    )}
+                    </View>
                   </View>
-                </View>
+                  <View style={styles.twoColumnContainer}>
+                    <View style={styles.labelColumn}>
+                      <Text style={styles.sectionTitle}>Confidence</Text>
+                    </View>
+                    <View style={styles.contentColumn}>
+                      <Text style={styles.sectionText}>
+                        {selectedReport[1]?.VR_confidence_score}%
+                      </Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.verificationTitle,
+                      { marginTop: height * 0.015 },
+                    ]}
+                  >
+                    FIRE ANALYSIS
+                  </Text>
+                  {selectedReport[1].VR_detected && (
+                    <>
+                      <View style={styles.twoColumnContainer}>
+                        <View style={styles.labelColumn}>
+                          <Text style={styles.sectionTitle}>Fire Type</Text>
+                        </View>
+                        <View style={styles.contentColumn}>
+                          <Text style={styles.sectionText}>
+                            {selectedReport[1]?.VR_fire_type
+                              ? selectedReport[1]?.VR_fire_type.toUpperCase()
+                              : "Unknown"}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.twoColumnContainer}>
+                        <View style={styles.labelColumn}>
+                          <Text style={styles.sectionTitle}>
+                            Severity Level
+                          </Text>
+                        </View>
+                        <View style={styles.contentColumn}>
+                          <Text style={styles.sectionText}>
+                            {selectedReport[1]?.VR_severity_level
+                              ? selectedReport[1]?.VR_severity_level.toUpperCase()
+                              : "Unknown"}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.twoColumnContainer}>
+                        <View style={styles.labelColumn}>
+                          <Text style={styles.sectionTitle}>
+                            Spread Potential
+                          </Text>
+                        </View>
+                        <View style={styles.contentColumn}>
+                          <Text style={styles.sectionText}>
+                            {selectedReport[1]?.VR_spread_potential
+                              ? selectedReport[1]?.VR_spread_potential.toUpperCase()
+                              : "Unknown"}
+                          </Text>
+                        </View>
+                      </View>
+                    </>
+                  )}
+                  {selectedReport[1].VR_detected == false && (
+                    <Text style={styles.sectionText}>
+                      The validation report indicates that no fire was detected
+                      in the reported location, therefore no other details will
+                      be listed here.
+                    </Text>
+                  )}
+                  <Text
+                    style={[
+                      styles.verificationTitle,
+                      { marginTop: height * 0.015 },
+                    ]}
+                  >
+                    ADDITIONAL DETAILS
+                  </Text>
+                  <View style={styles.twoColumnContainer}>
+                    <View style={styles.labelColumn}>
+                      <Text style={styles.sectionTitle}>Timestamp</Text>
+                    </View>
+                    <View style={styles.contentColumn}>
+                      <Text style={styles.sectionText}>
+                        <Text style={{ textAlign: "right" }}>
+                          {new Date(
+                            selectedReport[1]?.VR_verification_timestamp
+                          ).toUTCString()}
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                </>
               )}
 
               {/* CLOSE REPORT BUTTON */}

@@ -9,6 +9,7 @@ import {
 } from "@/constants/interfaces/database";
 import { ReportCardProps } from "@/constants/interfaces/components";
 import { EditReportModal } from "./EditReportModal";
+import { FireType } from "@/constants/types/database";
 
 const { width, height } = Dimensions.get("window");
 const fontSizeBase = width * 0.035;
@@ -28,6 +29,15 @@ export const getSeverityColor = (
   return severity && colorMap[severity] ? colorMap[severity] : "#374151";
 };
 
+const getFireTypeColor = (text: FireType) => {
+  const colorMap: Record<FireType, string> = {
+    small: "#10B981",
+    medium: "#F59E0B",
+    large: "#EF4444",
+  };
+  return text && colorMap[text] ? colorMap[text] : "#374151";
+};
+
 export const getStatusColor = (status: string) => {
   const colorMap: Record<string, string> = {
     false_alarm: "#C2410C",
@@ -44,6 +54,54 @@ const getConfidenceIcon = (score: number) => {
   if (score >= 70) return "thumbs-up";
   if (score >= 50) return "exclamation-circle";
   return "question-circle";
+};
+
+const generateConfidenceColor = (
+  confidence: number | undefined,
+  verified: PostverifiedReport
+) => {
+  if (confidence === undefined) {
+    return <span style={{ color: "#6c757d" }}>N/A</span>;
+  }
+
+  const percentage = confidence;
+
+  if (percentage >= 0 && percentage <= 40) {
+    return (
+      <Text style={{ color: "#dc3545" }}>
+        <FontAwesome
+          name={getConfidenceIcon(verified.VR_confidence_score * 100)}
+          size={12}
+        />
+        {"  "}
+        {percentage}%
+      </Text>
+    );
+  } else if (percentage >= 41 && percentage <= 80) {
+    return (
+      <Text style={{ color: "#ffc107" }}>
+        <FontAwesome
+          name={getConfidenceIcon(verified.VR_confidence_score * 100)}
+          size={12}
+        />
+        {"  "}
+        {percentage}%
+      </Text>
+    );
+  } else if (percentage >= 81 && percentage <= 100) {
+    return (
+      <Text style={{ color: "#28a745" }}>
+        <FontAwesome
+          name={getConfidenceIcon(verified.VR_confidence_score * 100)}
+          size={12}
+        />
+        {"  "}
+        {percentage}%
+      </Text>
+    );
+  } else {
+    return <Text style={{ color: "#6c757d" }}>Invalid Value</Text>;
+  }
 };
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -220,7 +278,9 @@ const ReportCard = ({
               <>
                 <Text
                   style={{
-                    color: getSeverityColor(verified.VR_severity_level),
+                    color: getFireTypeColor(
+                      (verified.VR_fire_type as FireType) ?? "Unknown"
+                    ),
                     fontWeight: "bold",
                     fontSize: fontSizeBase * 0.9,
                   }}
@@ -239,11 +299,6 @@ const ReportCard = ({
                     marginTop: 4,
                   }}
                 >
-                  <FontAwesome
-                    name={getConfidenceIcon(verified.VR_confidence_score * 100)}
-                    size={16}
-                    color="white"
-                  />
                   <Text
                     style={{
                       color: "#F8FAFC",
@@ -251,7 +306,10 @@ const ReportCard = ({
                       marginLeft: 6,
                     }}
                   >
-                    {verified.VR_confidence_score}%
+                    {generateConfidenceColor(
+                      verified.VR_confidence_score,
+                      verified
+                    )}
                   </Text>
                 </View>
               </>

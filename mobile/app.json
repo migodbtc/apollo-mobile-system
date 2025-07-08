@@ -61,7 +61,8 @@
       ],
       "expo-video",
       "expo-web-browser",
-      "expo-audio"
+      "expo-audio",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

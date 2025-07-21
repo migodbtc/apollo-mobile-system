@@ -54,6 +54,12 @@ const renderHeaderContent = ({
           <FontAwesome name="users" size={iconSize} /> Teams
         </Text>
       );
+    case "database":
+      return (
+        <Text style={textStyle}>
+          <FontAwesome name="database" size={iconSize} /> Database
+        </Text>
+      );
     default:
       return null;
   }

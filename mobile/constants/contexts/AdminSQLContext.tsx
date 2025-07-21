@@ -65,6 +65,7 @@ interface AdminSQLContextProps extends AdminSQLState {
   fetchUserAccounts: () => Promise<void>;
   /** Fetches media storage row by its ID */
   fetchMediaById: (id: number) => Promise<void>;
+  fetchMediaStorageDetails: () => Promise<void>;
   /** Merges preverified and postverified reports */
   combineReports: () => void;
   /** Refreshes all data tables simultaneously */
@@ -287,6 +288,11 @@ export const AdminSQLProvider = ({
     [api]
   );
 
+  const fetchMediaStorageDetails = useCallback(
+    () => fetchData<MediaStorage>("mediaStorage", "media/details/get/all"),
+    [fetchData]
+  );
+
   /**
    * Combines preverified and postverified reports into a single array
    * where each entry is [PreverifiedReport, PostverifiedReport | null]
@@ -333,6 +339,7 @@ export const AdminSQLProvider = ({
       fetchPreverifiedReports(),
       // fetchResponseLogs(),
       fetchUserAccounts(),
+      fetchMediaStorageDetails(),
     ]);
   }, [
     // fetchFireStatistics,
@@ -340,6 +347,7 @@ export const AdminSQLProvider = ({
     fetchPreverifiedReports,
     // fetchResponseLogs,
     fetchUserAccounts,
+    fetchMediaStorageDetails,
   ]);
 
   /**
@@ -421,6 +429,7 @@ export const AdminSQLProvider = ({
         fetchUserAccounts: () =>
           fetchData<UserAccount>("userAccounts", "user/get/all"),
         fetchMediaById,
+        fetchMediaStorageDetails,
         combineReports,
         combinedReports,
         refreshAll: async () => {

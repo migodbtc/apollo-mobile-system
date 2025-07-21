@@ -9,6 +9,7 @@ import { JSX, useState } from "react";
 import { View, Text, Dimensions } from "react-native";
 import HistoryPanel from "@/components/panels/HistoryPanel";
 import TeamsPanel from "@/components/panels/TeamsPanel";
+import DatabasePanel from "@/components/panels/DatabasePanel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,6 +26,7 @@ export default function Dashboard() {
     reports: <ReportsPanel />,
     history: <HistoryPanel />,
     team: <TeamsPanel />,
+    database: <DatabasePanel />,
   };
 
   return (

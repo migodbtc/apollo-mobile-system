@@ -18,6 +18,7 @@ import {
   PreverifiedReport,
 } from "@/constants/interfaces/database";
 import ReportHelpModal from "../dash/ReportHelpModal";
+import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,40 +26,27 @@ const HistoryPanel = () => {
   // Session context
   const { sessionData } = useSession();
 
-  // Data states
-  const [preverifiedReports, setPreverifiedReports] = useState<
-    PreverifiedReport[]
-  >([]);
-  const [verifiedReports, setVerifiedReports] = useState<PostverifiedReport[]>(
-    []
-  );
-
   // UI states
   const [selectedReport, setSelectedReport] = useState<
     [PreverifiedReport, PostverifiedReport | null] | null
   >(null);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [isHelpModalVisible, setIsHelpModalVisible] = useState(false);
+  const [isEditModaVisible, setIsEditModalVisible] = useState(false);
   const [showPreverified, setShowPreverified] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const combinedReports = useMemo(() => {
-    const result = preverifiedReports.map((preverified) => {
-      const verified = verifiedReports.find((v) => {
-        return v.VR_report_id === preverified.PR_report_id;
-      });
-
-      return [preverified, verified ?? null] as [
-        PreverifiedReport,
-        PostverifiedReport | null
-      ];
-    });
-
-    return result;
-  }, [preverifiedReports, verifiedReports]);
+  const {
+    preverifiedReports,
+    postverifiedReports,
+    combinedReports,
+    fetchPreverifiedReports,
+    fetchPostverifiedReports,
+    combineReports,
+  } = useAdminSQL();
 
   // Data fetching use effect to get the infrormation from the database
   useEffect(() => {
@@ -69,15 +57,9 @@ const HistoryPanel = () => {
         setIsLoading(true);
         setError(null);
 
-        const [preverified, postverified] = await Promise.all([
-          fetchUnverifiedReports(),
-          fetchVerifiedReports(),
-        ]);
-
-        if (isMounted) {
-          setPreverifiedReports(preverified);
-          setVerifiedReports(postverified);
-        }
+        fetchPreverifiedReports();
+        fetchPostverifiedReports();
+        combineReports();
       } catch (error) {
         if (isMounted) {
           setError("Failed to load reports. Please try again.");
@@ -115,71 +97,6 @@ const HistoryPanel = () => {
   const closeReportModal = useCallback(() => {
     setIsReportModalVisible(false);
   }, []);
-
-  // API call functions
-  const fetchUnverifiedReports = async (): Promise<PreverifiedReport[]> => {
-    try {
-      const response = await fetch(`${SERVER_LINK}/reports/preverified/all`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      return data.map((report: any) => ({
-        PR_report_id: report["PR_report_id"],
-        PR_user_id: report["PR_user_id"],
-        PR_image_url: report["PR_image_url"],
-        PR_video_url: report["PR_video_url"],
-        PR_latitude: parseFloat(report["PR_latitude"]),
-        PR_longitude: parseFloat(report["PR_longitude"]),
-        PR_address: report["PR_address"],
-        PR_timestamp: new Date(report["PR_timestamp"]),
-        PR_verified: report["PR_verified"] === 1,
-        PR_report_status: report["PR_report_status"] as
-          | "pending"
-          | "verified"
-          | "false_alarm"
-          | "resolved",
-      }));
-    } catch (error) {
-      console.error("Failed to fetch unverified reports:", error);
-      throw error; // Re-throw to be caught by the main error handler
-    }
-  };
-
-  const fetchVerifiedReports = async (): Promise<PostverifiedReport[]> => {
-    const response = await fetch(`${SERVER_LINK}/reports/postverified/all`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (!response.ok) throw new Error("Failed to fetch verified reports");
-
-    const data = await response.json();
-
-    return data.map((report: any) => ({
-      VR_verification_id: report["VR_verification_id"],
-      VR_report_id: report["VR_report_id"],
-      VR_confidence_score: parseFloat(report["VR_confidence_score"]),
-      VR_detected: report["VR_detected"] === 1,
-      VR_verification_timestamp: new Date(report["VR_verification_timestamp"]),
-      VR_severity_level: report["VR_severity_level"] as
-        | "low"
-        | "moderate"
-        | "high"
-        | "critical",
-      VR_spread_potential: report["VR_spread_potential"] as
-        | "low"
-        | "moderate"
-        | "high",
-      VR_fire_type: report["VR_fire_type"],
-    }));
-  };
 
   // Date formatting memoized
   const formattedDate = useMemo(() => {
@@ -291,6 +208,7 @@ const HistoryPanel = () => {
                 preverified={report[0]}
                 verified={report[1]}
                 onClick={() => handleReportClick(report)}
+                setIsEditModalVisible={setIsEditModalVisible}
               />
             ))
         )}

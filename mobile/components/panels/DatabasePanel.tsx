@@ -9,15 +9,6 @@ import {
   StyleSheet,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import ReportCard from "../dash/ReportCard";
-import SelectedReportModal from "../dash/SelectedReportModal";
-import SERVER_LINK from "@/constants/netvar";
-import { useSession } from "@/constants/contexts/SessionContext";
-import {
-  PostverifiedReport,
-  PreverifiedReport,
-} from "@/constants/interfaces/database";
-import ReportHelpModal from "../dash/ReportHelpModal";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 
 const { width, height } = Dimensions.get("window");
@@ -97,7 +88,6 @@ const DatabasePanel = () => {
   const [selectedOption, setSelectedOption] = useState(dropdownOptions[0]);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
-  const [userAccordionOpen, setUserAccordionOpen] = useState(false);
   const [mediaAccordionOpen, setMediaAccordionOpen] = useState(false);
   const [reportValAccordionOpen, setReportValAccordionOpen] = useState(false);
   const [reportNoValAccordionOpen, setReportNoValAccordionOpen] =

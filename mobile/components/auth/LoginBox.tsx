@@ -124,30 +124,31 @@ const LoginBox: React.FC = () => {
     <>
       <View
         style={{
-          width: "75%",
-          backgroundColor: "#11162B",
+          width: "100%",
+          height: "100%",
           paddingHorizontal: width * 0.08,
-          paddingTop: height * 0.035,
+          paddingTop: height * 0.02,
           paddingBottom: height * 0.06,
           borderRadius: 10,
           shadowColor: "#000",
           shadowOpacity: 0.2,
           shadowRadius: 5,
           marginBottom: height * 0.05,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Text
           style={{
-            fontSize: width * 0.05,
+            fontSize: width * 0.045,
             fontWeight: "bold",
             textAlign: "center",
             color: "#c2410c",
             marginTop: height * 0.015,
-            marginBottom: height * 0.03,
+            marginBottom: 32,
           }}
         >
-          <FontAwesome name="fire" size={width * 0.05} />
-          {"  "}APOLLO LOGIN
+          WELCOME TO APOLLO!
         </Text>
 
         <View
@@ -160,13 +161,13 @@ const LoginBox: React.FC = () => {
             paddingVertical: 4,
             paddingHorizontal: 16,
             marginBottom: height * 0.02,
-            backgroundColor: "#1E293B",
+            backgroundColor: "#23263A",
           }}
         >
           <FontAwesome
             name="user"
             size={20}
-            color="#c2410c"
+            color="#F97316"
             style={{ marginRight: 10 }}
           />
           <TextInput
@@ -188,13 +189,13 @@ const LoginBox: React.FC = () => {
             paddingVertical: 4,
             paddingHorizontal: 16,
             marginBottom: height * 0.02,
-            backgroundColor: "#1E293B",
+            backgroundColor: "#23263A",
           }}
         >
           <FontAwesome
             name="lock"
             size={20}
-            color="#c2410c"
+            color="#F97316"
             style={{ marginRight: 10 }}
           />
           <TextInput

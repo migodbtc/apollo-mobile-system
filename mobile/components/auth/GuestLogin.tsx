@@ -1,8 +1,3 @@
-import {
-  PostverifiedReport,
-  PreverifiedReport,
-} from "@/constants/interfaces/database";
-import SERVER_LINK from "@/constants/netvar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
@@ -13,6 +8,7 @@ import {
   Linking,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import * as Location from "expo-location";
 import { FontAwesome } from "@expo/vector-icons";
@@ -22,6 +18,7 @@ import MapView, { Marker, UrlTile } from "react-native-maps";
 import LoadingMapPanel from "../dash/LoadingMapScreen";
 import LoginBox from "./LoginBox";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
+import * as Animatable from "react-native-animatable";
 
 const { width, height } = Dimensions.get("window");
 
@@ -201,7 +198,10 @@ const GuestLogin = () => {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView
+      className="flex-1 bg-slate-950"
+      edges={["left", "right", "bottom"]}
+    >
       <ScrollView>
         <View
           className="items-center justify-center p-2"
@@ -212,18 +212,52 @@ const GuestLogin = () => {
             alignItems: "center",
           }}
         >
-          <LoginBox />
-          <Text
+          <View
             style={{
-              color: "#c2410c",
-              position: "absolute",
-              bottom: height * 0.06,
-              fontSize: width * 0.035,
+              width: "100%",
+              height: "35%",
+              aspectRatio: width / (height * 0.3),
+              overflow: "hidden",
+              position: "relative",
+              backgroundColor: "transparent",
+              padding: 0,
             }}
           >
-            <FontAwesome name="caret-down" size={width * 0.04} />
-            {"  "}Scroll down for more information!
-          </Text>
+            <Image
+              source={require("../../assets/images/apolloGraphic.png")}
+              style={{
+                width: "100%",
+                height: "100%",
+                resizeMode: "cover",
+                position: "absolute",
+                top: 0,
+                left: 0,
+              }}
+            />
+          </View>
+          <View style={{ width: "100%", height: "55%" }}>
+            <LoginBox />
+          </View>
+          <View style={{ width: "100%", height: "10%", alignItems: "center" }}>
+            <Animatable.Text
+              animation={{
+                0: { translateY: 0 },
+                0.5: { translateY: -10 },
+                1: { translateY: 0 },
+              }}
+              duration={2000}
+              iterationCount="infinite"
+              direction="alternate"
+              style={{
+                color: "#313D50",
+                fontSize: width * 0.035,
+                fontWeight: "600",
+              }}
+            >
+              <FontAwesome name="caret-down" size={width * 0.04} />
+              {"  "}Scroll down for more information!
+            </Animatable.Text>
+          </View>
         </View>
         <View
           style={{

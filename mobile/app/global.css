@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+#apolloGraphic {
+  background-image: url("../assets/images/apolloGraphic.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}

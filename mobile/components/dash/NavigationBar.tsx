@@ -37,7 +37,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     if (panel === "camera") {
       router.push("/capture");
     } else if (panel === "more") {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); // animation na dinagdag ko pag pinindot yung "more" basically naglagay lang ako fade transition hahahahaha 
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); // animation na dinagdag ko pag pinindot yung "more" basically naglagay lang ako fade transition hahahahaha
       setShowMoreMenu(!showMoreMenu);
     } else {
       setSelectedPanel(panel);
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     alignItems: "center",
     backgroundColor: "#11162B",
-    height: height * 0.1,
+    height: height * 0.15,
     position: "relative",
     zIndex: 1,
   },

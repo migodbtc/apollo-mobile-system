@@ -206,7 +206,7 @@ const GuestLogin = () => {
         <View
           className="items-center justify-center p-2"
           style={{
-            height: height * 0.95,
+            height: height,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",

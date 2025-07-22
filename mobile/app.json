@@ -26,8 +26,8 @@
     },
     "androidNavigationBar": {
       "backgroundColor": "#020617",
-      "barStyle": "light",
-      "visible": true
+      "barStyle": "light-content",   
+      "visible": "leanback"          
     },
     "web": {
       "bundler": "metro",

@@ -274,7 +274,7 @@ const ReportCard = ({
           }}
         >
           {verified ? (
-            verified.VR_detected !== false ? (
+            preverified.PR_report_status !== "false_alarm" ? (
               <>
                 <Text
                   style={{

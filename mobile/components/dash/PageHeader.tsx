@@ -60,6 +60,12 @@ const renderHeaderContent = ({
           <FontAwesome name="database" size={iconSize} /> Database
         </Text>
       );
+    case "meta":
+      return (
+        <Text style={textStyle}>
+          <FontAwesome name="bug" size={iconSize} /> Meta
+        </Text>
+      );
     default:
       return null;
   }

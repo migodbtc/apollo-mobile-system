@@ -27,6 +27,9 @@ const HomePanel = () => {
     getPreverifiedReportById,
   } = useAdminSQL();
 
+  const [showAlert, setShowAlert] = useState(true);
+  const [accordionOpen, setAccordionOpen] = useState(false);
+
   const [searchType, setSearchType] = useState<string>("id");
   const [searchQuery, setSearchQuery] = useState("");
   const [subSelection, setSubSelection] = useState<number>(0);
@@ -59,21 +62,20 @@ const HomePanel = () => {
   useEffect(() => {
     if (sessionData?.UA_user_id && shouldFetchReports.current) {
       fetchPreverifiedReports();
-      shouldFetchReports.current = false; // Prevent subsequent fetches
+      shouldFetchReports.current = false;
     }
   }, [sessionData?.UA_user_id, fetchPreverifiedReports]);
 
   const handleSelectionButton = (index: number) => {
     if (index !== subSelection) setSubSelection(index);
     if (index === 1) {
-      shouldFetchReports.current = true; // Allow refresh when tab is selected
+      shouldFetchReports.current = true;
       fetchPreverifiedReports();
     }
   };
 
   const handleSearchReport = (query: string) => {
     if (!query.trim()) {
-      // If query is empty, show all user reports
       setFilteredReports(
         preverifiedReports?.filter(
           (report) => report.PR_user_id === sessionData?.UA_user_id
@@ -108,36 +110,89 @@ const HomePanel = () => {
   };
 
   const renderAccountDetails = useMemo(() => {
-    const labelFontSize = width * 0.03;
-    const valueFontSize = width * 0.035;
-
     return () => (
       <View>
-        <Text
-          style={{
-            color: "#B0B3C4",
-            fontSize: 12,
-            marginHorizontal: 10,
-            fontStyle: "italic",
-          }}
-        >
-          <FontAwesome name="info" />
-          {"  "}
-          Complete the setup of your account by submitting personal information,
-          which in turn will increase your reputation score and make your
-          account and reports more credible and trusted!
-        </Text>
-        <Text
-          style={{
-            color: "#B0B3C4",
-            marginVertical: 10,
-            marginHorizontal: 10,
-            fontSize: 12,
-            fontWeight: "bold",
-          }}
-        >
-          EDIT YOUR ACCOUNT INFORMATION WITH THE PROFILE BUTTON BELOW!{" "}
-        </Text>
+        {showAlert && (
+          <View
+            style={{
+              marginHorizontal: 0,
+              marginBottom: 10,
+              marginTop: 2,
+              backgroundColor: "transparent",
+              overflow: "hidden",
+            }}
+          >
+            {/* Accordion Header */}
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 12,
+              }}
+              onPress={() => setAccordionOpen((prev) => !prev)}
+              activeOpacity={0.8}
+            >
+              <FontAwesome name="info-circle" size={20} color="#22c55e" />
+              <Text
+                style={{
+                  color: "#22c55e",
+                  fontWeight: "bold",
+                  fontSize: width * 0.035,
+                  marginLeft: 8,
+                  flex: 1,
+                }}
+              >
+                Account Setup Reminder
+              </Text>
+              {/* Dash Button to close */}
+              <TouchableOpacity
+                onPress={() => setShowAlert(false)}
+                activeOpacity={0.8}
+                style={{ marginLeft: 8 }}
+              >
+                <FontAwesome
+                  name="minus"
+                  size={width * 0.04}
+                  color="#22c55e"
+                  style={{ marginLeft: 8 }}
+                />
+              </TouchableOpacity>
+              <FontAwesome
+                name={accordionOpen ? "chevron-up" : "chevron-down"}
+                size={width * 0.04}
+                color="#22c55e"
+                style={{ marginLeft: 8 }}
+              />
+            </TouchableOpacity>
+            {/* Accordion Content */}
+            {accordionOpen && (
+              <View style={{ paddingHorizontal: 12, paddingBottom: 12 }}>
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: width * 0.035,
+                    fontStyle: "italic",
+                  }}
+                >
+                  Complete the setup of your account by submitting personal
+                  information, which in turn will increase your reputation score
+                  and make your account and reports more credible and trusted!
+                </Text>
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: width * 0.035,
+                    fontWeight: "bold",
+                    marginTop: 16,
+                  }}
+                >
+                  EDIT YOUR ACCOUNT INFORMATION WITH THE PROFILE BUTTON BELOW!
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {[
           { key: "User ID", value: sessionData?.UA_user_id },
           { key: "Last Name", value: sessionData?.UA_last_name },
@@ -165,7 +220,7 @@ const HomePanel = () => {
               style={{
                 color: "#fb923c",
                 fontWeight: "bold",
-                fontSize: labelFontSize,
+                fontSize: width * 0.035,
               }}
             >
               {item.key}
@@ -173,16 +228,60 @@ const HomePanel = () => {
             <Text
               style={{
                 color: "white",
-                fontSize: valueFontSize,
+                fontSize: width * 0.035,
               }}
             >
               {item.value ?? "  "}
             </Text>
           </View>
         ))}
+        {/* Profile operations */}
+        <View
+          style={{
+            marginHorizontal: 10,
+            marginBottom: 10,
+            marginTop: 32,
+            backgroundColor: "transparent",
+            overflow: "hidden",
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              justifyContent: "center",
+              minWidth: "40%",
+              maxWidth: "50%",
+
+              borderWidth: 2,
+              borderColor: "#c2410c",
+              borderRadius: 12,
+            }}
+            activeOpacity={0.8}
+            // onPress={handleEditProfile} // Add your handler here
+          >
+            <FontAwesome
+              name="edit"
+              size={22}
+              color="#c2410c"
+              style={{ marginRight: 8 }}
+            />
+            <Text
+              style={{
+                color: "#c2410c",
+                fontWeight: "bold",
+                fontSize: width * 0.035,
+              }}
+            >
+              Edit Profile
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
-  }, [sessionData]);
+  }, [sessionData, accordionOpen]);
 
   const renderAccountReports = useMemo(() => {
     return () => (

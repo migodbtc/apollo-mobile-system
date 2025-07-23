@@ -10,6 +10,7 @@ import { View, Text, Dimensions } from "react-native";
 import HistoryPanel from "@/components/panels/HistoryPanel";
 import TeamsPanel from "@/components/panels/TeamsPanel";
 import DatabasePanel from "@/components/panels/DatabasePanel";
+import MetaPanel from "@/components/panels/MetaPanel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -27,12 +28,14 @@ export default function Dashboard() {
     history: <HistoryPanel />,
     team: <TeamsPanel />,
     database: <DatabasePanel />,
+    meta: <MetaPanel />,
   };
 
   return (
     <View
       style={{
         flex: 1,
+        backgroundColor: "#020617",
       }}
     >
       {sessionData && (

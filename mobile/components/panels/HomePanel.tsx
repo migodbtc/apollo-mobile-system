@@ -281,7 +281,7 @@ const HomePanel = () => {
         </View>
       </View>
     );
-  }, [sessionData, accordionOpen]);
+  }, [sessionData, showAlert, accordionOpen]);
 
   const renderAccountReports = useMemo(() => {
     return () => (

@@ -818,6 +818,16 @@ const DatabasePanel = () => {
                       />
                       <Text style={styles.cardTitle}>
                         Submitted Report {report[0]?.PR_report_id ?? ""}
+                        <Text
+                          style={{
+                            color: "white",
+                            fontWeight: "light",
+                            fontSize: width * 0.035,
+                          }}
+                        >
+                          {"  "}
+                          {report[0].PR_address.substring(0, 15)}...
+                        </Text>
                       </Text>
                     </View>
                     <FontAwesome

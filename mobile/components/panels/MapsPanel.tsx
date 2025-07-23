@@ -18,11 +18,6 @@ import MapView, {
 import * as Location from "expo-location";
 import { FontAwesome } from "@expo/vector-icons";
 import LoadingMapPanel from "../dash/LoadingMapScreen";
-import {
-  PostverifiedReport,
-  PreverifiedReport,
-} from "@/constants/interfaces/database";
-import SERVER_LINK from "@/constants/netvar";
 import PulsatingMarker from "../dash/PulsatingMarker";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 import { CombinedReport } from "@/constants/types/database";

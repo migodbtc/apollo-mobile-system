@@ -180,89 +180,6 @@ def update_user(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
-def patch_user(request):
-    """DESC: Partially updates user details based on the provided fields."""
-    data = request.json
-    UA_user_id = data.get("UA_user_id")
-    
-    if not UA_user_id:
-        return jsonify({"error": "Missing UA_user_id"}), 400
-    
-    conn, cursor = None, None
-    try:
-        conn = mysql.connect()
-        cursor = conn.cursor(pms_DictCursor)
-
-        cursor.execute("SELECT * FROM `user_accounts` WHERE UA_user_id = %s", (UA_user_id,))
-        user = cursor.fetchone()
-        if not user:
-            return jsonify({"error": f"User with ID {UA_user_id} not found"}), 404
-
-        update_fields = []
-        update_values = []
-        
-        if 'UA_username' in data:
-            update_fields.append("UA_username = %s")
-            update_values.append(data['UA_username'])
-        if 'UA_password' in data:
-            update_fields.append("UA_password = %s")
-            update_values.append(data['UA_password'])
-        if 'UA_user_role' in data:
-            update_fields.append("UA_user_role = %s")
-            update_values.append(data['UA_user_role'])
-        if 'UA_created_at' in data:
-            update_fields.append("UA_created_at = %s")
-            update_values.append(data['UA_created_at'])
-        if 'UA_last_name' in data:
-            update_fields.append("UA_last_name = %s")
-            update_values.append(data['UA_last_name'])
-        if 'UA_first_name' in data:
-            update_fields.append("UA_first_name = %s")
-            update_values.append(data['UA_first_name'])
-        if 'UA_middle_name' in data:
-            update_fields.append("UA_middle_name = %s")
-            update_values.append(data['UA_middle_name'])
-        if 'UA_suffix' in data:
-            update_fields.append("UA_suffix = %s")
-            update_values.append(data['UA_suffix'])
-        if 'UA_email_address' in data:
-            update_fields.append("UA_email_address = %s")
-            update_values.append(data['UA_email_address'])
-        if 'UA_phone_number' in data:
-            update_fields.append("UA_phone_number = %s")
-            update_values.append(data['UA_phone_number'])
-        if 'UA_reputation_score' in data:
-            update_fields.append("UA_reputation_score = %s")
-            update_values.append(data['UA_reputation_score'])
-        if 'UA_id_picture_front' in data:
-            update_fields.append("UA_id_picture_front = %s")
-            update_values.append(data['UA_id_picture_front'])
-        if 'UA_id_picture_back' in data:
-            update_fields.append("UA_id_picture_back = %s")
-            update_values.append(data['UA_id_picture_back'])
-        
-        if not update_fields:
-            return jsonify({"error": "No fields to update"}), 400
-
-        update_query = f"""
-            UPDATE `user_accounts`
-            SET {', '.join(update_fields)}
-            WHERE UA_user_id = %s
-        """
-        update_values.append(UA_user_id) 
-        cursor.execute(update_query, tuple(update_values))
-        conn.commit()
-
-        return jsonify({"message": f"User {UA_user_id} updated successfully."}), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
 def delete_user(request):
     """DESC: Deletes a user by UA_user_id."""
     data = request.json
@@ -435,12 +352,6 @@ def add_postverified_report(request):
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
-
-def update_postverified_report(request):
-    pass
-
-def patch_postverified_report(request):
-    pass
 
 def delete_postverified_report(request):
     # DESC: Deletes a postverified report by VR_verification_id.
@@ -652,104 +563,6 @@ def delete_preverified_report(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
-def patch_preverified_report(request):
-    pass
-
-# def delete_preverified_report(request):
-#     """DESC: Deletes a preverified report by PR_report_id."""
-#     data = request.json if hasattr(request, "json") and request.json else request
-
-#     PR_report_id = data.get("PR_report_id")
-#     if not PR_report_id:
-#         return jsonify({"error": "Missing PR_report_id"}), 400
-
-#     conn, cursor = None, None
-#     try:
-#         conn = mysql.connect()
-#         cursor = conn.cursor(pms_DictCursor)
-#         cursor.execute("DELETE FROM postverified_reports WHERE VR_report_id = %s", (PR_report_id,))
-#         cursor.execute("SELECT * FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
-#         report = cursor.fetchone()
-#         if not report:
-#             return jsonify({"error": f"Report with ID {PR_report_id} not found"}), 404
-
-#         cursor.execute("DELETE FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
-#         conn.commit()
-#         return jsonify({"message": f"Preverified report {PR_report_id} deleted successfully."}), 200
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-#     finally:
-#         if cursor: cursor.close()
-#         if conn: conn.close()
-
-### === RESPONSE LOGS ===
-def get_response_logs():
-    pass
-
-def get_one_response_log(request):
-    pass
-
-def add_response_log(request):
-    pass
-
-def update_response_log(request):
-    pass
-
-def patch_response_log(request):
-    pass
-
-def delete_response_log(request):
-    pass
-
-### === FIRE STATISTICS ===
-def get_fire_statistics():
-    pass
-
-def get_one_fire_statistic(request):
-    pass
-
-def add_fire_statistic(request):
-    pass
-
-def update_fire_statistic(request):
-    """DESC: Updates all fields of an existing fire statistic based on FS_statistic_id."""
-    data = request.json
-    FS_statistic_id = data.get("FS_statistic_id")
-
-    if not FS_statistic_id:
-        return jsonify({"error": "Missing FS_statistic_id"}), 400
-
-    conn, cursor = None, None
-    try:
-        conn = mysql.connect()
-        cursor = conn.cursor(pms_DictCursor)
-        cursor.execute("SELECT * FROM `fire_statistics` WHERE FS_statistic_id = %s", (FS_statistic_id,))
-        stat = cursor.fetchone()
-        if not stat:
-            return jsonify({"error": f"Fire statistic with ID {FS_statistic_id} not found"}), 404
-
-        fields = ["FS_last_update", "FS_total_fires", "FS_false_alarms", "FS_detected_fires", "FS_average_confidence"]
-        values = [data.get(field) for field in fields]
-        update_query = f"""
-            UPDATE `fire_statistics` SET
-            {', '.join(f'{field} = %s' for field in fields)}
-            WHERE FS_statistic_id = %s
-        """
-        cursor.execute(update_query, (*values, FS_statistic_id))
-        conn.commit()
-        return jsonify({"message": f"Fire statistic {FS_statistic_id} updated successfully"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-def patch_fire_statistic(request):
-    pass
-
-def delete_fire_statistic(request):
-    pass
-
 ### === MEDIA STORAGE ===
 def get_all_media_files():
     pass
@@ -958,9 +771,6 @@ def add_media_file(request):
             cursor.close()
         if conn:
             conn.close()
-
-def update_media_file(request):
-    pass 
 
 def delete_media_file(request):
     pass
@@ -1384,18 +1194,6 @@ def route_update_user_confidence():
     
     try:
         return calculate_user_reputation_score(request=request)
-    except KeyError as e:
-        return jsonify({"error": f"Missing required data: {str(e)}"}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/user/patch', methods=["PUT"])
-def route_patch_user():
-    if request.method != 'POST':
-        return jsonify({"error": "Invalid request method. Expected POST method."}), 405
-    
-    try:
-        return patch_user(request=request)
     except KeyError as e:
         return jsonify({"error": f"Missing required data: {str(e)}"}), 400
     except Exception as e:

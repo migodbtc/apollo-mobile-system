@@ -706,21 +706,24 @@ const ReportEditModal = ({
                 </div>
               </div>
               {/* POSTVALIDATION INTRO */}
-              <div>
-                <div className="row w-100 mt-4 mx-0">
-                  <span className="text-muted text-sm text-bold">
-                    POSTVALIDATION DETAILS
-                  </span>
+              {modifiedData[1] && (
+                <div>
+                  <div className="row w-100 mt-4 mx-0">
+                    <span className="text-muted text-sm text-bold">
+                      POSTVALIDATION DETAILS
+                    </span>
+                  </div>
+                  <div className="row w-100 mt-1 mx-0">
+                    <p className="text-sm">
+                      This segment is only visible if the selected report is
+                      validated by the system or the responders. After the
+                      intervention for validation, the report contains the
+                      following data below.
+                    </p>
+                  </div>
                 </div>
-                <div className="row w-100 mt-1 mx-0">
-                  <p className="text-sm">
-                    This segment is only visible if the selected report is
-                    validated by the system or the responders. After the
-                    intervention for validation, the report contains the
-                    following data below.
-                  </p>
-                </div>
-              </div>
+              )}
+
               {/* POST VALIDATION  */}
               {modifiedData[0].PR_report_status !== "pending" && (
                 <div

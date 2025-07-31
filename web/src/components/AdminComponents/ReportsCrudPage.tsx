@@ -437,9 +437,7 @@ const ReportsCrudPage = () => {
             className="d-flex flex-row justify-content-between align-items-center"
             style={{ height: "5vh", color: "#c2410c" }}
           >
-            <div>
-              <h5 className="box-title">All Submitted Reports</h5>
-            </div>
+            <h5 className="box-title">All Submitted Reports</h5>
           </div>
           <div
             className="card py-3 px-4 w-100"

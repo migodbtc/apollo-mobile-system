@@ -7,7 +7,7 @@ import MissionSection from "./PublicComponents/MissionSection";
 
 const PublicSegment = () => {
   return (
-    <div id="publicSegment" className="container">
+    <div id="publicSegment" className="w-100">
       {/* HEADER - JUMBOTRON/HERO */}
       <HeroSection />
 

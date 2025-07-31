@@ -33,6 +33,17 @@ const LoginForm = () => {
 
       const data = await response.json();
 
+      const role = data["user_data"]["UA_user_role"];
+
+      if (role in ["superadmin", "admin"]) {
+        console.log("Valid user!");
+      } else {
+        alert(
+          `Sorry! Only administrators and superadministrators can access this!`
+        );
+        return;
+      }
+
       if (response.ok) {
         const {
           UA_user_id,

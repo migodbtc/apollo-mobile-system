@@ -22,19 +22,19 @@ function AppContent() {
     segment === "admin" && sessionData ? "container-fluid" : "container";
 
   return (
-    <div className={`${layoutClass} bg-fullpagebg`}>
+    <div className={`${layoutClass} bg-fullpagebg overflow-x-hidden`}>
       <div className={containerClass}>
         {/* NAVIGATION BAR */}
         <NavigationBar segment={segment} setSegment={setSegment} />
-      </div>
 
-      {segment === "public" ? (
-        <PublicSegment />
-      ) : (
-        <AdminSQLProvider serverUrl={SERVER_LINK}>
-          <AdminSegment />
-        </AdminSQLProvider>
-      )}
+        {segment === "public" ? (
+          <PublicSegment />
+        ) : (
+          <AdminSQLProvider serverUrl={SERVER_LINK}>
+            <AdminSegment />
+          </AdminSQLProvider>
+        )}
+      </div>
     </div>
   );
 }

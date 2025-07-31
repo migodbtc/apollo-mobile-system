@@ -85,13 +85,19 @@ const UserCreateModal = ({
   };
 
   const handleCreateUser = async () => {
-    if (newUser.UA_email_address && !validateEmail(newUser.UA_email_address)) {
-      alert("Please enter a valid email address.");
+    if (
+      !newUser.UA_username ||
+      !newUser.UA_password ||
+      !newUser.UA_email_address
+    ) {
+      alert(
+        "Please fill in all required fields: Username, email address, and password."
+      );
       return;
     }
 
-    if (!newUser.UA_username || !newUser.UA_password) {
-      alert("Please fill in all required fields: Username and Password.");
+    if (newUser.UA_email_address && !validateEmail(newUser.UA_email_address)) {
+      alert("Please enter a valid email address.");
       return;
     }
 

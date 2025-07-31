@@ -98,7 +98,7 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
         <div className="col-md-8">
           <div
             className="d-flex flex-row justify-content-between align-items-center"
-            style={{ height: "10%", color: "#c2410c" }}
+            style={{ height: "7%", color: "#c2410c" }}
           >
             <div>
               <h5 className="box-title mt-1">Recent Reports</h5>
@@ -128,7 +128,7 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
         <div className="col-md-4">
           <div
             className="d-flex flex-row justify-content-between align-items-center"
-            style={{ height: "10%", color: "#c2410c" }}
+            style={{ height: "7%", color: "#c2410c" }}
           >
             <div>
               <h5 className="box-title mt-1">Personnel</h5>

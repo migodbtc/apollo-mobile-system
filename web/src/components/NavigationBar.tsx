@@ -1,5 +1,4 @@
 import {
-  faBars,
   faHomeAlt,
   faInfoCircle,
   faMobileAndroidAlt,
@@ -28,116 +27,127 @@ const NavigationBar = ({ segment, setSegment }: NavigationBarProps) => {
 
   return (
     <nav
-      className="navbar navbar-expand navbar-primary navbar-dark py-3 px-3 navbarApollo"
+      className="navbar navbar-expand-md navbar-primary navbar-dark py-3 navbarApollo w-100"
       style={{
+        minHeight: 64,
         backgroundColor: "rgba(2, 6, 23, 0)",
-        height: "10vh",
+        userSelect: "none",
       }}
     >
-      {" "}
-      {segment == "public" ? (
-        <ul className="navbar-nav">
-          <li
-            className="nav-item d-none d-sm-inline-block mr-3 navbarApolloItem"
-            style={{ borderBottom: "3px solid #11162B" }}
-          >
-            <a
-              className="nav-link"
-              style={{ color: "#c2410c" }}
-              href="#missionSection"
+      <button
+        className="navbar-toggler border-0"
+        type="button"
+        data-toggle="collapse"
+        data-target="#apolloNavbar"
+        aria-controls="apolloNavbar"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span className="navbar-toggler-icon"></span>
+      </button>{" "}
+      <div className="collapse navbar-collapse" id="apolloNavbar">
+        {segment == "public" ? (
+          <ul className="navbar-nav">
+            <li
+              className="nav-item mr-3 navbarApolloItem"
+              style={{ borderBottom: "3px solid #11162B" }}
             >
-              <FontAwesomeIcon
-                icon={faHomeAlt}
-                className="mr-2"
+              <a
+                className="nav-link"
                 style={{ color: "#c2410c" }}
-              />
-              Mission
-            </a>
-          </li>
-          <li
-            className="nav-item d-none d-sm-inline-block mr-3"
-            style={{ borderBottom: "3px solid #11162B" }}
-          >
-            <a
-              className="nav-link"
-              style={{ color: "#c2410c" }}
-              href="#featuresSection"
+                href="#missionSection"
+              >
+                <FontAwesomeIcon
+                  icon={faHomeAlt}
+                  className="mr-2"
+                  style={{ color: "#c2410c" }}
+                />
+                Mission
+              </a>
+            </li>
+            <li
+              className="nav-item mr-3"
+              style={{ borderBottom: "3px solid #11162B" }}
             >
-              <FontAwesomeIcon
-                icon={faMobileAndroidAlt}
-                className="mr-2"
+              <a
+                className="nav-link"
                 style={{ color: "#c2410c" }}
-              />
-              Features
-            </a>
-          </li>
-          <li
-            className="nav-item d-none d-sm-inline-block mr-3"
-            style={{ borderBottom: "3px solid #11162B" }}
-          >
-            <a
-              className="nav-link"
-              style={{ color: "#c2410c" }}
-              href="#aboutSection"
+                href="#featuresSection"
+              >
+                <FontAwesomeIcon
+                  icon={faMobileAndroidAlt}
+                  className="mr-2"
+                  style={{ color: "#c2410c" }}
+                />
+                Features
+              </a>
+            </li>
+            <li
+              className="nav-item mr-3"
+              style={{ borderBottom: "3px solid #11162B" }}
             >
-              <FontAwesomeIcon
-                icon={faInfoCircle}
-                className="mr-2"
+              <a
+                className="nav-link"
                 style={{ color: "#c2410c" }}
-              />
-              About
-            </a>
-          </li>
-          <li
-            className="nav-item d-none d-sm-inline-block mr-3"
-            style={{ borderBottom: "3px solid #11162B" }}
-          >
-            <a
-              className="nav-link"
-              style={{ color: "#c2410c" }}
-              href="#contactSection"
+                href="#aboutSection"
+              >
+                <FontAwesomeIcon
+                  icon={faInfoCircle}
+                  className="mr-2"
+                  style={{ color: "#c2410c" }}
+                />
+                About
+              </a>
+            </li>
+            <li
+              className="nav-item mr-3"
+              style={{ borderBottom: "3px solid #11162B" }}
             >
-              <FontAwesomeIcon
-                icon={faPhoneAlt}
-                className="mr-2"
+              <a
+                className="nav-link"
                 style={{ color: "#c2410c" }}
-              />
-              Contact
-            </a>
-          </li>
-        </ul>
-      ) : (
-        <ul className="navbar-nav">
-          <li
-            className="nav-item d-none d-flex justify-content-center align-items-center mr-3 navbarApolloItem brand-text text-lg"
-            style={{ color: "#646A85" }}
-          >
-            <b className="mr-2" style={{ color: "#c2410c" }}>
-              Apollo
-            </b>
-            Admin
-          </li>
-        </ul>
-      )}
-      {segment == "public" ? (
-        <ul className="navbar-nav ml-auto">
-          <li
-            className="nav-item d-none d-sm-inline-block nav-link"
-            style={{
-              borderBottom: "3px solid #11162B",
-              color: "#646A85",
-              cursor: "pointer",
-            }}
-            onClick={() => handleSegmentChange("admin")}
-          >
-            Admin Login
-          </li>
-        </ul>
-      ) : (
-        <>
+                href="#contactSection"
+              >
+                <FontAwesomeIcon
+                  icon={faPhoneAlt}
+                  className="mr-2"
+                  style={{ color: "#c2410c" }}
+                />
+                Contact
+              </a>
+            </li>
+          </ul>
+        ) : (
+          <ul className="navbar-nav">
+            <li
+              className="nav-item d-flex justify-content-center align-items-center mr-3 navbarApolloItem brand-text text-lg"
+              style={{ color: "#646A85" }}
+            >
+              <b className="mr-2" style={{ color: "#c2410c" }}>
+                Apollo
+              </b>
+              Admin
+            </li>
+          </ul>
+        )}
+        {segment == "public" ? (
           <ul className="navbar-nav ml-auto">
             <li
-              className="nav-item d-none d-sm-inline-block nav-link mr-2"
+              className="nav-item nav-link"
+              style={{
+                borderBottom: "3px solid #11162B",
+                color: "#646A85",
+                cursor: "pointer",
+              }}
+              onClick={() => handleSegmentChange("admin")}
+            >
+              Admin Login
+            </li>
+          </ul>
+        ) : (
+          <ul className="navbar-nav ml-auto">
+            <li
+              className="nav-item nav-link mr-2"
               style={{
                 color: "#646A85",
                 cursor: "pointer",
@@ -148,7 +158,7 @@ const NavigationBar = ({ segment, setSegment }: NavigationBarProps) => {
             </li>
             {sessionData && (
               <li
-                className="nav-item d-none d-sm-inline-block nav-link"
+                className="nav-item nav-link"
                 style={{
                   color: "#646A85",
                   cursor: "pointer",
@@ -159,8 +169,8 @@ const NavigationBar = ({ segment, setSegment }: NavigationBarProps) => {
               </li>
             )}
           </ul>
-        </>
-      )}
+        )}
+      </div>
     </nav>
   );
 };

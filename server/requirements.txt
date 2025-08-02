@@ -73,7 +73,7 @@ protobuf==5.29.5
 psutil==7.0.0
 pure_eval==0.2.3
 pydantic==2.5.3
-pydantic_core==2.14.6 --only-binary=:all:
+pydantic_core --only-binary=:all:
 Pygments==2.19.2
 PyMySQL==1.1.0
 pyparsing==3.2.3

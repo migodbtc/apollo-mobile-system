@@ -25,17 +25,6 @@ const { width, height } = Dimensions.get("window");
 const SubmissionPage = () => {
   const router = useRouter();
   const { sessionData, setSessionData } = useSession();
-  const videoReference = useRef<Video>(null);
-  const { videoUri } = useVideoUri();
-  const { imageUri } = useImageUri();
-  const [videoSource, setVideoSource] = useState<{ uri: string } | undefined>(
-    undefined
-  );
-
-  const [vidMetaData, setVidMetaData] = useState<VideoMetadata | null>(null);
-  const [imageMetaData, setImageMetaData] = useState<{ size?: number } | null>(
-    null
-  );
 
   const [coords, setCoords] = useState<{
     latitude: number;
@@ -90,7 +79,7 @@ const SubmissionPage = () => {
       setAddress={setAddress}
       setCoords={setCoords}
       setTimestamp={setTimestamp}
-      onBackPress={() => router.back()}
+      onBackPress={() => router.replace("/(dash)/(camera)/preview")}
       onSubmitPress={() => {}}
       onCloseSuccessModal={() => {
         setIsSubmissionSuccessVisible(false);

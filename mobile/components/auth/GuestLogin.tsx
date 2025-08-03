@@ -21,6 +21,7 @@ import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 import * as Animatable from "react-native-animatable";
 import SelectedReportModal from "../dash/SelectedReportModal";
 import { CombinedReport } from "@/constants/types/database";
+import Mapbox from "@rnmapbox/maps";
 
 const { width, height } = Dimensions.get("window");
 
@@ -320,103 +321,97 @@ const GuestLogin = () => {
             ) : (
               <>
                 <View style={{ flex: 1, width: "100%", height: height * 0.95 }}>
-                  <MapView
+                  <Mapbox.MapView
                     style={{
                       flex: 1,
                       backgroundColor: "#11162B",
                       width: "100%",
                     }}
-                    initialRegion={{
-                      latitude: location?.latitude || 0,
-                      longitude: location?.longitude || 0,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
+                    logoEnabled={false}
+                    compassEnabled={true}
                   >
-                    <UrlTile
-                      urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      maximumZ={19}
-                      tileSize={256}
+                    <Mapbox.Camera
+                      zoomLevel={13}
+                      centerCoordinate={[
+                        location?.longitude || 0,
+                        location?.latitude || 0,
+                      ]}
                     />
 
                     {/* Marker Rendering */}
                     {dailyCombinedReports.map(
                       ([preverified, verified], index) => {
-                        const coordinatesFloat = {
-                          latitude:
-                            typeof preverified.PR_latitude == "string"
-                              ? parseFloat(preverified.PR_latitude)
-                              : preverified.PR_latitude,
-                          longitude:
-                            typeof preverified.PR_longitude == "string"
-                              ? parseFloat(preverified.PR_longitude)
-                              : preverified.PR_longitude,
-                        };
+                        const latitude =
+                          typeof preverified.PR_latitude === "string"
+                            ? parseFloat(preverified.PR_latitude)
+                            : preverified.PR_latitude;
+                        const longitude =
+                          typeof preverified.PR_longitude === "string"
+                            ? parseFloat(preverified.PR_longitude)
+                            : preverified.PR_longitude;
 
-                        if (verified) {
-                          return (
-                            <Marker
-                              key={`marker-ID#${preverified.PR_report_id}-postverified`}
-                              coordinate={coordinatesFloat}
-                              onPress={() => {
-                                setIsSelectedModalVisible(true);
-                                setSelectedReport([preverified, verified]);
-                              }}
-                            >
-                              <PulsatingMarker>
-                                <View
-                                  style={{
-                                    width: 32,
-                                    height: 32,
-                                    backgroundColor: "#2F855A",
-                                    padding: 2,
-                                    borderRadius: 20,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <FontAwesome
-                                    name="exclamation"
-                                    color="#FFFFFF"
-                                  />
-                                </View>
-                              </PulsatingMarker>
-                            </Marker>
-                          );
-                        }
+                        const markerColor = verified ? "#2F855A" : "#C53030";
+                        const iconName = verified ? "exclamation" : "question";
+                        const markerSize = verified ? 32 : 35;
+
                         return (
-                          <Marker
-                            key={`marker-ID#${preverified.PR_report_id}-preverified`}
-                            coordinate={coordinatesFloat}
-                            onPress={() => {
+                          <Mapbox.PointAnnotation
+                            key={`marker-ID#${preverified.PR_report_id}-${verified ? "postverified" : "preverified"}`}
+                            id={`marker-ID#${preverified.PR_report_id}-${verified ? "postverified" : "preverified"}`}
+                            coordinate={[longitude, latitude]}
+                            onSelected={() => {
                               setIsSelectedModalVisible(true);
-                              setSelectedReport([preverified, null]);
+                              setSelectedReport([
+                                preverified,
+                                verified ?? null,
+                              ]);
                             }}
                           >
-                            <PulsatingMarker>
-                              <View
-                                style={{
-                                  width: 35,
-                                  height: 35,
-                                  backgroundColor: "#C53030",
-                                  padding: 2,
-                                  borderRadius: 20,
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                <FontAwesome
-                                  name="question"
-                                  size={24}
-                                  color="#FFFFFF"
-                                />
-                              </View>
-                            </PulsatingMarker>
-                          </Marker>
+                            <View
+                              style={{
+                                width: markerSize,
+                                height: markerSize,
+                                backgroundColor: markerColor,
+                                padding: 2,
+                                borderRadius: 20,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <FontAwesome
+                                name={iconName}
+                                size={24}
+                                color="#FFFFFF"
+                              />
+                            </View>
+                          </Mapbox.PointAnnotation>
                         );
                       }
                     )}
-                  </MapView>
+                  </Mapbox.MapView>
+
+                  {/* Copyright */}
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 8,
+                      right: 8,
+                      backgroundColor: "rgba(0,0,0,0.5)",
+                      borderRadius: 6,
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                      zIndex: 100,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 12,
+                      }}
+                    >
+                      © Mapbox • OpenStreetMap contributors
+                    </Text>
+                  </View>
 
                   {/* Map Buttons */}
                   <View

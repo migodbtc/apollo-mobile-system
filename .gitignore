@@ -40,3 +40,6 @@ web/node_modules/
 .idea/
 *.swp
 start.bat
+
+# --- Private (Migo) ---
+mobilev2/ 

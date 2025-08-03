@@ -199,6 +199,29 @@ const MapsPanel = () => {
               })}
             </MapView>
 
+            {/* Copyright */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: height * 0.05 + 4,
+                right: 4,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                borderRadius: 6,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                zIndex: 100,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 12,
+                }}
+              >
+                © OpenStreetMap contributors
+              </Text>
+            </View>
+
             {/* Map Buttons */}
             <View
               pointerEvents="box-none"

@@ -257,7 +257,7 @@ const LoginBox: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push("/register")}
+          onPress={() => router.replace("/register")}
           style={{
             marginBottom: 5,
             width: "100%",

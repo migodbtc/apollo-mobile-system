@@ -166,16 +166,33 @@ export const AdminSQLProvider = ({
           loading: { ...prev.loading, [tableName]: false },
         }));
       } catch (error) {
+        let errorMsg = "Unknown error";
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
+            errorMsg = `HTTP ${error.response.status}: ${error.response.statusText}`;
+            if (
+              error.response.data &&
+              typeof error.response.data === "string"
+            ) {
+              errorMsg += ` - ${error.response.data}`;
+            }
+          } else if (error.request) {
+            errorMsg = "No response received from server.";
+          } else if (error.message) {
+            errorMsg = `Axios error: ${error.message}`;
+          }
+        } else if (error instanceof Error) {
+          errorMsg = error.message;
+        }
         setState((prev) => ({
           ...prev,
           loading: { ...prev.loading, [tableName]: false },
           errors: {
             ...prev.errors,
-            [tableName]:
-              error instanceof Error ? error.message : "Unknown error",
+            [tableName]: errorMsg,
           },
         }));
-        console.error(`Error fetching ${tableName}:`, error);
+        console.error(`Error fetching ${tableName}:`, errorMsg, error);
       }
     },
     [api]

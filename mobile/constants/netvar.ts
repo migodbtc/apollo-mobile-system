@@ -1,3 +1,5 @@
-export const SERVER_LINK = "http://192.168.123.34:5821";
+import Constants from "expo-constants";
+
+export const SERVER_LINK = Constants.expoConfig?.extra?.SERVER_LINK || "";
 
 export default SERVER_LINK;

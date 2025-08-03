@@ -34,8 +34,9 @@ const LoginForm = () => {
       const data = await response.json();
 
       const role = data["user_data"]["UA_user_role"];
+      console.log(role);
 
-      if (role in ["superadmin", "admin"]) {
+      if (role == "superadmin" || role == "admin") {
         console.log("Valid user!");
       } else {
         alert(

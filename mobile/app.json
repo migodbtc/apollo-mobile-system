@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ApolloExpo",
-    "slug": "ApolloExpo",
+    "name": "Apollo Mobile",
+    "slug": "apollo-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icons/BW.png",
@@ -18,16 +18,17 @@
       },
       "package": "com.anonymous.ApolloExpo",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "CAMERA",
-        "RECORD_AUDIO"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "androidNavigationBar": {
       "backgroundColor": "#020617",
-      "barStyle": "light-content",   
-      "visible": "leanback"          
+      "barStyle": "light-content",
+      "visible": "leanback"
     },
     "web": {
       "bundler": "metro",
@@ -62,21 +63,18 @@
       "expo-video",
       "expo-web-browser",
       "expo-audio",
-      "expo-notifications",
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsVersion": "11.0.0",
-          "RNMapboxMapsDownloadToken": "pk.eyJ1IjoibXhnb2RidGMiLCJhIjoiY204eHg3eTRiMDh4YjJtcHRmbWNqaGt5dyJ9.TLY4Jcf7Pxt96ZTcE3eM6A"
-        }
-      ]
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "SERVER_LINK": "http://192.168.123.34:5821",
-      "MAPBOX_ACCESS_TOKEN": "pk.eyJ1IjoibXhnb2RidGMiLCJhIjoiY204eHg3eTRiMDh4YjJtcHRmbWNqaGt5dyJ9.TLY4Jcf7Pxt96ZTcE3eM6A"
+      "MAPBOX_ACCESS_TOKEN": "pk.eyJ1IjoibXhnb2RidGMiLCJhIjoiY204eHg3eTRiMDh4YjJtcHRmbWNqaGt5dyJ9.TLY4Jcf7Pxt96ZTcE3eM6A",
+      "router": {},
+      "eas": {
+        "projectId": "75a19e08-ef61-4886-ae9a-367845b82a12"
+      }
     }
   }
 }

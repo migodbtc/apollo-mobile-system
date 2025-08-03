@@ -120,7 +120,7 @@ const MapsPanel = () => {
               }}
             >
               <UrlTile
-                urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                urlTemplate="https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
                 maximumZ={19}
                 tileSize={256}
               />

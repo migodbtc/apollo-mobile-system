@@ -8,8 +8,6 @@ import { AdminSQLProvider } from "@/constants/contexts/AdminSQLContext";
 import SERVER_LINK from "@/constants/netvar";
 import * as Notifications from "expo-notifications";
 import EventSource from "react-native-sse";
-import Mapbox from "@rnmapbox/maps";
-import Constants from "expo-constants";
 
 // NOTIFICATION SETUP
 Notifications.setNotificationHandler({
@@ -20,9 +18,6 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
-
-// MAPBOX SETUP
-Mapbox.setAccessToken(Constants.expoConfig?.extra?.MAPBOX_ACCESS_TOKEN || "");
 
 export default function RootLayout() {
   // NOTIFICATION PERMISSIONS HOOK

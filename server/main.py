@@ -353,6 +353,68 @@ def add_postverified_report(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
+def update_postverified_report(request):
+    """Updates fields of a postverified report dynamically based on provided keys."""
+    data = request.json if request.is_json else request.form
+
+    VR_verification_id = data.get("VR_verification_id")
+    if not VR_verification_id:
+        return jsonify({"error": "Missing VR_verification_id"}), 400
+
+    # List of fields that can be updated
+    allowed_fields = [
+        "VR_report_id", "VR_confidence_score", "VR_detected",
+        "VR_verification_timestamp", "VR_severity_level",
+        "VR_fire_type", "VR_status"
+    ]
+
+    update_fields = []
+    update_values = []
+
+    for field in allowed_fields:
+        if field in data:
+            update_fields.append(f"{field} = %s")
+            update_values.append(data[field])
+
+    if not update_fields:
+        return jsonify({"error": "No fields to update"}), 400
+
+    update_values.append(VR_verification_id)
+
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+
+        sql = f"""
+            UPDATE postverified_reports
+            SET {', '.join(update_fields)}
+            WHERE VR_verification_id = %s
+        """
+
+        cursor.execute(sql, tuple(update_values))
+        conn.commit()
+
+        # Fetch and return updated record
+        cursor.execute(
+            "SELECT * FROM postverified_reports WHERE VR_verification_id = %s",
+            (VR_verification_id,)
+        )
+        updated_report = cursor.fetchone()
+        print("Post-verified report updated successfully:" + str(updated_report))
+        return jsonify({
+            "message": f"Postverified report {VR_verification_id} updated successfully.",
+            "updated_report": updated_report
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 def delete_postverified_report(request):
     # DESC: Deletes a postverified report by VR_verification_id.
     data = request.json if hasattr(request, "json") and request.json else request
@@ -1373,6 +1435,10 @@ def route_get_session_preverified_reports():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/reports/preverified/update", methods=["POST"])
+def route_update_preverified():
+    return update_preverified_report(request)
+
 @app.route('/reports/postverified/all', methods=['GET'])
 def route_get_postverified_reports():
     if request.method != 'GET':
@@ -1382,6 +1448,10 @@ def route_get_postverified_reports():
         return get_postverified_reports()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/reports/postverified/update", methods=["POST"])
+def route_update_postverified():
+    return update_postverified_report(request)
 
 @app.route('/reports/postverified/one/delete', methods=['POST'])
 def route_delete_postverified_report():

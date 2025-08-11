@@ -13,13 +13,16 @@ import {
   PreverifiedReport,
 } from "@/constants/interfaces/database";
 import { FontAwesome } from "@expo/vector-icons";
+import type { ReportStatus } from "@/constants/interfaces/database";
+
+
 
 const { width, height } = Dimensions.get("window");
 
-const statusOptions = [
+const statusOptions: { label: string; value: ReportStatus }[] = [
   { label: "Pending", value: "pending" },
   { label: "Validated", value: "verified" },
-  { label: "False Alarm", value: "false alarm" },
+  { label: "False Alarm", value: "false_alarm" },
   { label: "Resolved", value: "resolved" },
 ];
 
@@ -27,7 +30,7 @@ interface EditReportModalProps {
   visible: boolean;
   reportData: [PreverifiedReport, PostverifiedReport | null] | null;
   onClose: () => void;
-  onSave: (updatedData: { status: string }) => void;
+  onSave: (updatedData: { status: ReportStatus }) => void;
 }
 
 export const EditReportModal: React.FC<EditReportModalProps> = ({
@@ -36,11 +39,11 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
   onClose,
   onSave,
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState("pending");
+  const [selectedStatus, setSelectedStatus] = useState<ReportStatus>("pending");
 
   useEffect(() => {
     setSelectedStatus(
-      reportData?.[0]?.PR_report_status?.toLowerCase() || "pending"
+      (reportData?.[0]?.PR_report_status?.toLowerCase() as ReportStatus) || "pending"
     );
   }, [visible, reportData]);
 
@@ -123,7 +126,7 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
             <TouchableOpacity
               onPress={() => {
                 setSelectedStatus(
-                  reportData?.[0]?.PR_report_status?.toLowerCase() || "pending"
+                  (reportData?.[0]?.PR_report_status?.toLowerCase() as ReportStatus) || "pending"
                 );
               }}
               style={{

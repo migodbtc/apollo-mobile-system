@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useMemo, useState } from "react";
 import {
   View,
   ScrollView,
@@ -19,12 +19,25 @@ import {
 } from "@/constants/interfaces/database";
 import ReportHelpModal from "../dash/ReportHelpModal";
 import { EditReportModal } from "../dash/EditReportModal";
+import { EditPostReportModal } from "../dash/EditPostReportModal";
+import type { ReportStatus } from "@/constants/interfaces/database";
+import { Animated } from "react-native";
+import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
+
+
+
+
 
 const { width, height } = Dimensions.get("window");
 
 const ReportsPanel = () => {
   // Session context
   const { sessionData } = useSession();
+  const {combinedReports, fetchPostverifiedReports, fetchPreverifiedReports} = useAdminSQL();
+
+
+
+ 
 
   // Data states
   const [preverifiedReports, setPreverifiedReports] = useState<
@@ -34,6 +47,15 @@ const ReportsPanel = () => {
     []
   );
 
+
+
+  // Callback function to handle post-edit click
+  const handlePostEditClick = (postReport: PostverifiedReport | null) => {
+    if (!postReport) return;
+    setSelectedPostReport(postReport);
+    setIsPostEditModalVisible(true);
+  };
+
   // UI states
   const [selectedReport, setSelectedReport] = useState<
     [PreverifiedReport, PostverifiedReport | null] | null
@@ -41,7 +63,23 @@ const ReportsPanel = () => {
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isHelpModalVisible, setIsHelpModalVisible] = useState(false);
-  const [showPreverified, setShowPreverified] = useState(false);
+  const [showVerified, setShowVerified] = useState(true);
+  const [isPostEditModalVisible, setIsPostEditModalVisible] = useState(false);
+  const [selectedPostReport, setSelectedPostReport] = useState<PostverifiedReport | null>(null);
+  //for toggle animation to hehe
+  const toggleTranslateX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const toggleWidthValue = width * 0.15;
+    const circleSizeValue = height * 0.02;
+  
+    Animated.timing(toggleTranslateX, {
+      toValue: showVerified ? toggleWidthValue - circleSizeValue - 4 : 4,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [showVerified]);
+
   const isAdmin =
     sessionData?.UA_user_role &&
     ["admin", "superadmin", "responder"].includes(
@@ -53,40 +91,11 @@ const ReportsPanel = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Report combination
-  const combinedReports = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+  
+  
+  
 
-    const filteredPreverified = preverifiedReports.filter((preverified) => {
-      const prDate = new Date(preverified.PR_timestamp)
-        .toISOString()
-        .slice(0, 10);
-      const isToday = prDate === today;
-      return isToday;
-    });
 
-    const result = filteredPreverified.map((preverified) => {
-      const prDate = new Date(preverified.PR_timestamp)
-        .toISOString()
-        .slice(0, 10);
-
-      const verified = verifiedReports.find((v) => {
-        const vrDate = new Date(v.VR_verification_timestamp)
-          .toISOString()
-          .slice(0, 10);
-        const idMatch = v.VR_report_id === preverified.PR_report_id;
-        const dateMatch = vrDate === prDate;
-
-        return idMatch && dateMatch;
-      });
-
-      return [preverified, verified ?? null] as [
-        PreverifiedReport,
-        PostverifiedReport | null,
-      ];
-    });
-
-    return result;
-  }, [preverifiedReports, verifiedReports, showPreverified]);
 
   // Data fetching use effect to get the infrormation from the database
   useEffect(() => {
@@ -125,6 +134,8 @@ const ReportsPanel = () => {
 
   const refreshReports = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
+    fetchPreverifiedReports();
+    fetchPostverifiedReports();
   }, []);
 
   // Handle report click callback hook to prevent unnecessary new 'handleReportClick' renders
@@ -136,11 +147,96 @@ const ReportsPanel = () => {
     []
   );
 
-  const handleEditSave = (updatedData: any) => {
-    //pwede dito ilagay yunhg save logic or kahit saan mo trip bahala ka sa buhay mo hehe
-    console.log("Saved data:", updatedData);
+  // Handle edit save function to update the report status kapag nasave na sa edit modal
+  const handleEditSave = async (updatedData: { status: ReportStatus }) => {
+    if (!selectedReport) return;
+  
+    const updatedPre = {
+      ...selectedReport[0],
+      PR_report_status: updatedData.status,
+    };
+  
+    await fetch(`${SERVER_LINK}/reports/preverified/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedPre),
+    });
+  
+    if (updatedData.status === "verified") {
+      await fetch(`${SERVER_LINK}/reports/postverified/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          VR_report_id: selectedReport[0].PR_report_id,
+          VR_confidence_score: 0.9,
+          VR_detected: true,
+          VR_verification_timestamp: new Date().toISOString(),
+          VR_severity_level: "low",
+          VR_spread_potential: "low",
+          VR_fire_type: "wildfire",
+        }),
+      });
+    }
+  
+    await refreshReports(); // Refetches both reports (preverified and postverified)
     setIsEditModalVisible(false);
   };
+
+  const handlePostEditSave = async (updatedData: Partial<PostverifiedReport>) => {
+    if (!selectedPostReport) return;
+  
+    try {
+      // 1. Update backend
+      const response = await fetch(`${SERVER_LINK}/reports/postverified/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          VR_verification_id: selectedPostReport.VR_verification_id,
+          updatedData.
+        }),
+      });
+  
+      // 2. Update LOCAL state
+      setVerifiedReports(prev => 
+        prev.map(report => ({
+          ...report,
+          ...(report.VR_verification_id === selectedPostReport.VR_verification_id 
+            ? updatedData 
+            : {})
+        }))
+      );
+  
+      // 3. Sync PREVERIFIED status - THIS IS THE KEY FIX
+      if (updatedData.VR_status) {
+        setPreverifiedReports(prev =>
+          prev.map(report => 
+            report.PR_report_id === selectedPostReport.VR_report_id
+              ? {
+                  ...report,
+                  PR_report_status: mapPostToPreStatus(updatedData.VR_status || '')
+                }
+              : report
+          )
+        );
+      }
+  
+      setIsPostEditModalVisible(false);
+    } catch (error) {
+      console.error("Update error:", error);
+      alert("Failed to save changes.");
+    }
+  };
+  
+  // Add this helper function
+  const mapPostToPreStatus = (postStatus: string) => {
+    switch(postStatus) {
+      case 'false_alarm': return 'false_alarm';
+      case 'resolved': return 'resolved'; // Make sure this matches your preverified statuses
+      default: return 'verified';
+    }
+  };
+  
+  
 
   const toggleHelpModal = useCallback(() => {
     setIsHelpModalVisible((prev) => !prev);
@@ -198,6 +294,7 @@ const ReportsPanel = () => {
 
     return data.map((report: any) => ({
       VR_verification_id: report["VR_verification_id"],
+      VR_status: report.VR_status || "validated",
       VR_report_id: report["VR_report_id"],
       VR_confidence_score: parseFloat(report["VR_confidence_score"]),
       VR_detected: report["VR_detected"] === 1,
@@ -275,50 +372,57 @@ const ReportsPanel = () => {
           </View>
         </View>
 
-        {/* Additional Filter Checkboxes */}
-        <View style={styles.checkboxContainer}>
+        {/* Additional Filter TOGGLE */}
+        <View style={styles.toggleContainer}>
           <TouchableOpacity
-            style={styles.checkbox}
-            onPress={() => setShowPreverified(!showPreverified)}
+            onPress={() => setShowVerified(prev => !prev)}
+            activeOpacity={0.8}
+            style={[
+              styles.toggleSwitch,
+              { backgroundColor: showVerified ? "#f97316" : "#64748b" },
+            ]}
           >
-            <View
+            <Animated.View
               style={[
-                styles.checkboxIcon,
-                showPreverified && styles.checkboxIconChecked,
+                styles.toggleCircle,
+                {
+                  transform: [{ translateX: toggleTranslateX }],
+                },
               ]}
-            >
-              {showPreverified && (
-                <FontAwesome name="check" size={width * 0.03} color="#f97316" />
-              )}
-            </View>
-            <Text style={styles.checkboxLabel}>Show unverified reports</Text>
+            />
           </TouchableOpacity>
+
+          <Text style={styles.toggleLabel}>
+            {showVerified ? "Showing Verified Reports" : "Showing Unverified Reports"}
+          </Text>
         </View>
 
         {/* Render Report Cards or Empty State */}
-        {combinedReports.filter(
-          (report) => report[1] !== null || showPreverified
+        {combinedReports.filter((report) =>
+          showVerified
+            ? report[1] !== null
+            : report[1] === null && report[0].PR_report_status === "pending"
         ).length === 0 ? (
           <View style={styles.emptyContainer}>
-            <FontAwesome
-              name="exclamation"
-              size={width * 0.15}
-              color="#64748B"
-            />
+            <FontAwesome name="exclamation" size={width * 0.15} color="#64748B" />
             <Text style={styles.emptyText}>
-              {showPreverified
-                ? "No reports available today"
-                : "No verified reports available today."}
+              {showVerified
+                ? "No verified reports available today."
+                : "No unverified reports available today"}
             </Text>
             <Text style={styles.emptySubtext}>
-              {showPreverified
-                ? "There are currently no fire reports in your area"
-                : "Try showing unverified reports or check back later."}
+              {showVerified
+                ? "Try switching back to unverified or check again later."
+                : "There are currently no pending fire reports."}
             </Text>
           </View>
         ) : (
           combinedReports
-            .filter((report) => report[1] !== null || showPreverified)
+            .filter((report) =>
+              showVerified
+                ? report[1] !== null
+                : report[1] === null && report[0].PR_report_status === "pending"
+            )
             .map((report, index) => (
               <ReportCard
                 key={`${report[0].PR_report_id}-${index}`}
@@ -326,9 +430,17 @@ const ReportsPanel = () => {
                 verified={report[1]}
                 onClick={() => handleReportClick(report)}
                 setIsEditModalVisible={setIsEditModalVisible}
+                setSelectedReport={setSelectedReport}
+                isAdmin={isAdmin}
+                onPostEditClick={() => handlePostEditClick(report[1]!)}
+                showPreverified={!showVerified}
+                showPostverified={showVerified}
               />
             ))
         )}
+
+
+
       </ScrollView>
 
       {/* Help Modal */}
@@ -348,6 +460,14 @@ const ReportsPanel = () => {
         reportData={selectedReport}
         onSave={handleEditSave}
       />
+
+      {/* Edit Post Report Modal */}
+      <EditPostReportModal
+        visible={isPostEditModalVisible}
+        onClose={() => setIsPostEditModalVisible(false)}
+        reportData={selectedReport}
+        onSave={handlePostEditSave}
+      />
     </>
   );
 };
@@ -365,6 +485,33 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     paddingBottom: 12,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start", 
+    marginVertical: height * 0.015,
+    paddingHorizontal: width * 0.05,
+    gap: width * 0.03, 
+  },
+  toggleLabel: {
+    fontSize: width * 0.035,
+    fontWeight: "600",
+    color: "#f97316",
+  },
+  toggleSwitch: {
+    width: width * 0.15,
+    height: height * 0.03,
+    borderRadius: (height * 0.03) / 2,
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleCircle: {
+    width: width * 0.045,
+    height: height * 0.020,
+    borderRadius: (height * 0.020) / 2,
+    backgroundColor: "#fff",
+    position: "absolute",
   },
   headerContent: {
     flex: 1,
@@ -456,35 +603,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: width * 0.04,
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    marginTop: 12,
-    paddingHorizontal: width * 0.02,
-  },
-  checkbox: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  checkboxIcon: {
-    width: width * 0.05,
-    height: width * 0.05,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#f97316",
-    marginRight: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#11162B",
-  },
-  checkboxIconChecked: {
-    backgroundColor: "#11162B",
-  },
-  checkboxLabel: {
-    color: "#94A3B8",
-    fontSize: width * 0.035,
   },
   refreshButton: {
     flex: 1,

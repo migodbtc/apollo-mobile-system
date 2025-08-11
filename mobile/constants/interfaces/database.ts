@@ -22,6 +22,7 @@ export interface PostverifiedReport {
   VR_severity_level?: SeverityLevel;
   VR_spread_potential?: SpreadPotential;
   VR_fire_type?: string;
+  VR_status?: string;
 }
 
 export interface PreverifiedReport {

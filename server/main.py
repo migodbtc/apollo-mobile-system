@@ -353,6 +353,55 @@ def add_postverified_report(request):
         if cursor: cursor.close()
         if conn: conn.close()
 
+# added this for the backend of postverified
+def update_postverified_report(request):
+    """DESC: Updates a postverified report."""
+    data = request.json if hasattr(request, "json") and request.json else request
+    VR_verification_id = data.get("VR_verification_id")
+
+    if not VR_verification_id:
+        return jsonify({"error": "Missing VR_verification_id"}), 400
+
+    allowed_fields = [
+        "VR_report_id", "VR_confidence_score", "VR_detected", "VR_verification_timestamp",
+        "VR_severity_level", "VR_spread_potential", "VR_fire_type"
+    ]
+
+    update_fields = []
+    update_values = []
+
+    for field in allowed_fields:
+        if field in data:
+            update_fields.append(f"{field} = %s")
+            update_values.append(data[field])
+
+    if not update_fields:
+        return jsonify({"error": "No fields to update"}), 400
+
+    update_values.append(VR_verification_id)
+
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pms_DictCursor)
+        cursor.execute(
+            f"""
+            UPDATE postverified_reports
+            SET {', '.join(update_fields)}
+            WHERE VR_verification_id = %s
+            """,
+            tuple(update_values)
+        )
+        conn.commit()
+        return jsonify({"message": f"Postverified report {VR_verification_id} updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+def patch_postverified_report(request):
+    pass
+
 def delete_postverified_report(request):
     # DESC: Deletes a postverified report by VR_verification_id.
     data = request.json if hasattr(request, "json") and request.json else request
@@ -1392,6 +1441,36 @@ def route_delete_postverified_report():
         return delete_postverified_report(request)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# Added postverified routes
+@app.route("/reports/postverified/all", methods=["GET"])
+def route_get_all_postverified():
+    return get_postverified_reports()
+
+@app.route("/reports/postverified/add", methods=["POST"])
+def route_add_postverified():
+    return add_postverified_report(request)
+
+@app.route("/reports/postverified/update", methods=["POST"])  
+def route_update_postverified():
+    return update_postverified_report(request)
+
+@app.route("/reports/postverified/delete", methods=["POST"])
+def route_delete_postverified():
+    return delete_postverified_report(request)
+
+# === Preverified Routes (already working) ===
+@app.route("/reports/preverified/all", methods=["GET"])
+def route_get_all_preverified():
+    return get_preverified_reports()
+
+@app.route("/reports/preverified/update", methods=["POST"])
+def route_update_preverified():
+    return update_preverified_report(request)
+
+@app.route("/reports/preverified/delete", methods=["POST"])
+def route_delete_preverified():
+    return delete_preverified_report(request)
 
 ## === MEDIA RESOURCE ===
 @app.route('/media/details/get/all', methods=["GET"])

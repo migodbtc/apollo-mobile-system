@@ -28,11 +28,17 @@ export interface NavigationBarProps {
 // binago ko to para sa use session hehehe
 export interface ReportCardProps {
   preverified: PreverifiedReport;
-  verified?: PostverifiedReport | null;
+  verified: PostverifiedReport | null;
   setIsEditModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedReport: React.Dispatch<React.SetStateAction<[PreverifiedReport, PostverifiedReport | null] | null>>;
   onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onClose?: () => void;
+  isAdmin?: boolean;
+  onPostEditClick?: (report: PostverifiedReport) => void;
+  showPreverified: boolean;
+  showPostverified: boolean;
 }
 
 export interface PersonalReportCardProps {

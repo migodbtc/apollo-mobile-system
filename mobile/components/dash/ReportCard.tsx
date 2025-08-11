@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useSession } from "@/constants/contexts/SessionContext"; //eto na yung usesession hehehe
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
+import { useEffect } from 'react';
 import { Dimensions } from "react-native";
 import {
   PostverifiedReport,
@@ -10,6 +11,10 @@ import {
 import { ReportCardProps } from "@/constants/interfaces/components";
 import { EditReportModal } from "./EditReportModal";
 import { FireType } from "@/constants/types/database";
+import { EditPostReportModal } from "./EditPostReportModal";
+import { SERVER_LINK } from '@/constants/netvar';
+import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
+
 
 const { width, height } = Dimensions.get("window");
 const fontSizeBase = width * 0.035;
@@ -45,6 +50,7 @@ export const getStatusColor = (status: string) => {
     verified: "#EA580C",
     pending: "#D97706",
     rejected: "#B45309",
+    resolved: "#16A34A",
   };
   return colorMap[status] || "#6B7280";
 };
@@ -104,7 +110,8 @@ const generateConfidenceColor = (
   }
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status }: { status: string | undefined }) => {
+  if (!status) return null;
   return (
     <View
       style={{
@@ -132,16 +139,80 @@ const StatusBadge = ({ status }: { status: string }) => {
 const ReportCard = ({
   preverified,
   verified = null,
+  setSelectedReport,
   setIsEditModalVisible,
   onClick,
   onDelete,
+  onPostEditClick,
+  onClose,
+  showPreverified,
+  showPostverified,
+
 }: ReportCardProps) => {
   const { sessionData } = useSession();
+  // Depende kung sino naka login, this is to determine wether the user is admin, superadmin, or responder
+  const { fetchPostverifiedReports } = useAdminSQL();
   const isAdmin =
     sessionData?.UA_user_role &&
     ["admin", "superadmin", "responder"].includes(
       sessionData.UA_user_role.toLowerCase()
     );
+
+    const updatePostverifiedReport = async (
+      VR_report_id: string,
+      updatedData: Partial<PostverifiedReport>
+    ) => {
+      try {
+        const response = await fetch(`${SERVER_LINK}/reports/postverified/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            VR_report_id,
+            ...updatedData,
+          }),
+        });
+    
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    
+        const data = await response.json();
+        fetchPostverifiedReports(); 
+        console.log("Post-verified report updated successfully:", data);
+        return data;
+      } catch (error) {
+        console.error("Failed to update post-verified report:", error);
+        throw error; 
+      }
+    };
+
+    const [localVerified, setLocalVerified] = useState<PostverifiedReport | null>(verified);
+    useEffect(() => {
+      setLocalVerified(verified);
+    }, [verified]);
+
+    const reportData = localVerified; 
+    
+    const handleSave = async (updatedData: Partial<PostverifiedReport>) => {
+      try {
+        if (!reportData) return;
+        
+        const response = await updatePostverifiedReport(
+          String(reportData.VR_report_id), 
+          updatedData
+        );
+        
+        if (response.success) {
+          // Update local state or refetch data
+          onClose && onClose();
+        } else {
+          alert("Failed to update report");
+        }
+      } catch (error) {
+        console.error("Update error:", error);
+      }
+    };
+    
 
   return (
     <View style={{ alignItems: "center" }}>
@@ -151,7 +222,7 @@ const ReportCard = ({
           flexDirection: "row",
           overflow: "hidden",
           width: width * 0.9,
-          height: "auto",
+          height: height * 0.21,
           backgroundColor: "#11162B",
           borderRadius: 12,
           marginBottom: height * 0.015,
@@ -160,7 +231,7 @@ const ReportCard = ({
         <View
           style={{
             flex: 2,
-            paddingHorizontal: width * 0.05,
+            paddingHorizontal: width * 0.04,
             paddingVertical: height * 0.035,
             backgroundColor: "#11162B",
             justifyContent: "center",
@@ -174,13 +245,18 @@ const ReportCard = ({
             style={{
               color: "#f97316",
               fontWeight: "bold",
-              fontSize: fontSizeBase * 1.1,
+              fontSize: fontSizeBase * 1.3,
               marginBottom: 12,
             }}
           >
             {preverified.PR_address || "Unknown Address"}
           </Text>
-          <StatusBadge status={preverified.PR_report_status} />
+          
+          {verified ? (
+            <StatusBadge status={verified.VR_status} />
+          ) : (
+            <StatusBadge status={preverified.PR_report_status} />
+          )}
           <Text
             style={{
               color: "#94A3B8",
@@ -191,17 +267,100 @@ const ReportCard = ({
             {new Date(preverified.PR_timestamp).toUTCString()}
           </Text>
 
-          {/**start ng code for the admin controls depending on the role of the user */}
-          {isAdmin && (
+            {/**start ng code for the admin controls depending on the role of the user */}  
+            {verified && isAdmin && showPostverified && (
+              <View
+                style={{
+                  marginTop: height * 0.015,
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                }}
+              >
+                {/* Edit Verified Report Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (typeof onPostEditClick === "function") onPostEditClick(verified);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "#f97316",
+                    paddingVertical: height * 0.006,
+                    paddingHorizontal: width * 0.04,
+                    marginBottom: height * 0.01,
+                    borderRadius: 10,
+                  }}
+                >
+                  <FontAwesome
+                  name="edit"
+                  size={fontSizeBase * 0.75}
+                  color="white"
+                />
+                  <Text
+                  style={{
+                    color: "white",
+                    fontSize: fontSizeBase * 0.75,
+                    fontWeight: "bold",
+                    marginLeft: width * 0.02,
+                  }}
+                >
+                  EDIT
+                </Text>
+                </TouchableOpacity>
+
+                {/* Delete Verified Report Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    if (onDelete) onDelete(); 
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "#42475A",
+                    paddingVertical: height * 0.006,
+                    paddingHorizontal: width * 0.04,
+                    marginBottom: height * 0.01,
+                    borderRadius: 10,
+                    marginLeft: width * 0.02,
+                  }}
+                >
+                  <FontAwesome
+                  name="trash"
+                  size={fontSizeBase * 0.75}
+                  color="white"
+                />
+                  <Text
+                  style={{
+                    color: "white",
+                    fontSize: fontSizeBase * 0.75,
+                    fontWeight: "bold",
+                    marginLeft: width * 0.02,
+                  }}
+                >
+                  DELETE
+                </Text>
+                </TouchableOpacity>
+              </View>
+              
+            )}
+
+
+          {/** rendering buttons for preverified reports */}
+          {isAdmin && showPreverified && (
             <View
               style={{
-                marginTop: height * 0.03,
+                marginTop: height * 0.015,
                 flexDirection: "row",
                 alignItems: "flex-start",
               }}
             >
               <TouchableOpacity
-                onPress={() => setIsEditModalVisible(true)}
+                onPress={() => {
+                  setIsEditModalVisible(true);
+                  setSelectedReport([preverified, verified]);
+                }}
                 style={{
                   flexDirection: "row",
                   justifyContent: "center",
@@ -209,6 +368,7 @@ const ReportCard = ({
                   backgroundColor: "#f97316",
                   paddingVertical: height * 0.006,
                   paddingHorizontal: width * 0.04,
+                  marginBottom: height * 0.01,
                   borderRadius: 10,
                 }}
               >
@@ -220,7 +380,7 @@ const ReportCard = ({
                 <Text
                   style={{
                     color: "white",
-                    fontSize: fontSizeBase * 0.9,
+                    fontSize: fontSizeBase * 0.75,
                     fontWeight: "bold",
                     marginLeft: width * 0.02,
                   }}
@@ -228,7 +388,9 @@ const ReportCard = ({
                   EDIT
                 </Text>
               </TouchableOpacity>
+            
 
+              
               <TouchableOpacity
                 onPress={onDelete}
                 style={{
@@ -238,6 +400,7 @@ const ReportCard = ({
                   backgroundColor: "#42475A",
                   paddingVertical: height * 0.006,
                   paddingHorizontal: width * 0.04,
+                  marginBottom: height * 0.01,
                   borderRadius: 10,
                   marginLeft: width * 0.02,
                 }}
@@ -250,7 +413,7 @@ const ReportCard = ({
                 <Text
                   style={{
                     color: "white",
-                    fontSize: fontSizeBase * 0.9,
+                    fontSize: fontSizeBase * 0.75,
                     fontWeight: "bold",
                     marginLeft: width * 0.02,
                   }}
@@ -260,12 +423,11 @@ const ReportCard = ({
               </TouchableOpacity>
             </View>
           )}
-        </View>
-
+        </View>       
         <View
           style={{
             flex: 1,
-            backgroundColor: verified ? "#1E293B" : "#00000000",
+            backgroundColor: localVerified ? "#1E293B" : "#00000000",
             paddingHorizontal: width * 0.02,
             paddingVertical: height * 0.015,
             justifyContent: "center",
@@ -273,24 +435,24 @@ const ReportCard = ({
             borderRadius: 12,
           }}
         >
-          {verified ? (
+          {localVerified ? (
             preverified.PR_report_status !== "false_alarm" ? (
               <>
                 <Text
                   style={{
                     color: getFireTypeColor(
-                      (verified.VR_fire_type as FireType) ?? "Unknown"
+                      (localVerified.VR_fire_type as FireType) ?? "Unknown"
                     ),
                     fontWeight: "bold",
                     fontSize: fontSizeBase * 0.9,
                   }}
                 >
-                  {capitalize(verified.VR_fire_type ?? "Unknown")}
+                  {capitalize(localVerified.VR_fire_type ?? "Unknown")}
                 </Text>
                 <Text
                   style={{ color: "#D1D5DB", fontSize: fontSizeBase * 0.8 }}
                 >
-                  {capitalize(verified.VR_severity_level ?? "Unknown")}
+                  {capitalize(localVerified.VR_severity_level ?? "Unknown")}
                 </Text>
                 <View
                   style={{
@@ -299,6 +461,13 @@ const ReportCard = ({
                     marginTop: 4,
                   }}
                 >
+                  <FontAwesome
+                    name={getConfidenceIcon(
+                      localVerified.VR_confidence_score * 100
+                    )}
+                    size={16}
+                    color="white"
+                  />
                   <Text
                     style={{
                       color: "#F8FAFC",
@@ -307,8 +476,8 @@ const ReportCard = ({
                     }}
                   >
                     {generateConfidenceColor(
-                      verified.VR_confidence_score,
-                      verified
+                      localVerified.VR_confidence_score,
+                      localVerified
                     )}
                   </Text>
                 </View>
@@ -338,7 +507,7 @@ const ReportCard = ({
                   marginTop: 4,
                   textAlign: "center",
                 }}
-              >
+                >
                 Pending verification...
               </Text>
             </View>

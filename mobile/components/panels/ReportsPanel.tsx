@@ -7,6 +7,7 @@ import {
   Dimensions,
   Modal,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import ReportCard from "../dash/ReportCard";
@@ -36,9 +37,6 @@ const ReportsPanel = () => {
   const {combinedReports, fetchPostverifiedReports, fetchPreverifiedReports} = useAdminSQL();
 
 
-
- 
-
   // Data states
   const [preverifiedReports, setPreverifiedReports] = useState<
     PreverifiedReport[]
@@ -46,7 +44,8 @@ const ReportsPanel = () => {
   const [verifiedReports, setVerifiedReports] = useState<PostverifiedReport[]>(
     []
   );
-
+  
+ 
 
 
   // Callback function to handle post-edit click
@@ -55,7 +54,7 @@ const ReportsPanel = () => {
     setSelectedPostReport(postReport);
     setIsPostEditModalVisible(true);
   };
-
+  
   // UI states
   const [selectedReport, setSelectedReport] = useState<
     [PreverifiedReport, PostverifiedReport | null] | null
@@ -68,7 +67,7 @@ const ReportsPanel = () => {
   const [selectedPostReport, setSelectedPostReport] = useState<PostverifiedReport | null>(null);
   //for toggle animation to hehe
   const toggleTranslateX = useRef(new Animated.Value(0)).current;
-
+ 
   useEffect(() => {
     const toggleWidthValue = width * 0.15;
     const circleSizeValue = height * 0.02;
@@ -92,7 +91,7 @@ const ReportsPanel = () => {
 
   // Report combination
   
-  
+
   
 
 
@@ -137,6 +136,7 @@ const ReportsPanel = () => {
     fetchPreverifiedReports();
     fetchPostverifiedReports();
   }, []);
+ 
 
   // Handle report click callback hook to prevent unnecessary new 'handleReportClick' renders
   const handleReportClick = useCallback(
@@ -181,52 +181,51 @@ const ReportsPanel = () => {
     await refreshReports(); // Refetches both reports (preverified and postverified)
     setIsEditModalVisible(false);
   };
+ 
 
-  const handlePostEditSave = async (updatedData: Partial<PostverifiedReport>) => {
+  const handlePostEditSave = async (updatedData: PreverifiedReport) => {
+
+    if (!updatedData.PR_report_status) {
+      console.error("PR_report_status is required");
+      return;
+    }
+
     if (!selectedPostReport) return;
   
     try {
-      // 1. Update backend
+      // 1. Call your backend with matching params
       const response = await fetch(`${SERVER_LINK}/reports/postverified/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          VR_verification_id: selectedPostReport.VR_verification_id,
-          updatedData.
+          PR_report_id: selectedPostReport.PR_report_id,
+          PR_report_status: updatedData.PR_report_status,
         }),
       });
   
-      // 2. Update LOCAL state
-      setVerifiedReports(prev => 
-        prev.map(report => ({
-          ...report,
-          ...(report.VR_verification_id === selectedPostReport.VR_verification_id 
-            ? updatedData 
-            : {})
-        }))
-      );
-  
-      // 3. Sync PREVERIFIED status - THIS IS THE KEY FIX
-      if (updatedData.VR_status) {
-        setPreverifiedReports(prev =>
-          prev.map(report => 
-            report.PR_report_id === selectedPostReport.VR_report_id
-              ? {
-                  ...report,
-                  PR_report_status: mapPostToPreStatus(updatedData.VR_status || '')
-                }
-              : report
-          )
-        );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
   
+      // 2. Update local PREVERIFIED state
+      setPreverifiedReports(prev =>
+        prev.map(report =>
+          report.PR_report_id === selectedPostReport.PR_report_id
+            ? { ...report, PR_report_status: mapPostToPreStatus(updatedData.PR_report_status) }
+            : report
+        )
+      );
+  
+      // 3. Close modal
       setIsPostEditModalVisible(false);
+  
     } catch (error) {
       console.error("Update error:", error);
       alert("Failed to save changes.");
     }
   };
-  
+
+
   // Add this helper function
   const mapPostToPreStatus = (postStatus: string) => {
     switch(postStatus) {
@@ -235,8 +234,61 @@ const ReportsPanel = () => {
       default: return 'verified';
     }
   };
-  
-  
+
+  // Delete function for reports
+ const handleDeleteReport = async (reportId?: number): Promise<boolean> => {
+    if (!reportId) return false;
+
+    return new Promise((resolve) => {
+      Alert.alert(
+        "Delete Report",
+        "Are you sure you want to delete this report? This action cannot be undone.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => resolve(false),
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Try to delete from both preverified and postverified tables
+                // First try preverified
+                const preverifiedResponse = await fetch(`${SERVER_LINK}/reports/preverified/one/delete`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ PR_report_id: reportId }),
+                });
+
+                // Then try postverified (if it exists)
+                const postverifiedResponse = await fetch(`${SERVER_LINK}/reports/postverified/one/delete`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ VR_report_id: reportId }),
+                });
+
+                if (preverifiedResponse.ok || postverifiedResponse.ok) {
+                  // Refresh the reports after successful deletion
+                  refreshReports();
+                  resolve(true);
+                } else {
+                  Alert.alert("Error", "Failed to delete report. Please try again.");
+                  resolve(false);
+                }
+              } catch (error) {
+                console.error("Delete error:", error);
+                Alert.alert("Error", "Failed to delete report. Please try again.");
+                resolve(false);
+              }
+            },
+          },
+        ]
+      );
+    });
+  };
+
 
   const toggleHelpModal = useCallback(() => {
     setIsHelpModalVisible((prev) => !prev);
@@ -320,6 +372,7 @@ const ReportsPanel = () => {
       day: "numeric",
     });
   }, []);
+
 
   return (
     <>
@@ -427,12 +480,13 @@ const ReportsPanel = () => {
               <ReportCard
                 key={`${report[0].PR_report_id}-${index}`}
                 preverified={report[0]}
-                verified={report[1]}
-                onClick={() => handleReportClick(report)}
+                verified={report[1] as PostverifiedReport | null}
+                onClick={() => handleReportClick(report as [PreverifiedReport, PostverifiedReport | null])}
                 setIsEditModalVisible={setIsEditModalVisible}
                 setSelectedReport={setSelectedReport}
                 isAdmin={isAdmin}
-                onPostEditClick={() => handlePostEditClick(report[1]!)}
+                onPostEditClick={() => handlePostEditClick(report[1] as PostverifiedReport | null)}
+                onDelete={handleDeleteReport}
                 showPreverified={!showVerified}
                 showPostverified={showVerified}
               />

@@ -63,12 +63,13 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
 
           <Text style={styles.sectionLabel}>Status</Text>
           <View style={styles.radioRow}>
-            {statusOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={styles.radioButton}
-                onPress={() => setSelectedStatus(option.value)}
-                activeOpacity={0.7}
+            {statusOptions
+              .filter((option) => option.value !== "resolved") 
+              .map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={styles.radioButton}
+                  onPress={() => setSelectedStatus(option.value)}
               >
                 <View style={styles.radioCircle}>
                   {selectedStatus === option.value && (

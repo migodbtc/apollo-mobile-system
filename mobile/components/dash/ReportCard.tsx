@@ -7,6 +7,7 @@ import { Dimensions } from "react-native";
 import {
   PostverifiedReport,
   PreverifiedReport,
+  SeverityLevel,
 } from "@/constants/interfaces/database";
 import { ReportCardProps } from "@/constants/interfaces/components";
 import { EditReportModal } from "./EditReportModal";
@@ -14,6 +15,8 @@ import { FireType } from "@/constants/types/database";
 import { EditPostReportModal } from "./EditPostReportModal";
 import { SERVER_LINK } from '@/constants/netvar';
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
+
+
 
 
 const { width, height } = Dimensions.get("window");
@@ -34,6 +37,10 @@ export const getSeverityColor = (
   return severity && colorMap[severity] ? colorMap[severity] : "#374151";
 };
 
+
+
+
+
 const getFireTypeColor = (text: FireType) => {
   const colorMap: Record<FireType, string> = {
     small: "#10B981",
@@ -53,6 +60,32 @@ export const getStatusColor = (status: string) => {
     resolved: "#16A34A",
   };
   return colorMap[status] || "#6B7280";
+};
+
+export const handleSave = async (updatedReport: {
+  PR_report_id: number;
+  PR_report_status: string;
+  VR_confidence_score?: number | null;
+  VR_severity_level?: string | null;
+  VR_spread_potential?: string | null;
+  VR_fire_type?: string | null;
+}) => {
+  let payload = { ...updatedReport };
+
+  if (
+    payload.PR_report_status === "pending" ||
+    payload.PR_report_status === "false_alarm"
+  ) {
+    payload.VR_severity_level = null;
+    payload.VR_spread_potential = null;
+    payload.VR_fire_type = null;
+  }
+
+  await fetch(`${SERVER_LINK}/reports/postverified/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 };
 
 const getConfidenceIcon = (score: number) => {
@@ -115,7 +148,7 @@ const StatusBadge = ({ status }: { status: string | undefined }) => {
   return (
     <View
       style={{
-        backgroundColor: getStatusColor(status),
+        backgroundColor: getStatusColor(status.toLowerCase()),
         borderRadius: 8,
         paddingHorizontal: width * 0.02,
         paddingVertical: height * 0.004,
@@ -151,7 +184,7 @@ const ReportCard = ({
 }: ReportCardProps) => {
   const { sessionData } = useSession();
   // Depende kung sino naka login, this is to determine wether the user is admin, superadmin, or responder
-  const { fetchPostverifiedReports } = useAdminSQL();
+  const { fetchPostverifiedReports, fetchPreverifiedReports } = useAdminSQL();
   const isAdmin =
     sessionData?.UA_user_role &&
     ["admin", "superadmin", "responder"].includes(
@@ -160,7 +193,7 @@ const ReportCard = ({
 
     const updatePostverifiedReport = async (
       VR_report_id: string,
-      updatedData: Partial<PostverifiedReport>
+      updatedData: PreverifiedReport
     ) => {
       try {
         const response = await fetch(`${SERVER_LINK}/reports/postverified/update`, {
@@ -191,28 +224,39 @@ const ReportCard = ({
       setLocalVerified(verified);
     }, [verified]);
 
-    const reportData = localVerified; 
-    
-    const handleSave = async (updatedData: Partial<PostverifiedReport>) => {
+    const reportData = localVerified;
+
+    // delete function for postverified reports
+    const deletePostverifiedReport = async (VR_verification_id: number, preverifiedData: any): Promise<boolean> => {
       try {
-        if (!reportData) return;
+        const payload = [preverifiedData, { VR_verification_id: VR_verification_id }];
         
-        const response = await updatePostverifiedReport(
-          String(reportData.VR_report_id), 
-          updatedData
-        );
+        console.log("Sending payload:", JSON.stringify(payload));
         
-        if (response.success) {
-          // Update local state or refetch data
-          onClose && onClose();
+        const response = await fetch(`${SERVER_LINK}/reports/postverified/one/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+    
+        if (response.ok) {
+          console.log("Verification deleted successfully");
+          fetchPostverifiedReports();
+          fetchPreverifiedReports();
+          return true;
         } else {
-          alert("Failed to update report");
+          const errorText = await response.text();
+          console.error("Failed to delete verification. Status:", response.status, "Error:", errorText);
+          return false;
         }
       } catch (error) {
-        console.error("Update error:", error);
+        console.error("Delete error:", error);
+        return false;
       }
     };
     
+
+
 
   return (
     <View style={{ alignItems: "center" }}>
@@ -252,11 +296,9 @@ const ReportCard = ({
             {preverified.PR_address || "Unknown Address"}
           </Text>
           
-          {verified ? (
-            <StatusBadge status={verified.VR_status} />
-          ) : (
+         
             <StatusBadge status={preverified.PR_report_status} />
-          )}
+          
           <Text
             style={{
               color: "#94A3B8",
@@ -311,40 +353,32 @@ const ReportCard = ({
 
                 {/* Delete Verified Report Button */}
                 <TouchableOpacity
-                  onPress={() => {
-                    if (onDelete) onDelete(); 
+                  onPress={async () => {
+                    if (onDelete) {
+                      const success = await onDelete(verified.VR_report_id);
+                      if (success) {
+                        fetchPostverifiedReports();
+                      }
+                    }
                   }}
                   style={{
-                    flexDirection: "row",
+                    flexDirection:"row",
                     justifyContent: "center",
                     alignItems: "center",
                     backgroundColor: "#42475A",
                     paddingVertical: height * 0.006,
                     paddingHorizontal: width * 0.04,
                     marginBottom: height * 0.01,
+                    marginLeft: width * 0.02,
                     borderRadius: 10,
-                    marginLeft: width * 0.02,
                   }}
                 >
-                  <FontAwesome
-                  name="trash"
-                  size={fontSizeBase * 0.75}
-                  color="white"
-                />
-                  <Text
-                  style={{
-                    color: "white",
-                    fontSize: fontSizeBase * 0.75,
-                    fontWeight: "bold",
-                    marginLeft: width * 0.02,
-                  }}
-                >
-                  DELETE
-                </Text>
+                  <FontAwesome name="trash" size={fontSizeBase * 0.75} color="white" />
+                  <Text style={{ color: "white", fontSize: fontSizeBase * 0.75, fontWeight: "bold", marginLeft: width*0.02 }}>DELETE</Text>
                 </TouchableOpacity>
-              </View>
-              
-            )}
+                              </View>
+                              
+                )}
 
 
           {/** rendering buttons for preverified reports */}
@@ -392,7 +426,14 @@ const ReportCard = ({
 
               
               <TouchableOpacity
-                onPress={onDelete}
+                onPress={async () => {
+                  if (onDelete) {
+                    const success = await onDelete(preverified.PR_report_id);
+                    if (success) {
+                      fetchPreverifiedReports();
+                    }
+                  }
+                }}
                 style={{
                   flexDirection: "row",
                   justifyContent: "center",

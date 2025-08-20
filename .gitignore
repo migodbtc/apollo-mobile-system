@@ -10,6 +10,7 @@ Thumbs.db
 # --- Python Server ---
 server/__pycache__/
 server/.venv/
+server/venv/
 server/.pytest_cache/
 server/*.pyc
 server/tmp/
@@ -17,6 +18,8 @@ server/model/data/raw/img/fire/
 server/model/data/raw/img/no_fire/
 server/model/data/raw/video/fire/
 server/model/data/raw/video/no_fire/
+server/model/src/__pycache__
+server/model/__pycache__
 
 # --- Node/Expo App ---
 mobile/node_modules/

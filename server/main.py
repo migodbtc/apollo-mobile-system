@@ -355,52 +355,67 @@ def add_postverified_report(request):
 
 # added this for the backend of postverified
 def update_postverified_report(request):
-    """DESC: Updates a postverified report."""
-    data = request.json if hasattr(request, "json") and request.json else request
-    VR_verification_id = data.get("VR_verification_id")
-
-    if not VR_verification_id:
-        return jsonify({"error": "Missing VR_verification_id"}), 400
-
-    allowed_fields = [
-        "VR_report_id", "VR_confidence_score", "VR_detected", "VR_verification_timestamp",
-        "VR_severity_level", "VR_spread_potential", "VR_fire_type"
-    ]
-
-    update_fields = []
-    update_values = []
-
-    for field in allowed_fields:
-        if field in data:
-            update_fields.append(f"{field} = %s")
-            update_values.append(data[field])
-
-    if not update_fields:
-        return jsonify({"error": "No fields to update"}), 400
-
-    update_values.append(VR_verification_id)
-
     try:
+        data = request.json if request.is_json else request.form
+
+        print("Received data:", data)
+
+        PR_report_id = data.get("PR_report_id")
+        PR_report_status = data.get("PR_report_status")
+        VR_confidence_score = data.get("VR_confidence_score")
+        VR_severity_level = data.get("VR_severity_level")
+        VR_spread_potential = data.get("VR_spread_potential")
+        VR_fire_type = data.get("VR_fire_type")
+
+        if not PR_report_id or not PR_report_status:
+            return jsonify({"error": "PR_report_id and PR_report_status are required"}), 400
+
         conn = mysql.connect()
-        cursor = conn.cursor(pms_DictCursor)
-        cursor.execute(
-            f"""
+        cursor = conn.cursor()
+
+      
+        sql_pre = """
+            UPDATE preverified_reports
+            SET PR_report_status = %s
+            WHERE PR_report_id = %s
+        """
+        cursor.execute(sql_pre, (PR_report_status, PR_report_id))
+
+        sql_post = """
             UPDATE postverified_reports
-            SET {', '.join(update_fields)}
-            WHERE VR_verification_id = %s
-            """,
-            tuple(update_values)
-        )
+            SET VR_confidence_score = %s,
+                VR_severity_level = %s,
+                VR_spread_potential = %s,
+                VR_fire_type = %s
+            WHERE VR_report_id = %s
+        """
+        cursor.execute(sql_post, (
+            VR_confidence_score,
+            VR_severity_level,
+            VR_spread_potential,
+            VR_fire_type,
+            PR_report_id
+        ))
+
         conn.commit()
-        return jsonify({"message": f"Postverified report {VR_verification_id} updated"}), 200
+
+        return jsonify({"message": "Report updated successfully"}), 200
+
     except Exception as e:
+        print("Error:", str(e))
         return jsonify({"error": str(e)}), 500
+
     finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 
 def patch_postverified_report(request):
     pass
+
 
 def delete_postverified_report(request):
     # DESC: Deletes a postverified report by VR_verification_id.
@@ -582,8 +597,10 @@ def update_preverified_report(request):
         if conn: conn.close()
 
 def delete_preverified_report(request):
-    """DESC: Deletes a preverified report by PR_report_id."""
-    data = request.json if hasattr(request, "json") and request.json else request
+    """Deletes a preverified report by PR_report_id."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid or missing JSON payload"}), 400
 
     PR_report_id = data.get("PR_report_id")
     if not PR_report_id:
@@ -592,16 +609,22 @@ def delete_preverified_report(request):
     conn, cursor = None, None
     try:
         conn = mysql.connect()
-        cursor = conn.cursor(pms_DictCursor)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         # Check if the report exists
-        cursor.execute("SELECT * FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
+        cursor.execute(
+            "SELECT * FROM preverified_reports WHERE PR_report_id = %s",
+            (PR_report_id,)
+        )
         report = cursor.fetchone()
         if not report:
             return jsonify({"error": f"Report with ID {PR_report_id} not found"}), 404
 
         # Delete the report
-        cursor.execute("DELETE FROM preverified_reports WHERE PR_report_id = %s", (PR_report_id,))
+        cursor.execute(
+            "DELETE FROM preverified_reports WHERE PR_report_id = %s",
+            (PR_report_id,)
+        )
         conn.commit()
 
         return jsonify({"message": f"Preverified report {PR_report_id} deleted successfully."}), 200
@@ -609,8 +632,10 @@ def delete_preverified_report(request):
         print("[DEBUG] Exception in delete_preverified_report:", str(e))
         return jsonify({"error": str(e)}), 500
     finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 ### === MEDIA STORAGE ===
 def get_all_media_files():
@@ -1366,22 +1391,17 @@ def route_get_preverified_reports():
 @app.route('/reports/preverified/one/delete', methods=['POST'])
 def route_delete_preverified_report():
     """
-    DESC: Deletes a preverified report by PR_report_id.
-    
-    Args: request (flask.Request): The incoming request containing the PR_report_id.
-        - Request.data contains the JSON payload with the following structure:
-        {
-            "PR_report_id": <int>  # The ID of the preverified report to delete
-        }
+    Deletes a preverified report by PR_report_id.
 
+    Expected JSON payload:
+    {
+        "PR_report_id": <int>
+    }
     """
-    
-    if request.method != 'POST':
-        return jsonify({"error": "Invalid request method. Expected POST method."}), 405
-    
     try:
         return delete_preverified_report(request)
     except Exception as e:
+        print("[DEBUG] Exception in route_delete_preverified_report:", str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/reports/preverified/one/verify', methods=['POST'])
@@ -1431,6 +1451,7 @@ def route_get_postverified_reports():
         return get_postverified_reports()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/reports/postverified/one/delete', methods=['POST'])
 def route_delete_postverified_report():

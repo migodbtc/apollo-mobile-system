@@ -1,6 +1,6 @@
 export type ResponseStatus = "dispatched" | "arrived" | "resolved";
 export type ReportStatus = "pending" | "verified" | "false_alarm" | "resolved";
-export type SeverityLevel = "low" | "moderate" | "high" | "critical";
+export type SeverityLevel = "mild" | "moderate" | "severe";
 export type SpreadPotential = "low" | "moderate" | "high";
 export type UserRole = "civilian" | "responder" | "admin" | "superadmin";
 
@@ -22,7 +22,8 @@ export interface PostverifiedReport {
   VR_severity_level?: SeverityLevel;
   VR_spread_potential?: SpreadPotential;
   VR_fire_type?: string;
-  VR_status?: string;
+  PR_report_status: ReportStatus;
+  PR_report_id: number;
 }
 
 export interface PreverifiedReport {

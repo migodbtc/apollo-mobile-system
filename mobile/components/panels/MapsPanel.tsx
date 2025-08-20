@@ -41,6 +41,7 @@ const MapsPanel = () => {
     useState<boolean>(false);
 
   const { combinedReports, refreshAll } = useAdminSQL();
+  
 
   const dailyCombinedReports = combinedReports.filter(([report]) => {
     if (!report) return false;

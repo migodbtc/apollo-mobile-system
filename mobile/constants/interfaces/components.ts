@@ -33,7 +33,7 @@ export interface ReportCardProps {
   setSelectedReport: React.Dispatch<React.SetStateAction<[PreverifiedReport, PostverifiedReport | null] | null>>;
   onClick?: () => void;
   onEdit?: () => void;
-  onDelete?: () => void;
+  onDelete?: (reportId?: number) => Promise<boolean> | void;
   onClose?: () => void;
   isAdmin?: boolean;
   onPostEditClick?: (report: PostverifiedReport) => void;

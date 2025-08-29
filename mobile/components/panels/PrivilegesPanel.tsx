@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,31 +13,133 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 import { UserAccount } from "@/constants/interfaces/database";
 import { useSession } from "@/constants/contexts/SessionContext";
+import axios from "axios";
+import SERVER_LINK from "@/constants/netvar";
 
 const { width, height } = Dimensions.get("window");
 
 const PrivilegesPanel = () => {
-  const { userAccounts } = useAdminSQL();
+  const { userAccounts, fetchUserAccounts } = useAdminSQL();
   const { sessionData } = useSession();
   const [helpVisible, setHelpVisible] = useState(false);
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
 
-  // Empty functions for now
-  const promoteToResponder = (userId: number) => {
-    // TODO: Implement promote logic
-    console.log("Promote to responder:", userId);
+  // Handler functions for privilege changes
+  // Feedback modal state
+  const [feedbackModal, setFeedbackModal] = useState({
+    visible: false,
+    message: "",
+    isError: false,
+  });
+
+  const showFeedback = (message: string, isError = false) => {
+    setFeedbackModal({ visible: true, message, isError });
+    setTimeout(
+      () => setFeedbackModal({ visible: false, message: "", isError: false }),
+      2000
+    );
   };
-  const promoteToAdmin = (userId: number) => {
-    // TODO: Implement promote to admin logic
-    console.log("Promote to admin:", userId);
+
+  const refreshPanel = useCallback(async () => {
+    await fetchUserAccounts();
+  }, [fetchUserAccounts]);
+
+  useEffect(() => {
+    refreshPanel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const promoteToResponder = async (userId: number) => {
+    try {
+      await axios.post(`${SERVER_LINK}/user/update`, {
+        UA_user_id: userId,
+        UA_user_role: "responder",
+      });
+      showFeedback("User promoted to responder.");
+    } catch (err: any) {
+      console.error("Promote to responder error:", err);
+      showFeedback("Failed to promote to responder.", true);
+    }
   };
-  const demoteToCivilian = (userId: number) => {
-    // TODO: Implement demote to civilian logic
-    console.log("Demote to civilian:", userId);
+  const promoteToAdmin = async (userId: number) => {
+    try {
+      await axios.post(`${SERVER_LINK}/user/update`, {
+        UA_user_id: userId,
+        UA_user_role: "admin",
+      });
+      showFeedback("User promoted to admin.");
+    } catch (err: any) {
+      console.error("Promote to admin error:", err);
+      showFeedback("Failed to promote to admin.", true);
+    }
   };
-  const revokeResponder = (userId: number) => {
-    // TODO: Implement revoke logic
-    console.log("Revoke responder:", userId);
+  const demoteToCivilian = async (userId: number) => {
+    try {
+      await axios.post(`${SERVER_LINK}/user/update`, {
+        UA_user_id: userId,
+        UA_user_role: "civilian",
+      });
+      showFeedback("User demoted to civilian.");
+    } catch (err: any) {
+      console.error("Demote to civilian error:", err);
+      showFeedback("Failed to demote to civilian.", true);
+    }
   };
+  const revokeResponder = async (userId: number) => {
+    try {
+      await axios.post(`${SERVER_LINK}/user/update`, {
+        UA_user_id: userId,
+        UA_user_role: "civilian",
+      });
+      showFeedback("Responder privileges revoked.");
+    } catch (err: any) {
+      console.error("Revoke responder error:", err);
+      showFeedback("Failed to revoke responder.", true);
+    }
+  };
+
+  {
+    /* Feedback Modal */
+  }
+  <Modal
+    visible={feedbackModal.visible}
+    transparent
+    animationType="fade"
+    onRequestClose={() =>
+      setFeedbackModal({ visible: false, message: "", isError: false })
+    }
+  >
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.2)",
+      }}
+    >
+      <View
+        style={{
+          backgroundColor: feedbackModal.isError ? "#DC2626" : "#16A34A",
+          borderRadius: 10,
+          paddingVertical: 18,
+          paddingHorizontal: 32,
+          minWidth: width * 0.5,
+          alignItems: "center",
+        }}
+      >
+        <Text
+          style={{
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: width * 0.04,
+            textAlign: "center",
+          }}
+        >
+          {feedbackModal.message}
+        </Text>
+      </View>
+    </View>
+  </Modal>;
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [modalAction, setModalAction] = useState<null | {
@@ -56,15 +158,23 @@ const PrivilegesPanel = () => {
     setModalVisible(false);
     setModalAction(null);
   };
-  const handleModalConfirm = () => {
+
+  const handleModalConfirm = async () => {
     if (!modalAction) return;
-    if (modalAction.type === "promoteResponder")
-      promoteToResponder(modalAction.user.UA_user_id);
-    if (modalAction.type === "promoteAdmin")
-      promoteToAdmin(modalAction.user.UA_user_id);
-    if (modalAction.type === "demoteCivilian")
-      demoteToCivilian(modalAction.user.UA_user_id);
-    closeModal();
+    const userId = modalAction.user.UA_user_id;
+    const key = `${modalAction.type}_${userId}`;
+    setLoading((prev) => ({ ...prev, [key]: true }));
+    try {
+      if (modalAction.type === "promoteResponder")
+        await promoteToResponder(userId);
+      if (modalAction.type === "promoteAdmin") await promoteToAdmin(userId);
+      if (modalAction.type === "demoteCivilian") await demoteToCivilian(userId);
+      // Refresh user accounts after backend change
+      await refreshPanel();
+    } finally {
+      setLoading((prev) => ({ ...prev, [key]: false }));
+      closeModal();
+    }
   };
 
   if (
@@ -195,14 +305,32 @@ const PrivilegesPanel = () => {
               <Text style={styles.userName}>@{user.UA_username}</Text>
             </View>
             <TouchableOpacity
-              style={styles.revokeButton}
+              style={[
+                styles.revokeButton,
+                {
+                  opacity: loading[`demoteCivilian_${user.UA_user_id}`]
+                    ? 0.7
+                    : 1,
+                },
+              ]}
               onPress={() => openModal("demoteCivilian", user)}
+              disabled={loading[`demoteCivilian_${user.UA_user_id}`]}
             >
-              <FontAwesome
-                name="user-times"
-                size={width * 0.032}
-                color="white"
-              />
+              {loading[`demoteCivilian_${user.UA_user_id}`] ? (
+                <FontAwesome
+                  name="spinner"
+                  size={width * 0.032}
+                  color="white"
+                  style={{ marginRight: 6 }}
+                />
+              ) : (
+                <FontAwesome
+                  name="user-times"
+                  size={width * 0.032}
+                  color="white"
+                  style={{ marginRight: 6 }}
+                />
+              )}
               <Text style={styles.buttonText}> Revoke</Text>
             </TouchableOpacity>
           </View>
@@ -228,29 +356,65 @@ const PrivilegesPanel = () => {
             </View>
             <View style={{ flexDirection: "row" }}>
               <TouchableOpacity
-                style={[styles.promoteButton, { backgroundColor: "#f59e42" }]}
+                style={[
+                  styles.promoteButton,
+                  {
+                    backgroundColor: "#f59e42",
+                    opacity: loading[`promoteResponder_${user.UA_user_id}`]
+                      ? 0.7
+                      : 1,
+                  },
+                ]}
                 onPress={() => openModal("promoteResponder", user)}
+                disabled={loading[`promoteResponder_${user.UA_user_id}`]}
               >
-                <FontAwesome
-                  name="arrow-up"
-                  size={width * 0.032}
-                  color="white"
-                />
+                {loading[`promoteResponder_${user.UA_user_id}`] ? (
+                  <FontAwesome
+                    name="spinner"
+                    size={width * 0.032}
+                    color="white"
+                    style={{ marginRight: 6 }}
+                  />
+                ) : (
+                  <FontAwesome
+                    name="arrow-up"
+                    size={width * 0.032}
+                    color="white"
+                    style={{ marginRight: 6 }}
+                  />
+                )}
                 <Text style={styles.buttonText}> Responder</Text>
               </TouchableOpacity>
               {sessionData.UA_user_role === "superadmin" && (
                 <TouchableOpacity
                   style={[
                     styles.promoteButton,
-                    { backgroundColor: "#16A34A", marginLeft: 8 },
+                    {
+                      backgroundColor: "#16A34A",
+                      marginLeft: 8,
+                      opacity: loading[`promoteAdmin_${user.UA_user_id}`]
+                        ? 0.7
+                        : 1,
+                    },
                   ]}
                   onPress={() => openModal("promoteAdmin", user)}
+                  disabled={loading[`promoteAdmin_${user.UA_user_id}`]}
                 >
-                  <FontAwesome
-                    name="shield"
-                    size={width * 0.032}
-                    color="white"
-                  />
+                  {loading[`promoteAdmin_${user.UA_user_id}`] ? (
+                    <FontAwesome
+                      name="spinner"
+                      size={width * 0.032}
+                      color="white"
+                      style={{ marginRight: 6 }}
+                    />
+                  ) : (
+                    <FontAwesome
+                      name="shield"
+                      size={width * 0.032}
+                      color="white"
+                      style={{ marginRight: 6 }}
+                    />
+                  )}
                   <Text style={styles.buttonText}> Admin</Text>
                 </TouchableOpacity>
               )}

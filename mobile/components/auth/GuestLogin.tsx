@@ -22,6 +22,7 @@ import * as Animatable from "react-native-animatable";
 import SelectedReportModal from "../dash/SelectedReportModal";
 import { CombinedReport } from "@/constants/types/database";
 import { LeafletView } from "react-native-leaflet-view";
+import { GEOAPIFY_APOLLO_KEY } from "@/constants/netvar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -335,7 +336,7 @@ const GuestLogin = () => {
                     }}
                   >
                     <UrlTile
-                      urlTemplate="https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
+                      urlTemplate={`https://maps.geoapify.com/v1/tile/dark-matter-dark-grey/{z}/{x}/{y}.png?apiKey=${GEOAPIFY_APOLLO_KEY}`}
                       maximumZ={19}
                       tileSize={256}
                     />

@@ -22,6 +22,7 @@ import PulsatingMarker from "../dash/PulsatingMarker";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 import { CombinedReport } from "@/constants/types/database";
 import SelectedReportModal from "../dash/SelectedReportModal";
+import { GEOAPIFY_APOLLO_KEY } from "@/constants/netvar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -120,7 +121,7 @@ const MapsPanel = () => {
               }}
             >
               <UrlTile
-                urlTemplate="https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
+                urlTemplate={`https://maps.geoapify.com/v1/tile/dark-matter-dark-grey/{z}/{x}/{y}.png?apiKey=${GEOAPIFY_APOLLO_KEY}`}
                 maximumZ={19}
                 tileSize={256}
               />
@@ -203,7 +204,7 @@ const MapsPanel = () => {
             <View
               style={{
                 position: "absolute",
-                bottom: height * 0.05 + 4,
+                bottom: height * 0.02 + 4,
                 right: 4,
                 backgroundColor: "rgba(0,0,0,0.5)",
                 borderRadius: 6,

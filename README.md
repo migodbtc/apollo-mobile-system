@@ -1,32 +1,85 @@
-# Apollo: Real-Time Fire Monitoring and Mobile Application
+# Apollo: Real-Time Fire Monitoring System
 
-**Capstone Project for IT401 / Capstone Project 1 and 2**
+> **A Capstone Project for IT401/IT402**  
+> Real-time fire detection, reporting, and analytics using AI, GIS, and modern web/mobile technologies.
 
-This is the official GitHub repository for the development of **Apollo: Real-Time Fire Monitoring and Mobile Application Using AI, GIS, and Alerts for Daang Bakal Fire Station**.  
-The project is developed as part of the Capstone Project 1 (IT401) and will continue into Capstone Project 2.
+---
 
-## Repository Structure
+## 🚀 Overview
 
-- **`doc/`**  
-  Contains documents and files related to paper writing, presentations, and other documentation needs for the project.
+Apollo is an integrated system for real-time fire monitoring, reporting, and response. It leverages AI-powered media analysis, geospatial data, and modern web/mobile interfaces to empower both citizens and first responders. Built for Daang Bakal Fire Station and the surrounding community.
 
-- **`mobile/`**  
-  The main mobile application built using Expo SDK 53. Features include:
+---
 
-  - Automated incident reporting via media capture
+## 🗂️ Project Structure
+
+- **mobile/** – Expo React Native app for users and responders
+- **server/** – Python Flask REST API, database, and ML model integration
+- **server/model/** – TensorFlow-based fire detection model (Hermes)
+- **web/** – React.js web dashboard for admin and analytics
+- **sql/** – MySQL schemas and database scripts
+- **doc/** – Project documentation and research papers
+
+---
+
+## 📱 Mobile App (`mobile/`)
+
+- Built with Expo SDK 53 (React Native)
+- Features:
+  - Automated incident reporting (photo/video capture)
   - Real-time location tracking
-  - AI-powered fire detection and data validation via machine learning
+  - AI-powered fire detection and validation
+  - User authentication and privilege management
+  - Admin dashboard (in-app)
+- Quick start:
+  ```bash
+  cd mobile
+  npm install
+  npx expo start
+  ```
 
-- **`server/`**  
-  Flask-based API that connects to and interacts with the database. Handles all backend logic and system requests.
+## 🖥️ Web Dashboard (`web/`)
 
-- **`sql/`**  
-  SQL files and schemas used in the system. Structured in 3NF and includes:
+- Built with React.js + Vite
+- Features:
+  - Admin dashboard for database and report analytics
+  - Public info and project mission
+- Quick start:
+  ```bash
+  cd web
+  npm install
+  npm run dev
+  ```
 
-  - Users
-  - Reports
-  - Statistics
-  - Other related entities
+## 🧠 Backend & AI Model (`server/`)
 
-- **`web/`**  
-  A React.js-based web application that displays the information about the mobile application, the mission of the development, the main beneficiary, and other key details of the capstone project. It also houses the admin dashboard for the administrators in order to see a more technical overview of the database.
+- Python 3.11, Flask, SQLAlchemy, Celery
+- RESTful API for all system operations
+- Integrates with MySQL and the Hermes ML model
+- ML model (`server/model/`): TensorFlow, Pandas, NumPy
+- Quick start:
+  ```bash
+  cd server
+  pip install -r requirements.txt
+  python app.py
+  ```
+
+## 🗄️ Database (`sql/`)
+
+- MySQL schema and migration scripts
+- To set up: import the latest `.sql` file into your MySQL server
+
+---
+
+## 📝 Development & Contribution
+
+- MIT License (see LICENSE.txt)
+- See each subfolder's README for more details and advanced usage
+- For research, see `doc/`
+
+---
+
+## 📣 Credits
+
+- Developed by @migodbtc, @hushiirei, and Apollo Development Team of DBTC
+- Special thanks to Daang Bakal Fire Station

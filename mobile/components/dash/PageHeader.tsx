@@ -66,6 +66,12 @@ const renderHeaderContent = ({
           <FontAwesome name="bug" size={iconSize} /> Meta
         </Text>
       );
+    case "privileges":
+      return (
+        <Text style={textStyle}>
+          <FontAwesome name="shield" size={iconSize} /> Privileges
+        </Text>
+      );
     default:
       return null;
   }

@@ -11,6 +11,7 @@ import HistoryPanel from "@/components/panels/HistoryPanel";
 import TeamsPanel from "@/components/panels/TeamsPanel";
 import DatabasePanel from "@/components/panels/DatabasePanel";
 import MetaPanel from "@/components/panels/MetaPanel";
+import PrivilegesPanel from "@/components/panels/PrivilegesPanel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,6 +30,7 @@ export default function Dashboard() {
     team: <TeamsPanel />,
     database: <DatabasePanel />,
     meta: <MetaPanel />,
+    privileges: <PrivilegesPanel />,
   };
 
   return (

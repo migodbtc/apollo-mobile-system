@@ -8,6 +8,7 @@ import {
   Dimensions,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { getSeverityColor, getStatusColor } from "./ReportCard";
 import { SelectedReportModalProps } from "@/constants/interfaces/components";
@@ -240,7 +241,8 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                   marginBottom: height * 0.01,
                 }}
               >
-                Navigate the details with the buttons below.
+                Navigate the details with the buttons below.{"\n"}
+                The details section is scrollable.
               </Text>
               <View
                 style={{
@@ -252,7 +254,7 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                   alignItems: "center",
                   marginVertical: height * 0.015,
                   gap: 8,
-                  marginBottom: 0,
+                  marginBottom: 12,
                 }}
               >
                 <TouchableOpacity
@@ -335,7 +337,9 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
 
               {/* DETAILS SEGMENT */}
               {subSelection == 0 && (
-                <>
+                <ScrollView
+                  style={{ height: "50%", paddingBottom: height * 0.1 }}
+                >
                   <Text
                     style={[
                       styles.verificationTitle,
@@ -460,7 +464,7 @@ const SelectedReportModal: React.FC<SelectedReportModalProps> = ({
                       </Text>
                     </>
                   )}
-                </>
+                </ScrollView>
               )}
 
               {/* MEDIA SEGMENT */}

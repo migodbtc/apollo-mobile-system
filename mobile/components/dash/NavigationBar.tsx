@@ -85,7 +85,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         subItems: [
           { iconName: "database", label: "Database", panel: "database" },
           { iconName: "bug", label: "Meta", panel: "meta" },
-          { iconName: "lock", label: "Privileges", panel: "privileges" },
+          { iconName: "shield", label: "Privileges", panel: "privileges" },
           { iconName: "info-circle", label: "About", panel: "about" },
         ],
       },
@@ -100,7 +100,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         label: "More",
         panel: "more",
         subItems: [
-          { iconName: "lock", label: "Privileges", panel: "privileges" },
+          { iconName: "shield", label: "Privileges", panel: "privileges" },
           { iconName: "database", label: "Database", panel: "database" },
           { iconName: "bug", label: "Meta", panel: "meta" },
           { iconName: "history", label: "History", panel: "history" },
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#020617",
     height: height * 0.1,
     position: "relative",
-    bottom: height * 0.05,
+    bottom: height * 0.02,
     zIndex: 1,
     borderTopColor: "#11162B",
     borderTopWidth: 2,

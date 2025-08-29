@@ -13,6 +13,7 @@ import UserProfileCard from "../dash/UserProfileCard";
 import { Picker } from "@react-native-picker/picker";
 import ReportCard from "../dash/ReportCard";
 import SelectedReportModal from "../dash/SelectedReportModal";
+import EditReportModal from "../dash/EditReportModal";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 import { PreverifiedReport } from "@/constants/types/database";
 
@@ -31,12 +32,21 @@ const HomePanel = () => {
   const [showAlert, setShowAlert] = useState(true);
   const [accordionOpen, setAccordionOpen] = useState(false);
 
-  const [searchType, setSearchType] = useState<string>("id");
-  const [searchQuery, setSearchQuery] = useState("");
   const [subSelection, setSubSelection] = useState<number>(0);
   const [filteredReports, setFilteredReports] = useState<PreverifiedReport[]>(
     []
   );
+  // State for EditReportModal
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editReportData, setEditReportData] = useState<
+    [PreverifiedReport, null] | null
+  >(null);
+
+  // Handler for saving edited report (implement actual logic as needed)
+  const handleSaveEditReport = (updatedData: { status: string }) => {
+    // TODO: Implement backend update logic here
+    setIsEditModalVisible(false);
+  };
 
   const buttonData = useMemo(
     () => [
@@ -312,17 +322,28 @@ const HomePanel = () => {
       ) : (
         <>
           {paginatedReports.map((report, idx) => (
-            <ReportCard
-              key={`report-card-${report.PR_report_id}-${idx}`}
-              preverified={report}
-              verified={null}
-              setIsEditModalVisible={() => {}}
-              onClick={() => {
-                setSelectedReport([report, null]);
-                setIsReportModalVisible(true);
-              }}
-            />
+            <View key={`report-card-${report.PR_report_id}-${idx}`}>
+              <ReportCard
+                preverified={report}
+                verified={null}
+                setIsEditModalVisible={() => {
+                  setEditReportData([report, null]);
+                  setIsEditModalVisible(true);
+                }}
+                onClick={() => {
+                  setSelectedReport([report, null]);
+                  setIsReportModalVisible(true);
+                }}
+              />
+            </View>
           ))}
+          {/* Edit Report Modal */}
+          <EditReportModal
+            visible={isEditModalVisible}
+            reportData={editReportData}
+            onClose={() => setIsEditModalVisible(false)}
+            onSave={handleSaveEditReport}
+          />
           {/* Pagination Controls */}
           <View
             style={{

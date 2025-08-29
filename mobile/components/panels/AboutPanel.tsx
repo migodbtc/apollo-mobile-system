@@ -24,19 +24,19 @@ const AboutPanel = () => {
   const developmentTeam = [
     {
       name: "Miguel Justin Bunda",
-      role: "Project Manager, Lead Fullstack Developer, Database Administrator, Systems Architect, UI/UX Designer, Assistant Technical Writer, Visionary Associate, GIS Developer, Lead Mobile Developer, Lead R&D Engineer, DevOps Engineer, ML Engineer",
+      role: "Project Manager, Lead Fullstack Developer, Database Administrator, Systems Architect, UI/UX Designer, Assistant Technical Writer, Visionary Associate, GIS Developer, Lead Mobile Developer, Lead R&D Engineer, DevOps Engineer, ML Engineer, Lead QA Tester",
     },
     {
       name: "Leeroi Claudio",
-      role: "Lead Backend Developer, Assistant Database Administrator, R&D Associate, Assistant Mobile Developer, Assistant Fullstack Developer, Assistant Technical Writer",
+      role: "Lead Backend Developer, Assistant Database Administrator, R&D Associate, Assistant Mobile Developer, Assistant Fullstack Developer, Assistant Technical Writer, Assistant QA Tester",
     },
     {
       name: "Mareus Gabriel Manzano",
-      role: "Lead Database Admnistrator, R&D Associate, Visionary Lead, Assistant Technical Writer",
+      role: "Lead Database Admnistrator, R&D Associate, Visionary Lead, Assistant Technical Writer, Assistant QA Tester",
     },
     {
       name: "Gideon Rico Agan",
-      role: "Lead Technical Writer, Logistics Manager",
+      role: "Lead Technical Writer, Logistics Manager, Assistant QA Tester",
     },
     {
       name: "Ferdinand Hassan Flojo",

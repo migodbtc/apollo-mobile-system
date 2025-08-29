@@ -286,12 +286,14 @@ const PrivilegesPanel = () => {
           onChangeText={setSearch}
         />
       </View>
-      <Text style={styles.sectionTitle}>
-        <FontAwesome name="user-md" size={width * 0.045} color="#f97316" />{" "}
+      <Text style={[styles.sectionTitle, { fontSize: width * 0.038 }]}>
+        <FontAwesome name="user-md" size={width * 0.038} color="#f97316" />{" "}
         Responders
       </Text>
       {filteredResponders.length === 0 ? (
-        <Text style={styles.emptyText}>No responders found.</Text>
+        <Text style={[styles.emptyText, { fontSize: width * 0.028 }]}>
+          No responders found.
+        </Text>
       ) : (
         filteredResponders.map((user) => (
           <View key={user.UA_user_id} style={styles.userCard}>
@@ -302,7 +304,9 @@ const PrivilegesPanel = () => {
                 color="#f97316"
                 style={{ marginRight: 8 }}
               />
-              <Text style={styles.userName}>@{user.UA_username}</Text>
+              <Text style={[styles.userName, { fontSize: width * 0.032 }]}>
+                @{user.UA_username}
+              </Text>
             </View>
             <TouchableOpacity
               style={[
@@ -331,17 +335,27 @@ const PrivilegesPanel = () => {
                   style={{ marginRight: 6 }}
                 />
               )}
-              <Text style={styles.buttonText}> Revoke</Text>
+              <Text style={[styles.buttonText, { fontSize: width * 0.028 }]}>
+                {" "}
+                Revoke
+              </Text>
             </TouchableOpacity>
           </View>
         ))
       )}
-      <Text style={[styles.sectionTitle, { marginTop: height * 0.03 }]}>
-        <FontAwesome name="user" size={width * 0.045} color="#f97316" />{" "}
+      <Text
+        style={[
+          styles.sectionTitle,
+          { marginTop: height * 0.03, fontSize: width * 0.038 },
+        ]}
+      >
+        <FontAwesome name="user" size={width * 0.038} color="#f97316" />{" "}
         Civilians
       </Text>
       {filteredCivilians.length === 0 ? (
-        <Text style={styles.emptyText}>No civilians found.</Text>
+        <Text style={[styles.emptyText, { fontSize: width * 0.028 }]}>
+          No civilians found.
+        </Text>
       ) : (
         filteredCivilians.map((user) => (
           <View key={user.UA_user_id} style={styles.userCard}>
@@ -352,7 +366,9 @@ const PrivilegesPanel = () => {
                 color="#f97316"
                 style={{ marginRight: 8 }}
               />
-              <Text style={styles.userName}>@{user.UA_username}</Text>
+              <Text style={[styles.userName, { fontSize: width * 0.032 }]}>
+                @{user.UA_username}
+              </Text>
             </View>
             <View style={{ flexDirection: "row" }}>
               <TouchableOpacity
@@ -383,7 +399,10 @@ const PrivilegesPanel = () => {
                     style={{ marginRight: 6 }}
                   />
                 )}
-                <Text style={styles.buttonText}> Responder</Text>
+                <Text style={[styles.buttonText, { fontSize: width * 0.028 }]}>
+                  {" "}
+                  Responder
+                </Text>
               </TouchableOpacity>
               {sessionData.UA_user_role === "superadmin" && (
                 <TouchableOpacity
@@ -415,7 +434,12 @@ const PrivilegesPanel = () => {
                       style={{ marginRight: 6 }}
                     />
                   )}
-                  <Text style={styles.buttonText}> Admin</Text>
+                  <Text
+                    style={[styles.buttonText, { fontSize: width * 0.028 }]}
+                  >
+                    {" "}
+                    Admin
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -425,12 +449,19 @@ const PrivilegesPanel = () => {
 
       {sessionData.UA_user_role === "superadmin" && (
         <>
-          <Text style={[styles.sectionTitle, { marginTop: height * 0.03 }]}>
-            <FontAwesome name="shield" size={width * 0.045} color="#f97316" />{" "}
+          <Text
+            style={[
+              styles.sectionTitle,
+              { marginTop: height * 0.03, fontSize: width * 0.038 },
+            ]}
+          >
+            <FontAwesome name="shield" size={width * 0.038} color="#f97316" />{" "}
             Admins
           </Text>
           {filteredAdmins.length === 0 ? (
-            <Text style={styles.emptyText}>No admins found.</Text>
+            <Text style={[styles.emptyText, { fontSize: width * 0.028 }]}>
+              No admins found.
+            </Text>
           ) : (
             filteredAdmins.map((user) => (
               <View key={user.UA_user_id} style={styles.userCard}>
@@ -441,7 +472,9 @@ const PrivilegesPanel = () => {
                     color="#f97316"
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={styles.userName}>@{user.UA_username}</Text>
+                  <Text style={[styles.userName, { fontSize: width * 0.032 }]}>
+                    @{user.UA_username}
+                  </Text>
                 </View>
                 <View style={{ flexDirection: "row" }}>
                   <TouchableOpacity
@@ -453,7 +486,12 @@ const PrivilegesPanel = () => {
                       size={width * 0.032}
                       color="white"
                     />
-                    <Text style={styles.buttonText}> Demote</Text>
+                    <Text
+                      style={[styles.buttonText, { fontSize: width * 0.028 }]}
+                    >
+                      {" "}
+                      Demote
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -492,7 +530,7 @@ const PrivilegesPanel = () => {
               >
                 <Text
                   style={{
-                    fontSize: width * 0.038, // smaller header
+                    fontSize: width * 0.032, // smaller header
                     fontWeight: "700",
                     color: "#f97316",
                     textAlign: "center",
@@ -508,7 +546,7 @@ const PrivilegesPanel = () => {
                   <Text
                     style={{
                       color: "#E2E8F0",
-                      fontSize: width * 0.038,
+                      fontSize: width * 0.032,
                       textAlign: "center",
                       marginBottom: 14,
                       lineHeight: height * 0.025,
@@ -537,14 +575,14 @@ const PrivilegesPanel = () => {
                       style={{
                         color: "#fff",
                         fontWeight: "bold",
-                        fontSize: width * 0.038,
+                        fontSize: width * 0.032,
                         flexDirection: "row",
                         alignItems: "center",
                       }}
                     >
                       <FontAwesome
                         name="check"
-                        size={width * 0.032}
+                        size={width * 0.028}
                         color="#fff"
                       />
                       {"  "}Confirm
@@ -563,14 +601,14 @@ const PrivilegesPanel = () => {
                       style={{
                         color: "#fff",
                         fontWeight: "bold",
-                        fontSize: width * 0.038,
+                        fontSize: width * 0.032,
                         flexDirection: "row",
                         alignItems: "center",
                       }}
                     >
                       <FontAwesome
                         name="times"
-                        size={width * 0.032}
+                        size={width * 0.028}
                         color="#fff"
                       />
                       {"  "}Cancel

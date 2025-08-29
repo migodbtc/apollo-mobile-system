@@ -11,7 +11,8 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useSession } from "@/constants/contexts/SessionContext";
 import UserProfileCard from "../dash/UserProfileCard";
 import { Picker } from "@react-native-picker/picker";
-import PersonalReportCard from "../dash/PersonalReportCard";
+import ReportCard from "../dash/ReportCard";
+import SelectedReportModal from "../dash/SelectedReportModal";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 import { PreverifiedReport } from "@/constants/types/database";
 
@@ -72,41 +73,6 @@ const HomePanel = () => {
       shouldFetchReports.current = true;
       fetchPreverifiedReports();
     }
-  };
-
-  const handleSearchReport = (query: string) => {
-    if (!query.trim()) {
-      setFilteredReports(
-        preverifiedReports?.filter(
-          (report) => report.PR_user_id === sessionData?.UA_user_id
-        ) || []
-      );
-      return;
-    }
-
-    const filtered =
-      preverifiedReports
-        ?.filter((report) => report.PR_user_id === sessionData?.UA_user_id)
-        ?.filter((report) => {
-          switch (searchType) {
-            case "id":
-              return report.PR_report_id.toString().includes(query);
-            case "date":
-              return report.PR_timestamp.toString().includes(query);
-            case "address":
-              return report.PR_address.toLowerCase().includes(
-                query.toLowerCase()
-              );
-            case "status":
-              return report.PR_report_status.toLowerCase().includes(
-                query.toLowerCase()
-              );
-            default:
-              return true;
-          }
-        }) || [];
-
-    setFilteredReports(filtered);
   };
 
   const renderAccountDetails = useMemo(() => {
@@ -235,47 +201,43 @@ const HomePanel = () => {
             </Text>
           </View>
         ))}
-        {/* Profile operations */}
+        {/* Edit Account Row */}
         <View
           style={{
-            marginHorizontal: 10,
-            marginBottom: 10,
-            marginTop: 32,
-            backgroundColor: "transparent",
-            overflow: "hidden",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: 10,
+            paddingHorizontal: 10,
+            borderTopWidth: 1,
+            borderTopColor: "#1e293b",
           }}
         >
+          <Text
+            style={{
+              color: "#fb923c",
+              fontWeight: "bold",
+              fontSize: width * 0.035,
+            }}
+          >
+            Update Account
+          </Text>
           <TouchableOpacity
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 8,
-              paddingHorizontal: 16,
-              justifyContent: "center",
-              minWidth: "40%",
-              maxWidth: "50%",
-
               borderWidth: 2,
               borderColor: "#c2410c",
               borderRadius: 12,
+              padding: 2,
+              paddingHorizontal: 12,
+              backgroundColor: "transparent",
+              alignItems: "center",
+              justifyContent: "center",
             }}
             activeOpacity={0.8}
             // onPress={handleEditProfile} // Add your handler here
           >
-            <FontAwesome
-              name="edit"
-              size={22}
-              color="#c2410c"
-              style={{ marginRight: 8 }}
-            />
-            <Text
-              style={{
-                color: "#c2410c",
-                fontWeight: "bold",
-                fontSize: width * 0.035,
-              }}
-            >
-              Edit Profile
+            <Text style={{ color: "#c2410c", fontSize: width * 0.035 }}>
+              Edit
             </Text>
           </TouchableOpacity>
         </View>
@@ -283,94 +245,185 @@ const HomePanel = () => {
     );
   }, [sessionData, showAlert, accordionOpen]);
 
-  const renderAccountReports = useMemo(() => {
-    return () => (
-      <View>
-        <View
-          style={{
-            flexDirection: "row",
-            height: height * 0.075,
-            alignItems: "center",
-            backgroundColor: "#1E293B",
-            borderRadius: width * 0.04,
-            paddingHorizontal: width * 0.03,
-            marginBottom: width * 0.04,
-          }}
-        >
-          <FontAwesome
-            name="filter"
-            size={width * 0.05}
-            color="#F97316"
-            style={{ marginRight: width * 0.005, marginLeft: width * 0.045 }}
-          />
-
-          <Picker
-            selectedValue={searchType}
-            onValueChange={(itemValue) => {
-              setSearchType(itemValue);
-              setSearchQuery(""); // Reset search query when type changes
-              handleSearchReport(""); // Reset filtered results
-            }}
-            style={{
-              flex: 1,
-              color: "white",
-              fontSize: width * 0.035,
-            }}
-            dropdownIconColor="#F97316"
-          >
-            <Picker.Item label="Search by ID" value="id" />
-            <Picker.Item label="Search by Date" value="date" />
-            <Picker.Item label="Search by Address" value="address" />
-            <Picker.Item label="Search by Status" value="status" />
-          </Picker>
-
-          <TextInput
-            style={{
-              flex: 7,
-              height: "100%",
-              color: "white",
-              fontSize: width * 0.035,
-              paddingVertical: width * 0.01,
-            }}
-            placeholder={`Search by ${searchType.toUpperCase()}...`}
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              handleSearchReport(text);
-            }}
-          />
-        </View>
-
-        {loading.preverifiedReports ? (
-          <Text style={{ color: "white", textAlign: "center", padding: 20 }}>
-            Loading reports...
-          </Text>
-        ) : errors.preverifiedReports ? (
-          <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
-            Error: {errors.preverifiedReports}
-          </Text>
-        ) : filteredReports.length === 0 ? (
-          <Text style={{ color: "white", textAlign: "center", padding: 20 }}>
-            No reports found
-          </Text>
-        ) : (
-          filteredReports.map((report, index) => (
-            <PersonalReportCard
-              key={`PRC#${index}`}
-              userSubmittedReport={report}
-            />
-          ))
-        )}
-      </View>
+  const [reportSearch, setReportSearch] = useState("");
+  const [selectedReport, setSelectedReport] = useState<
+    [PreverifiedReport, null] | null
+  >(null);
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const filteredUserReports = useMemo(() => {
+    if (!reportSearch.trim()) return filteredReports;
+    return filteredReports.filter(
+      (report) =>
+        report.PR_address &&
+        report.PR_address.toLowerCase().includes(reportSearch.toLowerCase())
     );
-  }, [
-    searchType,
-    searchQuery,
-    filteredReports,
-    loading.preverifiedReports,
-    errors.preverifiedReports,
-  ]);
+  }, [filteredReports, reportSearch]);
+
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+  const totalPages = Math.ceil(filteredUserReports.length / pageSize) || 1;
+  const paginatedReports = filteredUserReports.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
+  const renderAccountReports = () => (
+    <View>
+      {/* Search bar (like PrivilegesPanel) */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: "#1a2232",
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: "#334155",
+          paddingVertical: 2,
+          paddingHorizontal: 2,
+          marginBottom: 12,
+        }}
+      >
+        <FontAwesome
+          name="search"
+          size={width * 0.045}
+          color="#94A3B8"
+          style={{ marginLeft: 8, marginRight: 8 }}
+        />
+        <TextInput
+          style={{
+            flex: 1,
+            backgroundColor: "transparent",
+            color: "#fff",
+            fontSize: width * 0.035,
+            paddingVertical: 8,
+            paddingHorizontal: 0,
+          }}
+          placeholder="Enter the address of the report you'd like to search"
+          placeholderTextColor="#94A3B8"
+          value={reportSearch}
+          onChangeText={setReportSearch}
+        />
+      </View>
+      {/* Render user's reports with pagination */}
+      {filteredUserReports.length === 0 ? (
+        <Text style={{ color: "#9CA3AF", textAlign: "center", marginTop: 24 }}>
+          No reports found.
+        </Text>
+      ) : (
+        <>
+          {paginatedReports.map((report, idx) => (
+            <ReportCard
+              key={`report-card-${report.PR_report_id}-${idx}`}
+              preverified={report}
+              verified={null}
+              setIsEditModalVisible={() => {}}
+              onClick={() => {
+                setSelectedReport([report, null]);
+                setIsReportModalVisible(true);
+              }}
+            />
+          ))}
+          {/* Pagination Controls */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              marginVertical: 16,
+            }}
+          >
+            {/* First Page Button */}
+            <TouchableOpacity
+              onPress={() => setPage(1)}
+              disabled={page === 1}
+              style={{
+                opacity: page === 1 ? 0.5 : 1,
+                marginHorizontal: 4,
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                borderColor: "#f97316",
+                borderRadius: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+              }}
+            >
+              <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                {"<<"}
+              </Text>
+            </TouchableOpacity>
+            {/* Prev Button */}
+            <TouchableOpacity
+              onPress={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              style={{
+                opacity: page === 1 ? 0.5 : 1,
+                marginHorizontal: 4,
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                borderColor: "#f97316",
+                borderRadius: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 16,
+              }}
+            >
+              <Text style={{ color: "#f97316", fontWeight: "bold" }}>Prev</Text>
+            </TouchableOpacity>
+            <Text
+              style={{
+                color: "#f97316",
+                fontWeight: "bold",
+                marginHorizontal: 12,
+              }}
+            >
+              Page {page} / {totalPages}
+            </Text>
+            {/* Next Button */}
+            <TouchableOpacity
+              onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              style={{
+                opacity: page === totalPages ? 0.5 : 1,
+                marginHorizontal: 4,
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                borderColor: "#f97316",
+                borderRadius: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 16,
+              }}
+            >
+              <Text style={{ color: "#f97316", fontWeight: "bold" }}>Next</Text>
+            </TouchableOpacity>
+            {/* Last Page Button */}
+            <TouchableOpacity
+              onPress={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              style={{
+                opacity: page === totalPages ? 0.5 : 1,
+                marginHorizontal: 4,
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                borderColor: "#f97316",
+                borderRadius: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+              }}
+            >
+              <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                {">>"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+      {/* Selected Report Modal */}
+      <SelectedReportModal
+        visible={isReportModalVisible}
+        onClose={() => setIsReportModalVisible(false)}
+        selectedReport={selectedReport}
+      />
+    </View>
+  );
 
   return (
     <ScrollView
@@ -380,6 +433,7 @@ const HomePanel = () => {
         alignItems: "center",
         paddingVertical: height * 0.01,
         paddingHorizontal: width * 0.05,
+        paddingBottom: height * 0.1,
       }}
       showsVerticalScrollIndicator={true}
     >

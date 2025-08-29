@@ -315,7 +315,10 @@ const DatabasePanel = () => {
   }, [combinedReports, reportPage]);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: height * 0.1 }}
+    >
       <View
         style={{
           marginTop: 24,

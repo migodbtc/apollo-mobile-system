@@ -107,9 +107,24 @@ const HistoryPanel = () => {
     });
   }, []);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+  const filteredReports = combinedReports.filter(
+    (report) => report[1] !== null || showPreverified
+  );
+  const totalPages = Math.ceil(filteredReports.length / pageSize);
+  const paginatedReports = filteredReports.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
   return (
     <>
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: height * 0.1 }}
+      >
         {/* Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.headerContent}>
@@ -179,9 +194,7 @@ const HistoryPanel = () => {
         </View>
 
         {/* Render Report Cards or Empty State */}
-        {combinedReports.filter(
-          (report) => report[1] !== null || showPreverified
-        ).length === 0 ? (
+        {filteredReports.length === 0 ? (
           <View style={styles.emptyContainer}>
             <FontAwesome
               name="exclamation"
@@ -200,9 +213,8 @@ const HistoryPanel = () => {
             </Text>
           </View>
         ) : (
-          combinedReports
-            .filter((report) => report[1] !== null || showPreverified)
-            .map((report, index) => (
+          <>
+            {paginatedReports.map((report, index) => (
               <ReportCard
                 key={`${report[0].PR_report_id}-${index}`}
                 preverified={report[0]}
@@ -210,7 +222,103 @@ const HistoryPanel = () => {
                 onClick={() => handleReportClick(report)}
                 setIsEditModalVisible={setIsEditModalVisible}
               />
-            ))
+            ))}
+            {/* Pagination Controls */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                marginVertical: 16,
+              }}
+            >
+              {/* First Page Button */}
+              <TouchableOpacity
+                onPress={() => setPage(1)}
+                disabled={page === 1}
+                style={{
+                  opacity: page === 1 ? 0.5 : 1,
+                  marginHorizontal: 4,
+                  backgroundColor: "transparent",
+                  borderWidth: 2,
+                  borderColor: "#f97316",
+                  borderRadius: 8,
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                }}
+              >
+                <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                  {"<<"}
+                </Text>
+              </TouchableOpacity>
+              {/* Prev Button */}
+              <TouchableOpacity
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                style={{
+                  opacity: page === 1 ? 0.5 : 1,
+                  marginHorizontal: 4,
+                  backgroundColor: "transparent",
+                  borderWidth: 2,
+                  borderColor: "#f97316",
+                  borderRadius: 8,
+                  paddingVertical: 6,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                  Prev
+                </Text>
+              </TouchableOpacity>
+              <Text
+                style={{
+                  color: "#f97316",
+                  fontWeight: "bold",
+                  marginHorizontal: 12,
+                }}
+              >
+                Page {page} / {totalPages}
+              </Text>
+              {/* Next Button */}
+              <TouchableOpacity
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                style={{
+                  opacity: page === totalPages ? 0.5 : 1,
+                  marginHorizontal: 4,
+                  backgroundColor: "transparent",
+                  borderWidth: 2,
+                  borderColor: "#f97316",
+                  borderRadius: 8,
+                  paddingVertical: 6,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                  Next
+                </Text>
+              </TouchableOpacity>
+              {/* Last Page Button */}
+              <TouchableOpacity
+                onPress={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                style={{
+                  opacity: page === totalPages ? 0.5 : 1,
+                  marginHorizontal: 4,
+                  backgroundColor: "transparent",
+                  borderWidth: 2,
+                  borderColor: "#f97316",
+                  borderRadius: 8,
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                }}
+              >
+                <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                  {">>"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
       </ScrollView>
 

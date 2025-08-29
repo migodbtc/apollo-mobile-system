@@ -295,40 +295,148 @@ const ReportsPanel = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Render Report Cards or Empty State */}
-        {combinedReports.filter(
-          (report) => report[1] !== null || showPreverified
-        ).length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <FontAwesome
-              name="exclamation"
-              size={width * 0.15}
-              color="#64748B"
-            />
-            <Text style={styles.emptyText}>
-              {showPreverified
-                ? "No reports available today"
-                : "No verified reports available today."}
-            </Text>
-            <Text style={styles.emptySubtext}>
-              {showPreverified
-                ? "There are currently no fire reports in your area"
-                : "Try showing unverified reports or check back later."}
-            </Text>
-          </View>
-        ) : (
-          combinedReports
-            .filter((report) => report[1] !== null || showPreverified)
-            .map((report, index) => (
-              <ReportCard
-                key={`${report[0].PR_report_id}-${index}`}
-                preverified={report[0]}
-                verified={report[1]}
-                onClick={() => handleReportClick(report)}
-                setIsEditModalVisible={setIsEditModalVisible}
-              />
-            ))
-        )}
+        {/* Render Report Cards or Empty State with Pagination */}
+        {(() => {
+          const [page, setPage] = React.useState(1);
+          const pageSize = 5;
+          const filteredReports = combinedReports.filter(
+            (report) => report[1] !== null || showPreverified
+          );
+          const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
+          const paginatedReports = filteredReports.slice(
+            (page - 1) * pageSize,
+            page * pageSize
+          );
+          if (filteredReports.length === 0) {
+            return (
+              <View style={styles.emptyContainer}>
+                <FontAwesome
+                  name="exclamation"
+                  size={width * 0.15}
+                  color="#64748B"
+                />
+                <Text style={styles.emptyText}>
+                  {showPreverified
+                    ? "No reports available today"
+                    : "No verified reports available today."}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {showPreverified
+                    ? "There are currently no fire reports in your area"
+                    : "Try showing unverified reports or check back later."}
+                </Text>
+              </View>
+            );
+          }
+          return (
+            <>
+              {paginatedReports.map((report, index) => (
+                <ReportCard
+                  key={`${report[0].PR_report_id}-${index}`}
+                  preverified={report[0]}
+                  verified={report[1]}
+                  onClick={() => handleReportClick(report)}
+                  setIsEditModalVisible={setIsEditModalVisible}
+                />
+              ))}
+              {/* Pagination Controls */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginVertical: 16,
+                }}
+              >
+                {/* First Page Button */}
+                <TouchableOpacity
+                  onPress={() => setPage(1)}
+                  disabled={page === 1}
+                  style={{
+                    opacity: page === 1 ? 0.5 : 1,
+                    marginHorizontal: 4,
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    borderColor: "#f97316",
+                    borderRadius: 8,
+                    paddingVertical: 6,
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                    {"<<"}
+                  </Text>
+                </TouchableOpacity>
+                {/* Prev Button */}
+                <TouchableOpacity
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  style={{
+                    opacity: page === 1 ? 0.5 : 1,
+                    marginHorizontal: 4,
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    borderColor: "#f97316",
+                    borderRadius: 8,
+                    paddingVertical: 6,
+                    paddingHorizontal: 16,
+                  }}
+                >
+                  <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                    Prev
+                  </Text>
+                </TouchableOpacity>
+                <Text
+                  style={{
+                    color: "#f97316",
+                    fontWeight: "bold",
+                    marginHorizontal: 12,
+                  }}
+                >
+                  Page {page} / {totalPages}
+                </Text>
+                {/* Next Button */}
+                <TouchableOpacity
+                  onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  style={{
+                    opacity: page === totalPages ? 0.5 : 1,
+                    marginHorizontal: 4,
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    borderColor: "#f97316",
+                    borderRadius: 8,
+                    paddingVertical: 6,
+                    paddingHorizontal: 16,
+                  }}
+                >
+                  <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                    Next
+                  </Text>
+                </TouchableOpacity>
+                {/* Last Page Button */}
+                <TouchableOpacity
+                  onPress={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                  style={{
+                    opacity: page === totalPages ? 0.5 : 1,
+                    marginHorizontal: 4,
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    borderColor: "#f97316",
+                    borderRadius: 8,
+                    paddingVertical: 6,
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <Text style={{ color: "#f97316", fontWeight: "bold" }}>
+                    {">>"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          );
+        })()}
       </ScrollView>
 
       {/* Help Modal */}

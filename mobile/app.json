@@ -70,7 +70,6 @@
     },
     "extra": {
       "SERVER_LINK": "http://192.168.123.34:5821",
-      "MAPBOX_ACCESS_TOKEN": "pk.eyJ1IjoibXhnb2RidGMiLCJhIjoiY204eHg3eTRiMDh4YjJtcHRmbWNqaGt5dyJ9.TLY4Jcf7Pxt96ZTcE3eM6A",
       "router": {},
       "eas": {
         "projectId": "75a19e08-ef61-4886-ae9a-367845b82a12"

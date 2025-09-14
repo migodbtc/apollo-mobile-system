@@ -34,6 +34,7 @@ const ReportsCrudPage = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   const [selectedRow, setSelectedRow] = useState<CombinedReport | null>(null);
   const [showSelectedModal, setShowSelectedModal] = useState<boolean>(false);
@@ -271,8 +272,16 @@ const ReportsCrudPage = () => {
       accessorFn: (row) => new Date(row[0].PR_timestamp).getTime(),
       header: "Timestamp",
       cell: ({ row }) => {
-        const date = new Date(row.original[0].PR_timestamp).toLocaleString();
-        return <div className="text-xs">{date}</div>;
+        const dateObj = row.original[0].PR_timestamp;
+        const parts = dateObj.split(" ");
+        const datePart = `${parts[1]} ${parts[2]}, ${parts[3]}`;
+        const timePart = parts[4];
+
+        return (
+          <div className="text-xs">
+            {datePart}, {timePart}
+          </div>
+        );
       },
     },
     {
@@ -371,15 +380,12 @@ const ReportsCrudPage = () => {
       sorting: sorting,
       globalFilter,
       rowSelection,
+      pagination: pagination,
     },
+    onPaginationChange: setPagination,
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
   });
 
   const deletePreverifiedReport = async (reportId: number) => {
@@ -412,19 +418,41 @@ const ReportsCrudPage = () => {
     }
   };
 
+  // implement refresh logic to fetch new data before recalibrating pagination index
+  // useEffect(() => {
+  //   console.log("[RefreshEffect] Initial fetch:");
+  //   fetchPreverifiedReports();
+  //   fetchPostverifiedReports();
+
+  //   // interval logic
+  //   const interval = setInterval(() => {
+  //     console.log("[RefreshEffect] Interval triggered.");
+  //     console.log(
+  //       "[RefreshEffect] Current pagination.pageIndex:",
+  //       pagination.pageIndex
+  //     );
+  //     // integrate internal table pagination index update via pagination state variable
+  //     table.setPageIndex(pagination.pageIndex);
+  //     console.log(
+  //       "[RefreshEffect] table.setPageIndex called with:",
+  //       pagination.pageIndex
+  //     );
+  //     fetchPreverifiedReports();
+  //     fetchPostverifiedReports();
+  //     console.log("[RefreshEffect] Data fetch triggered.");
+  //   }, 5000); // fetch every 30 seconds
+
+  //   return () => {
+  //     console.log("[RefreshEffect] Cleanup: clearing interval.");
+  //     clearInterval(interval);
+  //   };
+  // }, []);
+
   useEffect(() => {
-    fetchPreverifiedReports();
-    fetchPostverifiedReports();
-
-    const REFRESH_IN_SECONDS = 5;
-
-    const interval = setInterval(() => {
-      fetchPreverifiedReports();
-      fetchPostverifiedReports();
-    }, REFRESH_IN_SECONDS * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+    console.log("Pagination index updated:", pagination.pageIndex);
+    // log the stack trace to see where the change originated
+    console.trace();
+  }, [pagination.pageIndex]);
 
   return (
     <>
@@ -605,28 +633,48 @@ const ReportsCrudPage = () => {
                   }}
                 >
                   <button
-                    onClick={() => table.setPageIndex(0)}
+                    onClick={() => {
+                      setPagination({
+                        ...pagination,
+                        pageIndex: 0,
+                      });
+                    }}
                     disabled={!table.getCanPreviousPage()}
                     className="btn btn-sm btn-secondary mr-1"
                   >
                     {"<<"}
                   </button>
                   <button
-                    onClick={() => table.previousPage()}
+                    onClick={() => {
+                      setPagination({
+                        ...pagination,
+                        pageIndex: table.getState().pagination.pageIndex - 1,
+                      });
+                    }}
                     disabled={!table.getCanPreviousPage()}
                     className="btn btn-sm btn-secondary mr-1"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => table.nextPage()}
+                    onClick={() => {
+                      setPagination({
+                        ...pagination,
+                        pageIndex: table.getState().pagination.pageIndex + 1,
+                      });
+                    }}
                     disabled={!table.getCanNextPage()}
                     className="btn btn-sm btn-secondary mr-1"
                   >
                     Next
                   </button>
                   <button
-                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                    onClick={() => {
+                      setPagination({
+                        ...pagination,
+                        pageIndex: table.getPageCount() - 1,
+                      });
+                    }}
                     disabled={!table.getCanNextPage()}
                     className="btn btn-sm btn-secondary"
                   >

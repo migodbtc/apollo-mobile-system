@@ -136,6 +136,14 @@ const ReportsPanel = () => {
     []
   );
 
+  const handleEditClick = useCallback(
+    (report: [PreverifiedReport, PostverifiedReport | null]) => {
+      setSelectedReport(report);
+      setIsEditModalVisible(true);
+    },
+    []
+  );
+
   const handleEditSave = (updatedData: any) => {
     //pwede dito ilagay yunhg save logic or kahit saan mo trip bahala ka sa buhay mo hehe
     console.log("Saved data:", updatedData);
@@ -336,6 +344,7 @@ const ReportsPanel = () => {
                   preverified={report[0]}
                   verified={report[1]}
                   onClick={() => handleReportClick(report)}
+                  onEdit={() => handleEditClick(report)}
                   setIsEditModalVisible={setIsEditModalVisible}
                 />
               ))}

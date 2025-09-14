@@ -13,6 +13,8 @@ import {
   PreverifiedReport,
 } from "@/constants/interfaces/database";
 import { FontAwesome } from "@expo/vector-icons";
+import SERVER_LINK from "@/constants/netvar";
+import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -62,6 +64,8 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
   // State to track if save is attempted with no changes
   const [noChangesAttempted, setNoChangesAttempted] = useState(false);
   const [missingFieldsAlert, setMissingFieldsAlert] = useState(false);
+  const [successAlert, setSuccessAlert] = useState<string | null>(null);
+  const { fetchPreverifiedReports, fetchPostverifiedReports } = useAdminSQL();
 
   useEffect(() => {
     setSelectedStatus(
@@ -77,17 +81,27 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
   // Placeholder handler functions for requests
 
   const isUnchanged = () => {
+    // log comparisons first before calculating for result
+    console.log("isUnchanged() called");
+    console.log(reportData);
     if (!reportData) return true;
     const [pre, post] = reportData;
-    // Compare all relevant fields
     const statusUnchanged =
       (pre?.PR_report_status?.toLowerCase() || "pending") === selectedStatus;
-    const confidenceUnchanged = (post?.VR_confidence_score || 0) === confidence;
-    const detectedUnchanged = (post?.VR_detected ?? false) === detected;
-    const severityUnchanged = post?.VR_severity_level === severity;
-    const spreadUnchanged = post?.VR_spread_potential === spread;
-    const fireTypeUnchanged = post?.VR_fire_type === fireType;
-    // Only compare fields that are visible for the selected status
+    const confidenceUnchanged =
+      Number(post?.VR_confidence_score ?? 0) === Number(confidence);
+    const detectedUnchanged =
+      Boolean(post?.VR_detected ?? false) === Boolean(detected);
+    const severityUnchanged =
+      (post?.VR_severity_level?.toLowerCase() ?? "") ===
+      (severity?.toLowerCase() ?? "");
+    const spreadUnchanged =
+      (post?.VR_spread_potential?.toLowerCase() ?? "") ===
+      (spread?.toLowerCase() ?? "");
+    const fireTypeUnchanged =
+      (post?.VR_fire_type?.toLowerCase() ?? "") ===
+      (fireType?.toLowerCase() ?? "");
+
     if (selectedStatus === "false_alarm") {
       return statusUnchanged && confidenceUnchanged && !detectedUnchanged;
     } else if (selectedStatus === "verified" || selectedStatus === "resolved") {
@@ -153,7 +167,7 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Only show missing fields alert if status is verified/resolved and any field is missing
     if (
       (selectedStatus === "verified" || selectedStatus === "resolved") &&
@@ -164,35 +178,98 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
     }
     setMissingFieldsAlert(false);
 
-    // EXPECTED PAYLOAD
-    // {
-    //   "status": "verified" | "resolved" | "false_alarm" | "pending",
-    //   "confidence": number,                // 0-100
-    //   "detected": boolean,                 // true/false
-    //   "severity": "mild" | "moderate" | "severe" | undefined,
-    //   "spread": "low" | "moderate" | "high" | undefined,
-    //   "fireType": "small" | "medium" | "large" | undefined
-    // }
-
     if (isUnchanged()) {
       setNoChangesAttempted(true);
       return;
     }
     setNoChangesAttempted(false);
-    // TODO: Implement HTTP request to save changes
-    console.log("Save pressed", {
-      status: selectedStatus,
-      confidence,
-      detected,
-      severity,
-      spread,
-      fireType,
-    });
-    // log the status changed or nah, tell if it did or not
-    console.log(
-      "Status changed:",
-      reportData?.[0]?.PR_report_status?.toLowerCase() !== selectedStatus
-    );
+
+    const update_verify_preverified_endpoint = `${SERVER_LINK}/reports/preverified/one/verify`;
+
+    let verify_payload;
+    if (selectedStatus === "false_alarm") {
+      verify_payload = [
+        {
+          PR_user_id: reportData?.[0]?.PR_user_id,
+          PR_image: reportData?.[0]?.PR_image,
+          PR_video: reportData?.[0]?.PR_video,
+          PR_report_id: reportData?.[0]?.PR_report_id,
+          PR_report_status: selectedStatus,
+          PR_verified: 1,
+          PR_latitude: reportData?.[0]?.PR_latitude,
+          PR_longitude: reportData?.[0]?.PR_longitude,
+          PR_address: reportData?.[0]?.PR_address,
+          PR_timestamp: reportData?.[0]?.PR_timestamp,
+        },
+        {
+          VR_verification_id: 999, // dummy, not used in backend
+          VR_report_id: reportData?.[0]?.PR_report_id,
+          VR_confidence_score: confidence,
+          VR_detected: detected ? 1 : 0,
+          VR_verification_timestamp: new Date().toISOString(),
+        },
+      ];
+    } else {
+      verify_payload = [
+        {
+          PR_user_id: reportData?.[0]?.PR_user_id,
+          PR_image: reportData?.[0]?.PR_image,
+          PR_video: reportData?.[0]?.PR_video,
+          PR_report_id: reportData?.[0]?.PR_report_id,
+          PR_report_status: selectedStatus,
+          PR_verified: selectedStatus === "pending" ? 0 : 1,
+          PR_latitude: reportData?.[0]?.PR_latitude,
+          PR_longitude: reportData?.[0]?.PR_longitude,
+          PR_address: reportData?.[0]?.PR_address,
+          PR_timestamp: reportData?.[0]?.PR_timestamp,
+        },
+        {
+          VR_verification_id: 999,
+          VR_report_id: reportData?.[0]?.PR_report_id,
+          VR_confidence_score: confidence,
+          VR_detected: detected ? 1 : 0,
+          VR_severity_level: severity,
+          VR_spread_potential: spread,
+          VR_fire_type: fireType,
+          VR_verification_timestamp: new Date().toISOString(),
+        },
+      ];
+    }
+
+    try {
+      const verificationResponse = await fetch(
+        update_verify_preverified_endpoint,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(verify_payload),
+        }
+      );
+
+      const verificationData = await verificationResponse.json();
+
+      if (verificationResponse.ok) {
+        setSuccessAlert("Report updated successfully!");
+        setTimeout(() => {
+          setSuccessAlert(null);
+          onClose();
+        }, 1200);
+      } else {
+        setSuccessAlert(
+          verificationData?.error ||
+            "Failed to update report. Please try again."
+        );
+        setTimeout(() => setSuccessAlert(null), 2000);
+      }
+      console.log("Verification Update Response:", verificationData);
+    } catch (e) {
+      setSuccessAlert("Network error. Please try again.");
+      setTimeout(() => setSuccessAlert(null), 2000);
+      console.error(e);
+    } finally {
+      console.log("Finishing up...");
+      fetchPreverifiedReports().then(() => fetchPostverifiedReports());
+    }
   };
 
   const handleReset = () => {

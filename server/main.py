@@ -354,11 +354,14 @@ def add_postverified_report(request):
         if conn: conn.close()
 
 def update_postverified_report(request):
+    # copilot, add logs on lines where i want to log
     """Updates fields of a postverified report dynamically based on provided keys."""
     data = request.json if request.is_json else request.form
+    print("[DEBUG] data = ", data)
 
     VR_verification_id = data.get("VR_verification_id")
     if not VR_verification_id:
+        print("[DEBUG] Missing VR_verification_id")
         return jsonify({"error": "Missing VR_verification_id"}), 400
 
     # List of fields that can be updated
@@ -377,6 +380,7 @@ def update_postverified_report(request):
             update_values.append(data[field])
 
     if not update_fields:
+        print("[DEBUG] No fields to update")
         return jsonify({"error": "No fields to update"}), 400
 
     update_values.append(VR_verification_id)
@@ -1437,6 +1441,8 @@ def route_get_session_preverified_reports():
 
 @app.route("/reports/preverified/update", methods=["POST"])
 def route_update_preverified():
+    # print the payload
+    print(f"[ROUTE] Payload received for /reports/preverified/update: {request.json}")
     return update_preverified_report(request)
 
 @app.route('/reports/postverified/all', methods=['GET'])
@@ -1451,6 +1457,8 @@ def route_get_postverified_reports():
 
 @app.route("/reports/postverified/update", methods=["POST"])
 def route_update_postverified():
+    # print the payload
+    print(f"[ROUTE] Payload received for /reports/postverified/update: {request.json}")
     return update_postverified_report(request)
 
 @app.route('/reports/postverified/one/delete', methods=['POST'])

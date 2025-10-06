@@ -6,6 +6,7 @@ import time
 import json
 import os
 import threading
+import random
 
 import flask
 import psutil
@@ -121,9 +122,39 @@ def add_user(request):
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pms_DictCursor)
-        cursor.execute(query, tuple(values))
-        conn.commit()
-        return jsonify({"message": "User added", "user_id": cursor.lastrowid}), 201
+
+        # Generate unique 8-digit UA_user_id and include it in the insert
+        attempts = 0
+        max_attempts = 10000
+        unique_id = None
+        insert_sql = query
+
+        while attempts < max_attempts:
+            candidate = random.randint(10_000_000, 99_999_999)
+            try:
+                # Prepend UA_user_id to columns/values if not already present
+                if 'UA_user_id' not in columns:
+                    full_columns = ['UA_user_id'] + columns
+                    full_placeholders = ['%s'] + placeholders
+                    full_values = [candidate] + values
+                else:
+                    full_columns = columns
+                    full_placeholders = placeholders
+                    full_values = values
+
+                sql = f"INSERT INTO user_accounts ({', '.join(full_columns)}) VALUES ({', '.join(full_placeholders)})"
+                cursor.execute(sql, tuple(full_values))
+                conn.commit()
+                unique_id = candidate
+                break
+            except pymysql.err.IntegrityError:
+                attempts += 1
+                continue
+
+        if unique_id is None:
+            return jsonify({"error": "Failed to generate unique user id"}), 500
+
+        return jsonify({"message": "User added", "user_id": unique_id}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -933,25 +964,54 @@ def handle_registration(data):
         if cursor.fetchone():
             return jsonify({"error": "That email address is already linked to an existing account."}), 409
 
-        cursor.execute("""
+        # Attempt to generate and insert a unique 8-digit UA_user_id.
+        attempts = 0
+        max_attempts = 10000
+        unique_id = None
+        insert_success = False
+
+        insert_sql = """
             INSERT INTO user_accounts (
-                UA_username, UA_password, UA_user_role, UA_created_at, UA_last_name, 
-                UA_first_name, UA_middle_name, UA_suffix, UA_email_address, 
+                UA_user_id, UA_username, UA_password, UA_user_role, UA_created_at, UA_last_name,
+                UA_first_name, UA_middle_name, UA_suffix, UA_email_address,
                 UA_phone_number, UA_reputation_score
             )
-            VALUES (%s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            UA_username, 
-            UA_password, 
-            "civilian", 
-            None, None, None, None, 
-            UA_email_address, 
-            None, 0
-        ))
+            VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
+        """
 
-        conn.commit()
+        # Keep trying until we insert successfully or exhaust attempts
+        while attempts < max_attempts and not insert_success:
+            candidate = random.randint(10_000_000, 99_999_999)
+            try:
+                cursor.execute(insert_sql, (
+                    candidate,
+                    UA_username,
+                    UA_password,
+                    "civilian",
+                    None, None, None, None,
+                    UA_email_address,
+                    None, 0
+                ))
+                conn.commit()
+                unique_id = candidate
+                insert_success = True
+                break
+            except pymysql.err.IntegrityError as ie:
+                # Duplicate primary key or unique constraint; try another candidate
+                # 1062 is MySQL duplicate entry error code
+                attempts += 1
+                continue
+            except Exception as ex:
+                # Unexpected error during insert
+                return jsonify({"error": f"Server error during registration: {str(ex)}"}), 500
 
-        return jsonify({"message": f"Welcome aboard, @{UA_username}! Your account has been successfully created."}), 201
+        if not insert_success:
+            return jsonify({"error": "Failed to create a unique user id after multiple attempts. Please try again later."}), 500
+
+        return jsonify({
+            "message": f"Welcome aboard, @{UA_username}! Your account has been successfully created.",
+            "UA_user_id": unique_id
+        }), 201
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}. Please contact support or try again later."}), 500

@@ -101,42 +101,83 @@ const RegisterBox: React.FC = () => {
 
   return (
     <>
+      {/* Form placed directly on the screen background (no card) */}
       <View
         style={{
-          width: "75%",
-          backgroundColor: "#11162B",
-          paddingHorizontal: width * 0.08,
-          paddingVertical: height * 0.035,
-          borderRadius: 10,
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
-          shadowRadius: 5,
+          width: "100%",
+          paddingHorizontal: width * 0.06,
+          paddingVertical: height * 0.02,
         }}
       >
         <Text
           style={{
-            fontSize: width * 0.04,
+            fontSize: width * 0.05,
             fontWeight: "bold",
             textAlign: "center",
             color: "#c2410c",
-            marginTop: height * 0.015,
-            marginBottom: height * 0.03,
+            marginTop: height * 0.01,
+            marginBottom: height * 0.02, // increased spacing below title
           }}
         >
-          <FontAwesome name="fire" size={width * 0.04} />
-          {"  "}APOLLO SIGN-UP FORM
+          <FontAwesome name="fire" size={width * 0.05} />
+          {"  "}Sign Up
         </Text>
+
+        {/* Help alert: darker background with a light border; icon inside the alert */}
+        <View
+          style={{
+            width: "100%",
+            backgroundColor: "#073b36", // slightly lighter background
+            borderRadius: 10,
+            paddingVertical: height * 0.012,
+            paddingHorizontal: width * 0.04,
+            marginTop: height * 0.01, // small gap from title
+            marginBottom: height * 0.025, // slightly larger gap after alert
+            justifyContent: "center",
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: "#2e6b67", // slightly lighter border
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <View style={{ marginRight: 10 }}>
+              <FontAwesome
+                name="info-circle"
+                size={width * 0.038}
+                color="#2e6b67"
+              />
+            </View>
+            <Text
+              style={{
+                color: "#78c6bf",
+                textAlign: "left",
+                fontSize: width * 0.032,
+                flex: 1,
+              }}
+            >
+              Tip: Use a valid email and a secure password. Passwords must
+              match.
+            </Text>
+          </View>
+        </View>
 
         <View
           style={{
+            width: "100%",
             flexDirection: "row",
             alignItems: "center",
             borderWidth: 1,
             borderColor: "#00000000",
             borderRadius: 12,
-            paddingVertical: width * 0.01,
-            paddingHorizontal: width * 0.03,
-            marginBottom: height * 0.02,
+            paddingVertical: width * 0.012,
+            paddingHorizontal: width * 0.04,
+            marginBottom: height * 0.025, // increased vertical spacing between inputs
             backgroundColor: "#1E293B",
           }}
         >
@@ -147,7 +188,7 @@ const RegisterBox: React.FC = () => {
             style={{ marginRight: 10 }}
           />
           <TextInput
-            style={{ flex: 1, fontSize: width * 0.03, color: "#c2410c" }}
+            style={{ flex: 1, fontSize: width * 0.034, color: "#c2410c" }}
             placeholder="Username"
             placeholderTextColor="#888"
             onChangeText={setUsername}
@@ -156,14 +197,15 @@ const RegisterBox: React.FC = () => {
 
         <View
           style={{
+            width: "100%",
             flexDirection: "row",
             alignItems: "center",
             borderWidth: 1,
             borderColor: "#00000000",
             borderRadius: 12,
-            paddingVertical: width * 0.01,
-            paddingHorizontal: width * 0.03,
-            marginBottom: height * 0.02,
+            paddingVertical: width * 0.012,
+            paddingHorizontal: width * 0.04,
+            marginBottom: height * 0.025, // increased vertical spacing between inputs
             backgroundColor: "#1E293B",
           }}
         >
@@ -174,7 +216,7 @@ const RegisterBox: React.FC = () => {
             style={{ marginRight: 10 }}
           />
           <TextInput
-            style={{ flex: 1, fontSize: width * 0.03, color: "#c2410c" }}
+            style={{ flex: 1, fontSize: width * 0.034, color: "#c2410c" }}
             placeholder="Email Address"
             placeholderTextColor="#888"
             onChangeText={setEmailAddress}
@@ -183,14 +225,15 @@ const RegisterBox: React.FC = () => {
 
         <View
           style={{
+            width: "100%",
             flexDirection: "row",
             alignItems: "center",
             borderWidth: 1,
             borderColor: "#00000000",
             borderRadius: 12,
-            paddingVertical: width * 0.01,
-            paddingHorizontal: width * 0.03,
-            marginBottom: height * 0.02,
+            paddingVertical: width * 0.012,
+            paddingHorizontal: width * 0.04,
+            marginBottom: height * 0.025, // increased vertical spacing between inputs
             backgroundColor: "#1E293B",
           }}
         >
@@ -201,7 +244,7 @@ const RegisterBox: React.FC = () => {
             style={{ marginRight: 10 }}
           />
           <TextInput
-            style={{ flex: 1, fontSize: width * 0.03, color: "#c2410c" }}
+            style={{ flex: 1, fontSize: width * 0.034, color: "#c2410c" }}
             placeholder="Password"
             placeholderTextColor="#888"
             secureTextEntry
@@ -211,13 +254,14 @@ const RegisterBox: React.FC = () => {
 
         <View
           style={{
+            width: "100%",
             flexDirection: "row",
             alignItems: "center",
             borderWidth: 1,
             borderColor: "#00000000",
             borderRadius: 12,
-            paddingVertical: width * 0.01,
-            paddingHorizontal: width * 0.03,
+            paddingVertical: width * 0.012,
+            paddingHorizontal: width * 0.04,
             marginBottom: height * 0.02,
             backgroundColor: "#1E293B",
           }}
@@ -229,7 +273,7 @@ const RegisterBox: React.FC = () => {
             style={{ marginRight: 10 }}
           />
           <TextInput
-            style={{ flex: 1, fontSize: width * 0.03, color: "#c2410c" }}
+            style={{ flex: 1, fontSize: width * 0.034, color: "#c2410c" }}
             placeholder="Confirm Password"
             placeholderTextColor="#888"
             secureTextEntry
@@ -242,9 +286,12 @@ const RegisterBox: React.FC = () => {
             backgroundColor: "#f97316",
             borderRadius: 12,
             alignItems: "center",
-            marginBottom: width * 0.005,
-            marginTop: width * 0.04,
-            paddingVertical: height * 0.01,
+            marginBottom: height * 0.012,
+            marginTop: height * 0.03, // increased spacing above button
+            paddingVertical: height * 0.012,
+            width: "100%",
+            alignSelf: "center",
+            justifyContent: "center",
           }}
           onPress={handleRegistration}
         >
@@ -252,7 +299,7 @@ const RegisterBox: React.FC = () => {
             style={{
               color: "white",
               fontWeight: "bold",
-              fontSize: width * 0.04,
+              fontSize: width * 0.045,
             }}
           >
             SIGN-UP
@@ -261,14 +308,14 @@ const RegisterBox: React.FC = () => {
 
         <TouchableOpacity
           onPress={() => router.push("/login")}
-          style={{ marginTop: 15 }}
+          style={{ marginTop: height * 0.02 }}
         >
           <Text
             style={{
               color: "#c2410c",
               textAlign: "center",
               fontWeight: "bold",
-              fontSize: width * 0.03,
+              fontSize: width * 0.034,
             }}
           >
             Return to Login Page?

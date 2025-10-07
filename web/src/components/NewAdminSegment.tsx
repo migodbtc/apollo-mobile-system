@@ -10,6 +10,7 @@ import ReportsCrudPage from "./AdminComponents/ReportsCrudPage";
 import MediaCrudPage from "./AdminComponents/MediaCrudPage";
 import AutomationPage from "./AdminComponents/AutomationPage";
 import AdminDocumentationPage from "./AdminComponents/AdminDocumentationPage";
+import ResponseLogsCrudPage from "./AdminComponents/ResponseLogsCrudPage";
 
 type AdminSegmentProps = {
   setSegment?: (seg: string) => void;
@@ -157,8 +158,8 @@ const AdminSegment = ({ setSegment }: AdminSegmentProps) => {
               )}
               {activeTab === "users" && <UserCrudPage />}
               {activeTab === "reports" && <ReportsCrudPage />}
-              {activeTab === "responseLogs" && <div>Work in progress!</div>}
               {activeTab === "mediaStorage" && <MediaCrudPage />}
+              {activeTab === "responseLogs" && <ResponseLogsCrudPage />}
               {activeTab === "machineLearning" && <AutomationPage />}
               {activeTab === "documentation" && <AdminDocumentationPage />}
             </main>

@@ -10,6 +10,7 @@ import ReportsCrudPage from "./AdminComponents/ReportsCrudPage";
 import MediaCrudPage from "./AdminComponents/MediaCrudPage";
 import AutomationPage from "./AdminComponents/AutomationPage";
 import AdminDocumentationPage from "./AdminComponents/AdminDocumentationPage";
+import ResponseLogsCrudPage from "./AdminComponents/ResponseLogsCrudPage";
 
 const AdminSegment = () => {
   const { sessionData } = useSession();
@@ -44,6 +45,7 @@ const AdminSegment = () => {
               {activeTab === "reports" && <ReportsCrudPage />}
               {activeTab === "responseLogs" && <div>Work in progress!</div>}
               {activeTab === "mediaStorage" && <MediaCrudPage />}
+              {activeTab === "responseLogs" && <ResponseLogsCrudPage />}
               {activeTab === "machineLearning" && <AutomationPage />}
               {activeTab === "documentation" && <AdminDocumentationPage />}
             </div>

@@ -22,22 +22,22 @@ function AppContent() {
     segment === "admin" && sessionData ? "container-fluid" : "container";
 
   return (
-    <div className={`${layoutClass} bg-fullpagebg overflow-x-hidden`}>
-      <div className={`${containerClass} px-0`}>
-        {/* NAVIGATION BAR */}
-        {segment === "public" && (
-          <NavigationBar segment={segment} setSegment={setSegment} />
-        )}
+    <AdminSQLProvider serverUrl={SERVER_LINK}>
+      <div className={`${layoutClass} bg-fullpagebg overflow-x-hidden`}>
+        <div className={`${containerClass} px-0`}>
+          {/* NAVIGATION BAR */}
+          {segment === "public" && (
+            <NavigationBar segment={segment} setSegment={setSegment} />
+          )}
 
-        {segment === "public" ? (
-          <PublicSegment />
-        ) : (
-          <AdminSQLProvider serverUrl={SERVER_LINK}>
+          {segment === "public" ? (
+            <PublicSegment />
+          ) : (
             <AdminSegment setSegment={setSegment} />
-          </AdminSQLProvider>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </AdminSQLProvider>
   );
 }
 

@@ -3,7 +3,11 @@ import AdminMockup from "../../assets/admindisplay.png";
 import { useEffect } from "react";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
-const AdminLoginPage = () => {
+type AdminLoginPageProps = {
+  setSegment?: (seg: string) => void;
+};
+
+const AdminLoginPage = ({ setSegment }: AdminLoginPageProps) => {
   const { refreshAll } = useAdminSQL();
 
   useEffect(() => {
@@ -37,7 +41,7 @@ const AdminLoginPage = () => {
           Welcome!
         </h3>
         <p className="text-white">Login to Dashboard</p>
-        <LoginForm />
+        <LoginForm setSegment={setSegment} />
       </div>
     </div>
   );

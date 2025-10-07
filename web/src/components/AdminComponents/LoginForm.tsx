@@ -1,11 +1,16 @@
 import { faSignIn } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
 import { useSession } from "../../constants/context/SessionContext";
 import { SERVER_LINK } from "../../constants/netvar";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
-const LoginForm = () => {
+type LoginFormProps = {
+  setSegment?: (seg: string) => void;
+};
+
+const LoginForm = ({ setSegment }: LoginFormProps) => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememebrMe] = useState<boolean>(false);
@@ -154,6 +159,34 @@ const LoginForm = () => {
             }}
           >
             Recover password?
+          </span>
+        </a>
+      </div>
+      <div className="form-group d-flex flex-column justify-content-center align-items-left">
+        <a
+          className="text-muted mt-2 text-left text-sm mb-2"
+          style={{ cursor: "pointer", width: "100%" }}
+          onClick={() => {
+            if (setSegment) setSegment("public");
+            else window.location.href = "/";
+          }}
+        >
+          <span
+            style={{
+              width: "100%",
+              textAlign: "left",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.95rem",
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faArrowLeft}
+              style={{ fontSize: "1.15rem" }}
+            />
+            Return to landing page
           </span>
         </a>
       </div>

@@ -154,6 +154,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         className="sidebar p-2"
         style={{
           height: "100vh",
+          width: 250,
           backgroundColor: "#01040F",
           boxSizing: "border-box",
           display: "flex",

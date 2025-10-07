@@ -68,10 +68,12 @@ const MapReportCard: React.FC<MapReportCardProps> = ({
   // Update overlays when reports or visibility toggle changes
   useEffect(() => {
     if (mapHandlerRef.current) {
-      // update the showUnvalidated flag by re-creating handler's view via updateAllReportsToday
-      // handler uses its internal showUnvalidated set during construction; if it needs to change,
-      // recreate overlays safely
       try {
+        // update handler's internal flag first so subsequent load uses the right filter
+        if (typeof mapHandlerRef.current.setShowUnvalidated === "function") {
+          (mapHandlerRef.current as any).setShowUnvalidated(showUnvalidated);
+        }
+
         mapHandlerRef.current.clearOverlays();
         mapHandlerRef.current.updateAllReportsToday(
           postverifiedReports,
@@ -87,7 +89,7 @@ const MapReportCard: React.FC<MapReportCardProps> = ({
     <div
       className="card card-primary w-100"
       style={{
-        height: "95%",
+        height: "100%",
         borderRadius: "1rem",
         overflow: "hidden",
       }}

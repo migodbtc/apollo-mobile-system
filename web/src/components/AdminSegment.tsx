@@ -24,9 +24,11 @@ const AdminSegment = () => {
 
       {sessionData && (
         <div className="row" style={{ height: "90vh" }}>
-          <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <div className="col-md-4 col-lg-3">
+            <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          </div>
 
-          <div className="col-md-9 col-lg-10">
+          <div className="col-md-8 col-lg-9">
             <div style={{ height: "100%", paddingBottom: 0, marginBottom: 0 }}>
               {activeTab === "dashboard" && (
                 <DashboardPage

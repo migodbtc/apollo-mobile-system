@@ -4,6 +4,7 @@ import FeaturesSection from "./PublicComponents/FeaturesSection";
 import FooterBar from "./FooterBar";
 import HeroSection from "./PublicComponents/HeroSection";
 import MissionSection from "./PublicComponents/MissionSection";
+import MapPreviewSection from "./PublicComponents/MapPreviewSection";
 
 const PublicSegment = () => {
   return (
@@ -19,6 +20,9 @@ const PublicSegment = () => {
 
       {/* ABOUT */}
       <AboutSection />
+
+      {/* MAP PREVIEW (public) */}
+      <MapPreviewSection />
 
       {/* CONTACT US */}
       <ContactSection />

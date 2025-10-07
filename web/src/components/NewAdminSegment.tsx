@@ -32,7 +32,7 @@ const AdminSegment = ({ setSegment }: AdminSegmentProps) => {
 
   return (
     <div id="adminSegment" className={`${containerClass} px-0`}>
-      {!sessionData && <AdminLoginPage />}
+      {!sessionData && <AdminLoginPage setSegment={setSegment} />}
       {sessionData && (
         // overall horizontal split: left = sidebar (toggleable), right = header + main
         <div style={{ display: "flex", height: "100vh", width: "100%" }}>

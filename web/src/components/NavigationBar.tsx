@@ -1,6 +1,7 @@
 import {
   faHomeAlt,
   faInfoCircle,
+  faMap,
   faMobileAndroidAlt,
   faPhoneAlt,
   faRightFromBracket,
@@ -80,6 +81,23 @@ const NavigationBar = ({ segment, setSegment }: NavigationBarProps) => {
                   style={{ color: "#c2410c" }}
                 />
                 Features
+              </a>
+            </li>
+            <li
+              className="nav-item mr-3"
+              style={{ borderBottom: "3px solid #11162B" }}
+            >
+              <a
+                className="nav-link"
+                style={{ color: "#c2410c" }}
+                href="#mapPreview"
+              >
+                <FontAwesomeIcon
+                  icon={faMap}
+                  className="mr-2"
+                  style={{ color: "#c2410c" }}
+                />
+                Map
               </a>
             </li>
             <li

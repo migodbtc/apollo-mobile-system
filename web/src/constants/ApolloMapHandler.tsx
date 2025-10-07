@@ -129,23 +129,45 @@ export class ApolloMapHandler {
       this.verified_reports.map((vReport) => [vReport.VR_report_id, vReport])
     );
 
+    console.debug(
+      "ApolloMapHandler.loadReportsToday: showUnvalidated=",
+      this.showUnvalidated
+    );
     this.preverified_reports.forEach((report) => {
       const verification = verifiedMap.get(report.PR_report_id) || null;
       const isVerified = !!verification;
 
+      console.debug(
+        `Processing report ${report.PR_report_id}: lon=${report.PR_longitude}, lat=${report.PR_latitude}, isVerified=${isVerified}`
+      );
+
+      // check condition before running
+      console.log(
+        "showUnvalidated",
+        this.showUnvalidated,
+        "isVerified",
+        isVerified
+      );
       if (this.showUnvalidated == false && isVerified) {
         const overlay = this.renderOverlay(report, isVerified, verification);
-
+        console.debug(
+          `Adding overlay for report ${report.PR_report_id} (verified)`
+        );
         this.map.addOverlay(overlay);
         this.overlays.push(overlay);
       } else if (this.showUnvalidated == true) {
         const overlay = this.renderOverlay(report, isVerified, verification);
+        console.debug(
+          `Adding overlay for report ${report.PR_report_id} (showUnvalidated=true)`
+        );
         this.map.addOverlay(overlay);
         this.overlays.push(overlay);
+      } else {
+        console.debug(`Skipping overlay for report ${report.PR_report_id}`);
       }
     });
 
-    // console.log("Current overlays on map:", this.map.getOverlays());
+    console.log("Current overlays on map:", this.map.getOverlays());
   }
 
   updateAllReports(
@@ -202,6 +224,13 @@ export class ApolloMapHandler {
     // console.log("Clearing overlays!");
     this.overlays.forEach((overlay) => this.map.removeOverlay(overlay));
     this.overlays = [];
+  }
+
+  // Public setter to update whether unvalidated reports should be shown.
+  // Call this when the UI toggles the filter so the handler uses the new flag
+  // on the next updateAllReports*() invocation.
+  setShowUnvalidated(flag: boolean) {
+    this.showUnvalidated = flag;
   }
 }
 

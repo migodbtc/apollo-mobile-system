@@ -16,40 +16,44 @@ const AdminProfilePage = () => {
   const userSessionData = userAccounts.find(
     (user) => user.UA_user_id === sessionData?.UA_user_id
   );
-
-  const [modifiedData, setModifiedData] = useState<UserAccount>(
-    userSessionData
-      ? {
-          UA_user_id: userSessionData.UA_user_id,
-          UA_username: userSessionData.UA_username,
-          UA_user_role: userSessionData.UA_user_role,
-          UA_created_at: userSessionData.UA_created_at,
-          UA_last_name: userSessionData.UA_last_name,
-          UA_first_name: userSessionData.UA_first_name,
-          UA_middle_name: userSessionData.UA_middle_name,
-          UA_suffix: userSessionData.UA_suffix,
-          UA_email_address: userSessionData.UA_email_address,
-          UA_phone_number: userSessionData.UA_phone_number,
-          UA_reputation_score: userSessionData.UA_reputation_score,
-        }
-      : {
-          UA_user_id: -1,
-          UA_username: "",
-          UA_user_role: "civilian",
-          UA_created_at: "",
-          UA_last_name: "",
-          UA_first_name: "",
-          UA_middle_name: "",
-          UA_suffix: "",
-          UA_email_address: "",
-          UA_phone_number: "",
-          UA_reputation_score: 0,
-        }
-  );
+  // initialize with safe defaults; we'll sync from session/user when available
+  const [modifiedData, setModifiedData] = useState<UserAccount>({
+    UA_user_id: -1,
+    UA_username: "",
+    UA_user_role: "civilian",
+    UA_created_at: "",
+    UA_last_name: "",
+    UA_first_name: "",
+    UA_middle_name: "",
+    UA_suffix: "",
+    UA_email_address: "",
+    UA_phone_number: "",
+    UA_reputation_score: 0,
+  });
   const [frontIdFile, setFrontIdFile] = useState<File | null>(null);
   const [backIdFile, setBackIdFile] = useState<File | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [hasSuffix, setHasSuffix] = useState(!!userSessionData?.UA_suffix);
+  const [hasSuffix, setHasSuffix] = useState<boolean>(false);
+
+  // Keep modifiedData in sync with the session/user data when it becomes available
+  useEffect(() => {
+    if (userSessionData) {
+      // copy all fields from the found user account to the editable state
+      setModifiedData(
+        (prev) => ({ ...prev, ...userSessionData } as UserAccount)
+      );
+      setHasSuffix(!!userSessionData.UA_suffix);
+      setFrontIdFile(null);
+      setBackIdFile(null);
+      return;
+    }
+
+    // fallback to sessionData if userAccounts not populated yet
+    if (sessionData) {
+      setModifiedData((prev) => ({ ...prev, ...sessionData } as UserAccount));
+      setHasSuffix(!!sessionData.UA_suffix);
+    }
+  }, [userSessionData, sessionData]);
 
   const renderRoleBadge = (role: string | undefined) => {
     let badgeStyle: { backgroundColor: string; color: string } = {

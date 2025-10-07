@@ -11,6 +11,92 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSession } from "../../constants/context/SessionContext";
+
+// Session info block shown under the title in the sidebar
+const SessionInfo: React.FC = () => {
+  const { sessionData } = useSession();
+
+  if (!sessionData) {
+    return (
+      <div style={{ padding: "10px 12px", color: "#5b616e" }}>
+        <div style={{ fontSize: 14 }}>Not signed in</div>
+      </div>
+    );
+  }
+
+  const fullName = `${sessionData.UA_first_name || ""} ${
+    sessionData.UA_last_name || ""
+  }`.trim();
+  const initials =
+    (sessionData.UA_first_name ? sessionData.UA_first_name[0] : "A") +
+    (sessionData.UA_last_name ? sessionData.UA_last_name[0] : "");
+
+  const roleColor =
+    sessionData.UA_user_role &&
+    sessionData.UA_user_role.toLowerCase().includes("admin")
+      ? "#c2410c"
+      : "#5b9cff";
+
+  return (
+    <div
+      style={{
+        padding: "10px 12px 14px 12px",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+      }}
+    >
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: 10,
+          background: "linear-gradient(135deg,#2b3242,#121419)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#E6EEF8",
+          fontWeight: 700,
+        }}
+      >
+        {initials.toUpperCase()}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          title={fullName || sessionData.UA_username}
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#E6EEF8",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {fullName || sessionData.UA_username}
+        </div>
+        <div style={{ marginTop: 4 }}>
+          <span
+            style={{
+              fontSize: 11,
+              padding: "2px 6px",
+              borderRadius: 10,
+              background: roleColor,
+              color: "#07111A",
+              fontWeight: 600,
+              textTransform: "capitalize",
+              display: "inline-block",
+            }}
+          >
+            {sessionData.UA_user_role || "user"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -82,6 +168,9 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
             <span style={{ color: "#646A85" }}>Admin</span>
           </div>
         </div>
+
+        {/* Session account name + role badge */}
+        <SessionInfo />
 
         {/* Divider with no margin directly below the title card */}
         <div

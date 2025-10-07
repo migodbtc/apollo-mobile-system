@@ -11,7 +11,7 @@ const AdminLoginPage = () => {
   }, [refreshAll]);
 
   return (
-    <div id="adminLoginPage" className="row" style={{ height: "90vh" }}>
+    <div id="adminLoginPage" className="row" style={{ height: "100vh" }}>
       <div className="col-md-8 d-flex justify-content-center align-items-center">
         <div style={{ width: "80%", aspectRatio: 1, borderRadius: "1rem" }}>
           <div className="image-wrapper d-flex justify-content-center align-items-center">

@@ -54,8 +54,8 @@ const AutomationPage = () => {
 
   return (
     <div
-      className="container-fluid"
-      style={{ height: "90vh", overflowY: "scroll" }}
+      className="container pt-3"
+      style={{ height: "90vh", overflowY: "hidden" }}
     >
       <div className="row">
         <div className="col-md-4 py-2">

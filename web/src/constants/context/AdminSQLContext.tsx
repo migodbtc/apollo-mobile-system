@@ -2,7 +2,6 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
   useMemo,
 } from "react";
@@ -286,14 +285,23 @@ export const AdminSQLProvider = ({
         }));
 
         const response = await api.get<MediaStorage>(`/media/${id}`);
-        setState((prev) => ({
-          ...prev,
-          mediaStorage: {
-            ...prev.mediaStorage,
-            [id]: response.data,
-          },
-          loading: { ...prev.loading, mediaStorage: false },
-        }));
+        // upsert into the mediaStorage array: replace existing item with same id or append
+        setState((prev) => {
+          const existingIndex = prev.mediaStorage.findIndex(
+            (m: any) => m.MS_media_id === id
+          );
+          let newMediaStorage = [...prev.mediaStorage];
+          if (existingIndex >= 0) {
+            newMediaStorage[existingIndex] = response.data as any;
+          } else {
+            newMediaStorage.push(response.data as any);
+          }
+          return {
+            ...prev,
+            mediaStorage: newMediaStorage,
+            loading: { ...prev.loading, mediaStorage: false },
+          };
+        });
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -311,26 +319,11 @@ export const AdminSQLProvider = ({
   );
 
   /**
-   * Combines preverified and postverified reports into a single array
-   * where each entry is [PreverifiedReport, PostverifiedReport | null]
+   * Derive combined reports from pre- and post- verified arrays.
+   * This avoids writing derived data back into state which causes
+   * extra renders and can overload the browser when datasets are large.
    */
-  const combineReports = useCallback(() => {
-    const combined = state.preverifiedReports.map((preReport) => {
-      const postReport =
-        state.postverifiedReports.find(
-          (post) => post.VR_report_id === preReport.PR_report_id
-        ) || null;
-      return [preReport, postReport] as CombinedReport;
-    });
-
-    setState((prev) => ({
-      ...prev,
-      combinedReports: combined,
-    }));
-  }, [state.preverifiedReports, state.postverifiedReports]);
-
-  // Remove combinedReports from AdminSQLState and setState
-  const combinedReports = useMemo(() => {
+  const derivedCombinedReports = useMemo<CombinedReport[]>(() => {
     return state.preverifiedReports.map((preReport) => {
       const postReport =
         state.postverifiedReports.find(
@@ -340,11 +333,12 @@ export const AdminSQLProvider = ({
     });
   }, [state.preverifiedReports, state.postverifiedReports]);
 
-  useEffect(() => {
-    if (state.preverifiedReports.length > 0) {
-      combineReports();
-    }
-  }, [state.preverifiedReports, state.postverifiedReports, combineReports]);
+  // Keep API stable for callers that expect a function, but avoid
+  // forcing a state update — expose a no-op that preserves the
+  // externally-visible contract while preventing extra renders.
+  const combineReports = useCallback(() => {
+    // no-op: combined reports are derived via `derivedCombinedReports`.
+  }, []);
 
   /**
    * Refreshes all data tables by making parallel requests
@@ -435,26 +429,66 @@ export const AdminSQLProvider = ({
     [api]
   );
 
+  // Memoize the context value so consumers only re-render when data they
+  // actually depend on changes. This avoids creating a new object on
+  // every render which can cause many consumers to re-render and freeze
+  // the UI when the tree is large.
+  // Only expose the specific pieces consumers need. Avoid spreading the
+  // full `state` object which creates a new object on every state change
+  // and forces all consumers to re-render (resetting table state, etc.).
+  const contextValue = useMemo(
+    () => ({
+      fireStatistics: state.fireStatistics,
+      postverifiedReports: state.postverifiedReports,
+      preverifiedReports: state.preverifiedReports,
+      responseLogs: state.responseLogs,
+      userAccounts: state.userAccounts,
+      mediaStorage: state.mediaStorage,
+      combinedReports: derivedCombinedReports,
+      loading: state.loading,
+      errors: state.errors,
+      fetchFireStatistics,
+      fetchPostverifiedReports,
+      fetchPreverifiedReports,
+      fetchResponseLogs,
+      fetchUserAccounts,
+      fetchMediaStorageDetails,
+      fetchMediaById,
+      combineReports,
+      refreshAll,
+      getPreverifiedReportById,
+      getPostverifiedReportById,
+      getUserAccountById,
+      fetchMediaBlobById,
+    }),
+    [
+      state.fireStatistics,
+      state.postverifiedReports,
+      state.preverifiedReports,
+      state.responseLogs,
+      state.userAccounts,
+      state.mediaStorage,
+      state.loading,
+      state.errors,
+      derivedCombinedReports,
+      fetchFireStatistics,
+      fetchPostverifiedReports,
+      fetchPreverifiedReports,
+      fetchResponseLogs,
+      fetchUserAccounts,
+      fetchMediaStorageDetails,
+      fetchMediaById,
+      combineReports,
+      refreshAll,
+      getPreverifiedReportById,
+      getPostverifiedReportById,
+      getUserAccountById,
+      fetchMediaBlobById,
+    ]
+  );
+
   return (
-    <AdminSQLContext.Provider
-      value={{
-        ...state,
-        combinedReports,
-        fetchFireStatistics,
-        fetchPostverifiedReports,
-        fetchPreverifiedReports,
-        fetchResponseLogs,
-        fetchUserAccounts,
-        fetchMediaStorageDetails,
-        fetchMediaById,
-        combineReports,
-        refreshAll,
-        getPreverifiedReportById,
-        getPostverifiedReportById,
-        getUserAccountById,
-        fetchMediaBlobById,
-      }}
-    >
+    <AdminSQLContext.Provider value={contextValue}>
       {children}
     </AdminSQLContext.Provider>
   );

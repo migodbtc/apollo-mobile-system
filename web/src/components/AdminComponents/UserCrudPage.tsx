@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -106,38 +106,42 @@ const UserCrudPage = () => {
 
   const { userAccounts, fetchUserAccounts } = useAdminSQL();
 
-  const deleteUserAccount = async (userId: number) => {
-    if (!userId) return;
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this user account? This action cannot be undone. Associated reports will be set to null, making the report contain missing information."
-    );
-    if (!confirmed) return;
-
-    try {
-      const response = await axios.post(
-        `${SERVER_LINK}/user/delete`,
-        { UA_user_id: userId },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+  const deleteUserAccount = useCallback(
+    async (userId: number) => {
+      if (!userId) return;
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this user account? This action cannot be undone. Associated reports will be set to null, making the report contain missing information."
       );
-      if (response.status === 200) {
-        alert("User account deleted successfully!");
-        fetchUserAccounts();
-      } else {
-        alert("User account preverified report.");
+      if (!confirmed) return;
+
+      try {
+        const response = await axios.post(
+          `${SERVER_LINK}/user/delete`,
+          { UA_user_id: userId },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.status === 200) {
+          alert("User account deleted successfully!");
+          fetchUserAccounts();
+        } else {
+          alert("User account preverified report.");
+        }
+      } catch (error) {
+        console.error("Failed to delete user account:", error);
+        alert("Failed to delete user account. Please try again.");
       }
-    } catch (error) {
-      console.error("Failed to delete user account:", error);
-      alert("Failed to delete user account. Please try again.");
-    }
-  };
+    },
+    [fetchUserAccounts]
+  );
 
-  const data: UserAccount[] = userAccounts;
+  const data: UserAccount[] = useMemo(() => userAccounts, [userAccounts]);
 
-  const columns: ColumnDef<UserAccount>[] = [
+  const columns: ColumnDef<UserAccount>[] = useMemo(
+    () => [
     {
       id: "selection-id",
       accessorKey: "UA_user_id",
@@ -246,7 +250,9 @@ const UserCrudPage = () => {
         );
       },
     },
-  ];
+    ],
+    [deleteUserAccount]
+  );
 
   const table = useReactTable({
     data,
@@ -270,14 +276,46 @@ const UserCrudPage = () => {
     },
   });
 
+  // Safe polling for user accounts: immediate fetch then poll every 30s
   useEffect(() => {
-    fetchUserAccounts();
-  }, [userAccounts, fetchUserAccounts]);
+    let cancelled = false;
+    let inFlight = false;
+    const intervalMs = 30_000; // 30 seconds
+    let timeoutId: number | undefined;
+
+    const schedule = (ms: number) => {
+      timeoutId = window.setTimeout(poll, ms) as unknown as number;
+    };
+
+    async function poll() {
+      if (cancelled) return;
+      if (inFlight) {
+        schedule(intervalMs);
+        return;
+      }
+      inFlight = true;
+      try {
+        await fetchUserAccounts();
+      } catch (e) {
+        // ignore and continue polling
+      } finally {
+        inFlight = false;
+        if (!cancelled) schedule(intervalMs);
+      }
+    }
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, [fetchUserAccounts]);
 
   return (
     <>
       <div
-        className="container-fluid"
+        className="container pt-3"
         style={{ height: "90vh", overflowY: "hidden" }}
       >
         <div className="row w-100">

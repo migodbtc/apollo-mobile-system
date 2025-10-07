@@ -18,7 +18,7 @@ export class ApolloMapHandler {
   private showUnvalidated: boolean | undefined;
 
   constructor(
-    parentElementId: string,
+    parentElementId: string | HTMLElement,
     userLocation: [number, number],
     onMarkerClick: (data: {
       report: PreverifiedReport;
@@ -30,7 +30,8 @@ export class ApolloMapHandler {
     this.showUnvalidated = showUnvalidated;
 
     this.map = new ol.Map({
-      target: parentElementId,
+      // ol.Map accepts either an element or an element id string
+      target: parentElementId as any,
       layers: [new TileLayer({ source: new OSM() })],
       view: new View({
         center: fromLonLat(userLocation),

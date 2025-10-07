@@ -17,7 +17,7 @@ const DashboardPage = ({ activeTab, setActiveTab }: DashboardPageProps) => {
 
   return (
     <div
-      className="container-fluid"
+      className="container pt-3"
       style={{ height: "90vh", overflowY: "scroll" }}
     >
       <div className="row">

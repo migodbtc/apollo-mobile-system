@@ -245,7 +245,7 @@ const AdminProfilePage = () => {
 
   return (
     <div
-      className="container-fluid"
+      className="container pt-3"
       style={{ height: "90vh", overflowY: "hidden" }}
     >
       <div className="row w-100" style={{ height: "100%" }}>

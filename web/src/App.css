@@ -142,6 +142,27 @@
   border-radius: 1rem;
 }
 
+/* Sidebar cascade animation: slide up + fade in with staggered delays */
+.sidebar-item {
+  opacity: 0;
+  transform: translateY(8px);
+  animation-name: sidebarItemIn;
+  animation-duration: 260ms;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes sidebarItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #adminProfilePicture {
   background-image: url("./assets/128x128.svg");
   background-size: cover;

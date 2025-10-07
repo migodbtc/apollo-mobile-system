@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -77,7 +77,7 @@ const MediaCrudPage = () => {
     );
   };
 
-  const downloadMedia = async (mediaId: number) => {
+  const downloadMedia = useCallback(async (mediaId: number) => {
     if (!mediaId) return;
     const confirmed = window.confirm(
       `Downloading media with ID no. ${mediaId}. Are you sure you want to proceed?`
@@ -131,142 +131,207 @@ const MediaCrudPage = () => {
       console.error("Failed to download media:", error);
       alert("Failed to download media. Please try again.");
     }
-  };
+  }, []);
 
-  const deleteMedia = async (mediaId: number) => {
-    if (!mediaId) return;
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this media file? This action cannot be undone."
-    );
-    if (!confirmed) return;
-
-    try {
-      const response = await axios.post(
-        `${SERVER_LINK}/media/delete`,
-        { MS_media_id: mediaId },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+  const deleteMedia = useCallback(
+    async (mediaId: number) => {
+      if (!mediaId) return;
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this media file? This action cannot be undone."
       );
-      if (response.status === 200) {
-        alert("Media deleted successfully!");
-        fetchMediaStorageDetails();
-      } else {
-        alert("Failed to delete media.");
-      }
-    } catch (error) {
-      console.error("Failed to delete media:", error);
-      alert("Failed to delete media. Please try again.");
-    }
-  };
+      if (!confirmed) return;
 
-  const data: MediaStorage[] = mediaStorage;
-
-  const columns: ColumnDef<MediaStorage>[] = [
-    {
-      id: "selection-id",
-      accessorKey: "MS_media_id",
-      header: ({ table }) => (
-        <>
-          <input
-            type="checkbox"
-            checked={table.getIsAllRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-            aria-label="Select all rows"
-            className="mr-2"
-            style={{ backgroundColor: "transparent", opacity: 0.5 }}
-          />
-          ID
-        </>
-      ),
-      cell: ({ row }) => (
-        <div className="d-flex align-items-center">
-          <input
-            type="checkbox"
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-            aria-label={`Select row ${row.id}`}
-            className="mr-2"
-            style={{ backgroundColor: "transparent", opacity: 0.5 }}
-          />
-          <span>{row.original.MS_media_id}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "MS_user_owner",
-      header: "Name",
-      cell: ({ row }) => {
-        const userId = row.original.MS_user_owner;
-        const userAccount = userAccounts.find(
-          (account) => account.UA_user_id === userId
+      try {
+        const response = await axios.post(
+          `${SERVER_LINK}/media/delete`,
+          { MS_media_id: mediaId },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
-
-        if (userAccount === undefined) {
-          return <span className="text-muted text-bold">N/A</span>;
+        if (response.status === 200) {
+          alert("Media deleted successfully!");
+          fetchMediaStorageDetails();
+        } else {
+          alert("Failed to delete media.");
         }
+      } catch (error) {
+        console.error("Failed to delete media:", error);
+        alert("Failed to delete media. Please try again.");
+      }
+    },
+    [fetchMediaStorageDetails]
+  );
 
-        return (
-          <span>
-            {"@" + userAccount?.UA_username ||
-              `${userAccount?.UA_first_name || ""} ${
-                userAccount?.UA_last_name || ""
-              }`.trim() ||
-              `User ${userId}`}
-          </span>
-        );
+  // Safe polling loop: fetch immediately, then poll every intervalMs
+  // without overlapping requests. Uses setTimeout scheduling so we can
+  // avoid piling up requests if a fetch takes longer than the interval.
+  useEffect(() => {
+    let cancelled = false;
+    let inFlight = false;
+    const intervalMs = 30_000; // 30 seconds
+    let timeoutId: number | undefined;
+
+    const schedule = (ms: number) => {
+      timeoutId = window.setTimeout(poll, ms) as unknown as number;
+    };
+
+    async function poll() {
+      if (cancelled) return;
+      if (inFlight) {
+        // Wait one interval and try again
+        schedule(intervalMs);
+        return;
+      }
+      inFlight = true;
+      try {
+        await fetchMediaStorageDetails();
+      } catch (e) {
+        // swallow — polling should continue even on error
+        // console.debug('media polling error', e);
+      } finally {
+        inFlight = false;
+        if (!cancelled) schedule(intervalMs);
+      }
+    }
+
+    // start polling immediately
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [fetchMediaStorageDetails]);
+
+  // Memoize data and columns to keep table internals stable across
+  // parent re-renders (prevents resetting sorting/pagination)
+  const data: MediaStorage[] = useMemo(() => mediaStorage, [mediaStorage]);
+
+  const downloadMediaCb = useCallback(
+    (mediaId: number) => {
+      void downloadMedia(mediaId);
+    },
+    [downloadMedia]
+  );
+
+  const deleteMediaCb = useCallback(
+    (mediaId: number) => {
+      void deleteMedia(mediaId);
+    },
+    [deleteMedia]
+  );
+
+  const columns: ColumnDef<MediaStorage>[] = useMemo(
+    () => [
+      {
+        id: "selection-id",
+        accessorKey: "MS_media_id",
+        header: ({ table }) => (
+          <>
+            <input
+              type="checkbox"
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+              aria-label="Select all rows"
+              className="mr-2"
+              style={{ backgroundColor: "transparent", opacity: 0.5 }}
+            />
+            ID
+          </>
+        ),
+        cell: ({ row }) => (
+          <div className="d-flex align-items-center">
+            <input
+              type="checkbox"
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+              aria-label={`Select row ${row.id}`}
+              className="mr-2"
+              style={{ backgroundColor: "transparent", opacity: 0.5 }}
+            />
+            <span>{row.original.MS_media_id}</span>
+          </div>
+        ),
       },
-    },
-    {
-      accessorKey: "MS_file_type",
-      header: "File Type",
-      cell: ({ row }) => {
-        return renderMediaTypeBadge(row.original.MS_file_type);
+      {
+        accessorKey: "MS_user_owner",
+        header: "Name",
+        cell: ({ row }) => {
+          const userId = row.original.MS_user_owner;
+          const userAccount = userAccounts.find(
+            (account) => account.UA_user_id === userId
+          );
+
+          if (userAccount === undefined) {
+            return <span className="text-muted text-bold">N/A</span>;
+          }
+
+          return (
+            <span>
+              {"@" + userAccount?.UA_username ||
+                `${userAccount?.UA_first_name || ""} ${
+                  userAccount?.UA_last_name || ""
+                }`.trim() ||
+                `User ${userId}`}
+            </span>
+          );
+        },
       },
-    },
-    {
-      accessorKey: "MS_file_name",
-      header: "File Name",
-    },
-    {
-      id: "mediaControls",
-      header: "Controls",
-      enableColumnFilter: false,
-      cell: ({ row }) => (
-        <div style={{ minWidth: 120 }}>
-          <a
-            rel="noopener noreferrer"
-            className="btn btn-sm bg-orange mr-2"
-            style={{ border: "none" }}
-            title="View"
-            onClick={() => {
-              setSelectedMedia(row.original);
-              setShowMediaModal(true);
-            }}
-          >
-            <FontAwesomeIcon icon={faEye} />
-          </a>
-          <a
-            className="btn btn-sm btn-secondary mr-2"
-            style={{ border: "none" }}
-            title="Download"
-            onClick={() => downloadMedia(row.original.MS_media_id)}
-          >
-            <FontAwesomeIcon icon={faDownload} />
-          </a>
-          <FontAwesomeIcon
-            icon={faTrash}
-            className="text-muted"
-            style={{ cursor: "pointer" }}
-            title="Delete"
-            onClick={() => deleteMedia(row.original.MS_media_id)}
-          />
-        </div>
-      ),
-    },
-  ];
+      {
+        accessorKey: "MS_file_type",
+        header: "File Type",
+        cell: ({ row }) => {
+          return renderMediaTypeBadge(row.original.MS_file_type);
+        },
+      },
+      {
+        accessorKey: "MS_file_name",
+        header: "File Name",
+      },
+      {
+        id: "mediaControls",
+        header: "Controls",
+        enableColumnFilter: false,
+        cell: ({ row }) => (
+          <div style={{ minWidth: 120 }}>
+            <a
+              rel="noopener noreferrer"
+              className="btn btn-sm bg-orange mr-2"
+              style={{ border: "none" }}
+              title="View"
+              onClick={() => {
+                setSelectedMedia(row.original);
+                setShowMediaModal(true);
+              }}
+            >
+              <FontAwesomeIcon icon={faEye} />
+            </a>
+            <a
+              className="btn btn-sm btn-secondary mr-2"
+              style={{ border: "none" }}
+              title="Download"
+              onClick={() => downloadMediaCb(row.original.MS_media_id)}
+            >
+              <FontAwesomeIcon icon={faDownload} />
+            </a>
+            <FontAwesomeIcon
+              icon={faTrash}
+              className="text-muted"
+              style={{ cursor: "pointer" }}
+              title="Delete"
+              onClick={() => deleteMediaCb(row.original.MS_media_id)}
+            />
+          </div>
+        ),
+      },
+    ],
+    [userAccounts, downloadMediaCb, deleteMediaCb]
+  );
 
   const table = useReactTable({
     data,
@@ -292,7 +357,7 @@ const MediaCrudPage = () => {
 
   return (
     <div
-      className="container-fluid"
+      className="container pt-3"
       style={{ height: "90vh", overflowY: "hidden" }}
     >
       <div className="row w-100">

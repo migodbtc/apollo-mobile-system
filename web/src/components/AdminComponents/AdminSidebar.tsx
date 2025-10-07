@@ -1,3 +1,4 @@
+import React from "react";
 import {
   faBook,
   faBullhorn,
@@ -21,147 +22,113 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
     setActiveTab(tabName);
   };
 
+  const handleAnchorClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    tabName: string
+  ) => {
+    e.preventDefault();
+    handleTabChange(tabName);
+  };
+
+  const sections = [
+    {
+      header: "PERSONAL",
+      items: [{ key: "profile", label: "Profile", icon: faUser }],
+    },
+    {
+      header: "VISUALIZATION",
+      items: [
+        { key: "dashboard", label: "Dashboard", icon: faTachometer },
+        { key: "reportsMap", label: "Reports Map", icon: faMapLocation },
+      ],
+    },
+    {
+      header: "TABLES",
+      items: [
+        { key: "users", label: "Users", icon: faUsers },
+        { key: "reports", label: "Reports", icon: faClipboardList },
+        { key: "mediaStorage", label: "Media Storage", icon: faImagePortrait },
+        { key: "responseLogs", label: "Response Logs", icon: faBullhorn },
+      ],
+    },
+    {
+      header: "MISCELLANEOUS",
+      items: [
+        { key: "machineLearning", label: "Automation", icon: faRobot },
+        { key: "documentation", label: "Documentation", icon: faBook },
+      ],
+    },
+  ];
+
+  let idx = 0;
+
   return (
-    <div className="col-md-3 col-lg-2">
+    <div>
       <div
-        className="sidebar"
-        style={{ height: "100%", backgroundColor: "transparent" }}
+        className="sidebar p-2"
+        style={{
+          height: "100vh",
+          backgroundColor: "#01040F",
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          borderRight: "2px solid rgb(17, 22, 43)",
+        }}
       >
-        <nav className="mt-2">
+        {/* Title card moved here from header */}
+        <div style={{ padding: "10px 12px 8px 12px", fontSize: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <b style={{ color: "#c2410c" }}>Apollo</b>
+            <span style={{ color: "#646A85" }}>Admin</span>
+          </div>
+        </div>
+
+        {/* Divider with no margin directly below the title card */}
+        <div
+          style={{ height: 1, background: "rgba(17,22,43,0.06)", margin: 0 }}
+        />
+
+        <nav className="mt-2" style={{ flex: 1, overflow: "auto" }}>
           <ul
             className="nav nav-pills nav-sidebar flex-column text-md"
             data-widget="treeview"
             role="menu"
-            style={{ color: "rgb(100, 106, 133)" }}
+            style={{
+              color: "rgb(100, 106, 133)",
+              paddingLeft: 0,
+              marginLeft: 0,
+              margin: 0,
+              listStyle: "none",
+            }}
           >
-            <li className="nav-header text-bold">PERSONAL</li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "profile" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("profile")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faUser} className="mr-2" />
-                  Profile
-                </p>
-              </a>
-            </li>
-            <li className="nav-header text-bold">VISUALIZATION</li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "dashboard" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("dashboard")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faTachometer} className="mr-2" />
-                  Dashboard
-                </p>
-              </a>
-            </li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "reportsMap" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("reportsMap")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faMapLocation} className="mr-2" />
-                  Reports Map
-                </p>
-              </a>
-            </li>
-            <li className="nav-header text-bold">TABLES</li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${activeTab === "users" ? "active" : ""}`}
-                onClick={() => handleTabChange("users")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faUsers} className="mr-2" />
-                  Users
-                </p>
-              </a>
-            </li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "reports" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("reports")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faClipboardList} className="mr-2" />
-                  Reports
-                </p>
-              </a>
-            </li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "mediaStorage" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("mediaStorage")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faImagePortrait} className="mr-2" />
-                  Media Storage
-                </p>
-              </a>
-            </li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "responseLogs" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("responseLogs")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faBullhorn} className="mr-2" />
-                  Response Logs
-                </p>
-              </a>
-            </li>
-            <li className="nav-header text-bold">MISCELLANEOUS</li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "machineLearning" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("machineLearning")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faRobot} className="mr-2" />
-                  Automation
-                </p>
-              </a>
-            </li>
-            <li className="nav-item">
-              <a
-                href="#"
-                className={`nav-link ${
-                  activeTab === "documentation" ? "active" : ""
-                }`}
-                onClick={() => handleTabChange("documentation")}
-              >
-                <p>
-                  <FontAwesomeIcon icon={faBook} className="mr-2" />
-                  Documentation
-                </p>
-              </a>
-            </li>
+            {sections.map((section) => (
+              <React.Fragment key={section.header}>
+                <li className="nav-header text-bold">{section.header}</li>
+                {section.items.map((it) => {
+                  const currentIdx = idx++;
+                  return (
+                    <li
+                      key={it.key}
+                      className="nav-item sidebar-item"
+                      style={{ animationDelay: `${currentIdx * 45}ms` }}
+                    >
+                      <a
+                        href="#"
+                        className={`nav-link ${
+                          activeTab === it.key ? "active" : ""
+                        }`}
+                        onClick={(e) => handleAnchorClick(e, it.key)}
+                      >
+                        <p>
+                          <FontAwesomeIcon icon={it.icon} className="mr-2" />
+                          {it.label}
+                        </p>
+                      </a>
+                    </li>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </ul>
         </nav>
       </div>
@@ -169,4 +136,4 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
   );
 };
 
-export default AdminSidebar;
+export default React.memo(AdminSidebar);

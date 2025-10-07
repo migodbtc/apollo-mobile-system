@@ -23,6 +23,9 @@ const MapReportCard: React.FC<MapReportCardProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapHandlerRef = useRef<ApolloMapHandler | null>(null);
+  const uniqueIdRef = useRef<string>(
+    `map-${Math.random().toString(36).slice(2, 9)}`
+  );
 
   const {
     preverifiedReports,
@@ -31,27 +34,21 @@ const MapReportCard: React.FC<MapReportCardProps> = ({
     fetchPreverifiedReports,
   } = useAdminSQL();
 
+  // Initialize map once
   useEffect(() => {
     fetchPreverifiedReports();
     fetchPostverifiedReports();
 
-    if (mapContainerRef.current) {
+    if (mapContainerRef.current && !mapHandlerRef.current) {
+      // ensure the container has a unique id for ol to target
+      if (!mapContainerRef.current.id) {
+        mapContainerRef.current.id = uniqueIdRef.current;
+      }
       mapHandlerRef.current = new ApolloMapHandler(
-        mapContainerRef.current.id,
+        mapContainerRef.current,
         userLocation,
         onMarkerClick,
         showUnvalidated
-      );
-      mapHandlerRef.current.updateAllReportsToday(
-        postverifiedReports,
-        preverifiedReports
-      );
-    }
-
-    if (mapHandlerRef.current) {
-      mapHandlerRef.current.updateAllReportsToday(
-        postverifiedReports,
-        preverifiedReports
       );
     }
 
@@ -62,9 +59,29 @@ const MapReportCard: React.FC<MapReportCardProps> = ({
         if (mapInstance) {
           mapInstance.setTarget(undefined);
         }
+        mapHandlerRef.current = null;
       }
     };
-  }, [showUnvalidated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update overlays when reports or visibility toggle changes
+  useEffect(() => {
+    if (mapHandlerRef.current) {
+      // update the showUnvalidated flag by re-creating handler's view via updateAllReportsToday
+      // handler uses its internal showUnvalidated set during construction; if it needs to change,
+      // recreate overlays safely
+      try {
+        mapHandlerRef.current.clearOverlays();
+        mapHandlerRef.current.updateAllReportsToday(
+          postverifiedReports,
+          preverifiedReports
+        );
+      } catch (e) {
+        console.error("Error updating map overlays:", e);
+      }
+    }
+  }, [postverifiedReports, preverifiedReports, showUnvalidated]);
 
   return (
     <div

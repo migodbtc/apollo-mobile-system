@@ -6,7 +6,7 @@ import {
   SessionProvider,
   useSession,
 } from "./constants/context/SessionContext";
-import AdminSegment from "./components/AdminSegment";
+import AdminSegment from "./components/NewAdminSegment";
 import { AdminSQLProvider } from "./constants/context/AdminSQLContext";
 import { SERVER_LINK } from "./constants/netvar";
 import { HermesProvider } from "./constants/context/HermesContext";
@@ -23,15 +23,17 @@ function AppContent() {
 
   return (
     <div className={`${layoutClass} bg-fullpagebg overflow-x-hidden`}>
-      <div className={containerClass}>
+      <div className={`${containerClass} px-0`}>
         {/* NAVIGATION BAR */}
-        <NavigationBar segment={segment} setSegment={setSegment} />
+        {segment === "public" && (
+          <NavigationBar segment={segment} setSegment={setSegment} />
+        )}
 
         {segment === "public" ? (
           <PublicSegment />
         ) : (
           <AdminSQLProvider serverUrl={SERVER_LINK}>
-            <AdminSegment />
+            <AdminSegment setSegment={setSegment} />
           </AdminSQLProvider>
         )}
       </div>

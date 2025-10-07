@@ -93,7 +93,7 @@ const MapVisualPage = ({}: MapVisualPageProps) => {
 
   return (
     <>
-      <div className="container-fluid" style={{ height: "90vh" }}>
+      <div className="container pt-3" style={{ height: "90vh" }}>
         <div className="row h-100">
           <div className="d-flex flex-column col-md-5 h-100 pb-2">
             <div

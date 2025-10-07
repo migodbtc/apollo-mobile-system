@@ -1,6 +1,6 @@
 import { faSignIn } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useSession } from "../../constants/context/SessionContext";
 import { SERVER_LINK } from "../../constants/netvar";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
@@ -12,7 +12,8 @@ const LoginForm = () => {
   const { setSessionData } = useSession();
   const { refreshAll } = useAdminSQL();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.MouseEvent) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
     if (!username || !password) {
       alert("Please fill in the login details before submitting!");
       return 0;
@@ -131,8 +132,8 @@ const LoginForm = () => {
         </label>
       </div>
 
-      <a
-        href="#"
+      <button
+        type="button"
         className="btn btn-md mt-3 text-white rounded-xl w-100"
         style={{
           borderColor: "#c2410c",
@@ -142,7 +143,7 @@ const LoginForm = () => {
       >
         <FontAwesomeIcon icon={faSignIn} className="mr-2" />
         Login
-      </a>
+      </button>
       <div className="form-group d-flex flex-column justify-content-center align-items-left">
         <a className="text-muted mt-2 text-left text-sm  mb-2">
           <span

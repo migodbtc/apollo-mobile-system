@@ -11,6 +11,7 @@ import MediaCrudPage from "./AdminComponents/MediaCrudPage";
 import AutomationPage from "./AdminComponents/AutomationPage";
 import AdminDocumentationPage from "./AdminComponents/AdminDocumentationPage";
 import ResponseLogsCrudPage from "./AdminComponents/ResponseLogsCrudPage";
+import NewDashboardPage from "./AdminComponents/NewDashboardPage";
 
 type AdminSegmentProps = {
   setSegment?: (seg: string) => void;
@@ -72,9 +73,22 @@ const AdminSegment = ({ setSegment }: AdminSegmentProps) => {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/**
+                 * Sidebar toggle: disabled on Dashboard due to a known freeze bug.
+                 * We keep a tooltip to inform users while devs fix the issue.
+                 */}
                 <button
                   onClick={() => setSidebarOpen((s) => !s)}
                   aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                  title={
+                    activeTab === "dashboard"
+                      ? "Disabling the sidebar on this page may freeze the app (known issue being fixed)."
+                      : sidebarOpen
+                      ? "Close sidebar"
+                      : "Open sidebar"
+                  }
+                  aria-disabled={activeTab === "dashboard"}
+                  disabled={activeTab === "dashboard"}
                   style={{
                     background: "transparent",
                     border: "none",
@@ -82,10 +96,15 @@ const AdminSegment = ({ setSegment }: AdminSegmentProps) => {
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: 6,
-                    color: "rgb(100, 106, 133)",
-                    cursor: "pointer",
+                    color:
+                      activeTab === "dashboard"
+                        ? "#8b8f98"
+                        : "rgb(100, 106, 133)",
+                    cursor:
+                      activeTab === "dashboard" ? "not-allowed" : "pointer",
                     fontWeight: 600,
                     fontSize: 24,
+                    opacity: activeTab === "dashboard" ? 0.6 : 1,
                   }}
                 >
                   {sidebarOpen ? "«" : "»"}

@@ -11,6 +11,7 @@ import MediaCrudPage from "./AdminComponents/MediaCrudPage";
 import AutomationPage from "./AdminComponents/AutomationPage";
 import AdminDocumentationPage from "./AdminComponents/AdminDocumentationPage";
 import ResponseLogsCrudPage from "./AdminComponents/ResponseLogsCrudPage";
+import NewDashboardPage from "./AdminComponents/NewDashboardPage";
 
 const AdminSegment = () => {
   const { sessionData } = useSession();
@@ -31,7 +32,7 @@ const AdminSegment = () => {
           <div className="col-md-8 col-lg-9">
             <div style={{ height: "100%", paddingBottom: 0, marginBottom: 0 }}>
               {activeTab === "dashboard" && (
-                <DashboardPage
+                <NewDashboardPage
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
                 />
@@ -45,7 +46,6 @@ const AdminSegment = () => {
               )}
               {activeTab === "users" && <UserCrudPage />}
               {activeTab === "reports" && <ReportsCrudPage />}
-              {activeTab === "responseLogs" && <div>Work in progress!</div>}
               {activeTab === "mediaStorage" && <MediaCrudPage />}
               {activeTab === "responseLogs" && <ResponseLogsCrudPage />}
               {activeTab === "machineLearning" && <AutomationPage />}

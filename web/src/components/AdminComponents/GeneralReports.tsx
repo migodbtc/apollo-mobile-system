@@ -82,7 +82,7 @@ const GeneralReports = ({
     <>
       <div
         className="d-flex flex-row justify-content-between align-items-center"
-        style={{ height: "15%", color: "#c2410c" }}
+        style={{ color: "#c2410c", marginBottom: 8 }}
       >
         <div>
           <h5 className="box-title">Reports</h5>
@@ -106,14 +106,17 @@ const GeneralReports = ({
         </div>
       </div>
       <div
-        className="card p-4 text-black"
+        className="card p-4 text-black d-flex flex-column"
         style={{
-          height: "85%",
           borderRadius: "1rem",
           backgroundColor: "#11162B",
+          minHeight: 360,
+          display: "flex",
+          flexDirection: "column",
+          boxSizing: "border-box",
         }}
       >
-        <div className="row h-100">
+        <div className="row" style={{ flex: 1 }}>
           <div className="col-md-6 d-flex flex-column text-align-center justify-content-center pr-3">
             <span className="text-muted text-sm mb-1">
               Reports {selectionOneStringMap[selectionOne]}

@@ -69,7 +69,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "SERVER_LINK": "http://192.168.123.33:5821",
+      "SERVER_LINK": "http://47.129.185.180:5821",
       "router": {},
       "eas": {
         "projectId": "75a19e08-ef61-4886-ae9a-367845b82a12"

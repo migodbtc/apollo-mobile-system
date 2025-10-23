@@ -1,0 +1,55 @@
+# Repo-level EAS ignore. This is used when running `eas build` from the repository root.
+
+# It intentionally excludes server artifacts, web build outputs, and other large files
+
+# that are not needed for mobile builds.
+
+# Server model artifacts and temporary data
+
+server/model
+server/model/**
+server/tmp
+server/**/_.h5
+server/\*\*/_.pb
+
+# Web build outputs and heavy vendor bundles
+
+web/public
+web/dist
+web/build
+web/node_modules
+
+# SQL dumps, seeds, and archive
+
+sql
+sql/\*\*
+
+# Large directories that are not part of the mobile app
+
+node_modules
+\*\*/node_modules
+
+# OS / editor / VCS
+
+.vscode
+.git
+.DS_Store
+Thumbs.db
+
+# Large media
+
+**/\*.mp4
+**/_.mov
+\*\*/_.zip \*_/_.tar
+
+# Android / iOS native projects (if you want to keep them local only)
+
+android
+ios
+
+# Keystores & secrets
+
+_.keystore
+_.jks
+_.p12
+_.pem

@@ -92,12 +92,17 @@ export class ApolloMapHandler {
     // console.log("Loading reports!");
 
     const verifiedMap = new Map(
-      this.verified_reports.map((vReport) => [vReport.VR_report_id, vReport])
+      // ensure keys are strings to avoid mismatches when API returns ids as strings
+      this.verified_reports.map((vReport) => [
+        String(vReport.VR_report_id),
+        vReport,
+      ])
     );
 
     // console.log("Adding the overlays!");
     this.preverified_reports.forEach((report) => {
-      const verification = verifiedMap.get(report.PR_report_id) || null;
+      // lookup using string key to match the map above
+      const verification = verifiedMap.get(String(report.PR_report_id)) || null;
       const isVerified = !!verification;
 
       if (this.showUnvalidated == false && isVerified) {
@@ -126,7 +131,11 @@ export class ApolloMapHandler {
 
   loadReportsToday() {
     const verifiedMap = new Map(
-      this.verified_reports.map((vReport) => [vReport.VR_report_id, vReport])
+      // ensure keys are strings to avoid mismatches when API returns ids as strings
+      this.verified_reports.map((vReport) => [
+        String(vReport.VR_report_id),
+        vReport,
+      ])
     );
 
     console.debug(
@@ -134,8 +143,9 @@ export class ApolloMapHandler {
       this.showUnvalidated
     );
     this.preverified_reports.forEach((report) => {
-      const verification = verifiedMap.get(report.PR_report_id) || null;
-      const isVerified = !!verification;
+      // lookup using string key to match the map above
+      const isVerified = report.PR_report_status === "verified";
+      const verification = verifiedMap.get(String(report.PR_report_id)) || null;
 
       console.debug(
         `Processing report ${report.PR_report_id}: lon=${report.PR_longitude}, lat=${report.PR_latitude}, isVerified=${isVerified}`

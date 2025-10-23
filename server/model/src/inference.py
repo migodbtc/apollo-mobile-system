@@ -5,6 +5,8 @@ import cv2
 import tensorflow as tf
 import keras
 import numpy as np
+from pathlib import Path
+import logging
 from model.src.load import load_image, load_video
 from model.src.model import FrameExtractor
 
@@ -27,8 +29,55 @@ Example usage:
 
 class HermesModel:
     def __init__(self, model_path, DETECTION_THRESHOLD=0.5):
-        self.model = tf.keras.models.load_model(model_path, custom_objects={'FrameExtractor': FrameExtractor}
-)
+        """Load a Keras model.
+
+        The provided model_path may be relative. We try the path as given first,
+        then resolve it relative to the package/server root so callers don't need
+        to rely on the current working directory.
+        """
+        logger = logging.getLogger(__name__)
+
+        # Prepare candidate paths to check (preserve given string if absolute)
+        input_path = Path(model_path)
+        resolved_path = None
+
+        if input_path.is_absolute():
+            if input_path.exists():
+                resolved_path = input_path
+        else:
+            # Try the path as provided relative to current working dir
+            candidates = [Path.cwd() / input_path]
+
+            # server/ is two levels above this file (server/model/src)
+            # so try resolving relative to server root and model folder
+            pkg_dir = Path(__file__).resolve().parents
+            try:
+                server_root = pkg_dir[2]
+            except Exception:
+                server_root = Path(__file__).resolve().parents[1]
+
+            candidates.append(server_root / input_path)
+            candidates.append((Path(__file__).resolve().parents[1]) / input_path)
+
+            for cand in candidates:
+                if cand.exists():
+                    resolved_path = cand
+                    break
+
+        if resolved_path is None:
+            # Build a helpful error message listing where we looked
+            checked = []
+            if input_path.is_absolute():
+                checked.append(str(input_path))
+            else:
+                checked.extend([str((Path.cwd() / input_path).resolve()),
+                                str((server_root / input_path).resolve()) if 'server_root' in locals() else '',
+                                str(((Path(__file__).resolve().parents[1]) / input_path).resolve())])
+            raise FileNotFoundError(f"Model file not found for given model_path '{model_path}'. Paths checked: {checked}")
+
+        resolved_model_path = str(resolved_path)
+        logger.info(f"Loading model from {resolved_model_path}")
+        self.model = tf.keras.models.load_model(resolved_model_path, custom_objects={'FrameExtractor': FrameExtractor})
         self.type_map = {0: 'small', 1: 'medium', 2: 'large', 3: 'none'}
         self.severity_map = {0: 'mild', 1: 'moderate', 2: 'severe', 3: 'none'}
         self.spread_map = {0: 'low', 1: 'medium', 2: 'high', 3: 'none'}

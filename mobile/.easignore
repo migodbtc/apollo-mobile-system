@@ -1,0 +1,55 @@
+# EAS ignore for the Expo project located in this folder (mobile/)
+
+# Patterns are relative to this project root (where app.json lives).
+
+# node_modules (never upload dependencies)
+
+node_modules
+\*\*/node_modules
+
+# Native build artifacts & caches
+
+android
+android/\*\*/build
+ios
+.expo
+.expo-shared
+.gradle
+
+# Keystores and private keys
+
+_.keystore
+_.jks
+_.p12
+_.pem
+
+# Metro / packager / npm caches
+
+.expo/_cache_
+.cache
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Web/build output (if present under mobile/)
+
+web/public
+web/dist
+web/node_modules
+
+# Large media that don't need to be included in the app bundle
+
+**/\*.mp4
+**/_.mov
+\*\*/_.zip \*_/_.tar
+
+# Editor / OS / VCS files
+
+.vscode
+.git
+.DS_Store
+Thumbs.db
+
+# If you ever run eas from the repository root, create a repo-level .easignore
+
+# (see project root /.easignore) to exclude server models, web build artifacts, etc.

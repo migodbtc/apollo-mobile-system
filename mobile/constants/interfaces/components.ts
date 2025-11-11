@@ -33,6 +33,7 @@ export interface ReportCardProps {
   onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  reportsPanel?: boolean;
 }
 
 export interface PersonalReportCardProps {

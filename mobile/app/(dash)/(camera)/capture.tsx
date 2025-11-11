@@ -1,6 +1,6 @@
 import { Dimensions, StyleSheet, View } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { CameraType, CameraView } from "expo-camera";
+import { Camera, CameraType, CameraView } from "expo-camera";
 import { useRouter } from "expo-router";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
 import CameraPanel from "@/components/panels/CameraPanel";
@@ -21,6 +21,12 @@ const CaptureScreen = () => {
   const { imageUri, setImageUri } = useImageUri();
 
   const [facing, setFacing] = useState<CameraType>("back");
+  const [hasCameraPermission, setHasCameraPermission] = useState<
+    boolean | null
+  >(null);
+  const [hasMicrophonePermission, setHasMicrophonePermission] = useState<
+    boolean | null
+  >(null);
   const [isVideoMode, setIsVideoMode] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -34,7 +40,68 @@ const CaptureScreen = () => {
     setIsVideoMode((prev) => !prev);
   };
 
+  // Request camera & microphone permissions on mount and keep local state
+  useEffect(() => {
+    let mounted = true;
+
+    const getPermissions = async () => {
+      try {
+        const camPerm = await Camera.requestCameraPermissionsAsync();
+        // Some SDK versions expose a microphone permission helper on Camera;
+        // if not available, try to gracefully assume it's handled elsewhere.
+        let micPerm: { status?: string } = { status: "granted" };
+
+        if (typeof Camera.requestMicrophonePermissionsAsync === "function") {
+          // @ts-ignore - optional helper may not exist on all SDKs
+          micPerm = await Camera.requestMicrophonePermissionsAsync();
+        }
+
+        if (!mounted) return;
+
+        setHasCameraPermission(camPerm.status === "granted");
+        setHasMicrophonePermission(micPerm.status === "granted");
+      } catch (err) {
+        console.warn("Permission request failed:", err);
+        if (!mounted) return;
+        setHasCameraPermission(false);
+        setHasMicrophonePermission(false);
+      }
+    };
+
+    getPermissions();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleStartRecording = async () => {
+    console.log("Start recording requested");
+    // Ensure we have camera and microphone permissions before starting.
+    if (hasCameraPermission !== true || hasMicrophonePermission !== true) {
+      try {
+        const cam = await Camera.requestCameraPermissionsAsync();
+        // @ts-ignore optional API
+        const mic =
+          typeof Camera.requestMicrophonePermissionsAsync === "function"
+            ? await Camera.requestMicrophonePermissionsAsync()
+            : { status: "granted" };
+
+        setHasCameraPermission(cam.status === "granted");
+        setHasMicrophonePermission(mic.status === "granted");
+
+        if (cam.status !== "granted" || mic.status !== "granted") {
+          console.warn(
+            "Camera or microphone permission not granted. Aborting recording."
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn("Permission request failed:", err);
+        return;
+      }
+    }
+
     if (!cameraViewReference.current) return;
     try {
       setVideoUri(null);
@@ -47,7 +114,7 @@ const CaptureScreen = () => {
       }, 1000);
 
       const video = await cameraViewReference.current.recordAsync({
-        maxDuration: 30,
+        maxDuration: 5,
       });
 
       if (video?.uri) {

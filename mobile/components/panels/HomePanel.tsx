@@ -15,7 +15,7 @@ import ReportCard from "../dash/ReportCard";
 import SelectedReportModal from "../dash/SelectedReportModal";
 import EditReportModal from "../dash/EditReportModal";
 import { useAdminSQL } from "@/constants/contexts/AdminSQLContext";
-import { PreverifiedReport } from "@/constants/types/database";
+import { PreverifiedReport, CombinedReport } from "@/constants/types/database";
 
 const { width, height } = Dimensions.get("window");
 
@@ -23,6 +23,7 @@ const HomePanel = () => {
   const { sessionData } = useSession();
   const {
     preverifiedReports,
+    combinedReports,
     loading,
     errors,
     fetchPreverifiedReports,
@@ -33,20 +34,12 @@ const HomePanel = () => {
   const [accordionOpen, setAccordionOpen] = useState(false);
 
   const [subSelection, setSubSelection] = useState<number>(0);
-  const [filteredReports, setFilteredReports] = useState<PreverifiedReport[]>(
-    []
-  );
+  const [filteredReports, setFilteredReports] = useState<CombinedReport[]>([]);
   // State for EditReportModal
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editReportData, setEditReportData] = useState<
-    [PreverifiedReport, null] | null
-  >(null);
-
-  // Handler for saving edited report (implement actual logic as needed)
-  const handleSaveEditReport = (updatedData: { status: string }) => {
-    // TODO: Implement backend update logic here
-    setIsEditModalVisible(false);
-  };
+  const [editReportData, setEditReportData] = useState<CombinedReport | null>(
+    null
+  );
 
   const buttonData = useMemo(
     () => [
@@ -61,13 +54,14 @@ const HomePanel = () => {
 
   // Filter reports by current user
   useEffect(() => {
-    if (preverifiedReports && sessionData?.UA_user_id) {
-      const userReports = preverifiedReports.filter(
-        (report) => report.PR_user_id === sessionData.UA_user_id
+    // Use combinedReports (pre + post) and filter by current user
+    if (combinedReports && sessionData?.UA_user_id) {
+      const userReports = combinedReports.filter(
+        (reportTuple) => reportTuple[0].PR_user_id === sessionData.UA_user_id
       );
       setFilteredReports(userReports);
     }
-  }, [preverifiedReports, sessionData?.UA_user_id]);
+  }, [combinedReports, sessionData?.UA_user_id]);
 
   // Fetch reports only when needed
   useEffect(() => {
@@ -83,6 +77,12 @@ const HomePanel = () => {
       shouldFetchReports.current = true;
       fetchPreverifiedReports();
     }
+  };
+
+  const handleEditSave = (updatedData: any) => {
+    //pwede dito ilagay yunhg save logic or kahit saan mo trip bahala ka sa buhay mo hehe
+    console.log("Saved data:", updatedData);
+    setIsEditModalVisible(false);
   };
 
   const renderAccountDetails = useMemo(() => {
@@ -256,17 +256,19 @@ const HomePanel = () => {
   }, [sessionData, showAlert, accordionOpen]);
 
   const [reportSearch, setReportSearch] = useState("");
-  const [selectedReport, setSelectedReport] = useState<
-    [PreverifiedReport, null] | null
-  >(null);
+  const [selectedReport, setSelectedReport] = useState<CombinedReport | null>(
+    null
+  );
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const filteredUserReports = useMemo(() => {
     if (!reportSearch.trim()) return filteredReports;
-    return filteredReports.filter(
-      (report) =>
-        report.PR_address &&
-        report.PR_address.toLowerCase().includes(reportSearch.toLowerCase())
-    );
+    return filteredReports.filter((reportTuple) => {
+      const pre = reportTuple[0];
+      return (
+        pre.PR_address &&
+        pre.PR_address.toLowerCase().includes(reportSearch.toLowerCase())
+      );
+    });
   }, [filteredReports, reportSearch]);
 
   const [page, setPage] = useState(1);
@@ -321,29 +323,26 @@ const HomePanel = () => {
         </Text>
       ) : (
         <>
-          {paginatedReports.map((report, idx) => (
-            <View key={`report-card-${report.PR_report_id}-${idx}`}>
-              <ReportCard
-                preverified={report}
-                verified={null}
-                setIsEditModalVisible={() => {
-                  setEditReportData([report, null]);
-                  setIsEditModalVisible(true);
-                }}
-                onClick={() => {
-                  setSelectedReport([report, null]);
-                  setIsReportModalVisible(true);
-                }}
-              />
-            </View>
-          ))}
-          {/* Edit Report Modal */}
-          <EditReportModal
-            visible={isEditModalVisible}
-            reportData={editReportData}
-            onClose={() => setIsEditModalVisible(false)}
-            onSave={handleSaveEditReport}
-          />
+          {paginatedReports.map((reportTuple, idx) => {
+            const [pre, post] = reportTuple;
+            return (
+              <View key={`report-card-${pre.PR_report_id}-${idx}`}>
+                <ReportCard
+                  preverified={pre}
+                  verified={post}
+                  setIsEditModalVisible={() => {
+                    setEditReportData([pre, post]);
+                    setIsEditModalVisible(true);
+                  }}
+                  onClick={() => {
+                    setSelectedReport([pre, post]);
+                    setIsReportModalVisible(true);
+                  }}
+                />
+              </View>
+            );
+          })}
+          {/* Edit Report Modal (moved to bottom) */}
           {/* Pagination Controls */}
           <View
             style={{
@@ -442,6 +441,14 @@ const HomePanel = () => {
         visible={isReportModalVisible}
         onClose={() => setIsReportModalVisible(false)}
         selectedReport={selectedReport}
+      />
+
+      {/* Edit Report Modal (single instance) */}
+      <EditReportModal
+        visible={isEditModalVisible}
+        onClose={() => setIsEditModalVisible(false)}
+        reportData={editReportData ?? selectedReport}
+        onSave={handleEditSave}
       />
     </View>
   );

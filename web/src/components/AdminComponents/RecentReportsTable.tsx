@@ -29,7 +29,7 @@ type PreverifiedReportType = {
 const columns: ColumnDef<PreverifiedReportType>[] = [
   {
     accessorKey: "PR_user_id",
-    header: "User",
+    header: "User ID",
   },
   {
     accessorKey: "PR_address",

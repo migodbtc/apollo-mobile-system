@@ -135,6 +135,7 @@ const ReportCard = ({
   setIsEditModalVisible,
   onClick,
   onDelete,
+  reportsPanel = false,
 }: ReportCardProps) => {
   const { sessionData } = useSession();
   const isAdmin =
@@ -192,7 +193,7 @@ const ReportCard = ({
           </Text>
 
           {/**start ng code for the admin controls depending on the role of the user */}
-          {isAdmin && (
+          {isAdmin && reportsPanel == true && (
             <View
               style={{
                 marginTop: height * 0.03,

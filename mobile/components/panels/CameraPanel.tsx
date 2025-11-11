@@ -144,9 +144,7 @@ const CameraPanel = ({
           </TouchableOpacity>
           <View style={[styles.modeButton, { opacity: isRecording ? 1 : 0 }]}>
             <Text style={styles.timerText}>
-              {isRecording
-                ? `${formatDuration(recordingDuration)}/30s`
-                : "--/30s"}
+              {isRecording ? `${formatDuration(recordingDuration)}/5s` : "--/5"}
             </Text>
           </View>
         </View>

@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useEffect,
 } from "react";
 import axios from "axios";
 import type {
@@ -486,6 +487,24 @@ export const AdminSQLProvider = ({
       fetchMediaBlobById,
     ]
   );
+
+  // Perform an initial refresh when the provider mounts so admin pages
+  // have data available without each page having to call fetch on mount.
+  // This keeps the fetch logic centralized and avoids duplicating calls
+  // across multiple admin components. Any errors are logged but do not
+  // block rendering.
+  useEffect(() => {
+    (async () => {
+      try {
+        await refreshAll();
+      } catch (e) {
+        console.error("AdminSQLProvider initial refresh failed:", e);
+      }
+    })();
+    // We intentionally depend only on `refreshAll` so this runs once
+    // when the provider is created (or when the function identity
+    // changes during hot reload).
+  }, [refreshAll]);
 
   return (
     <AdminSQLContext.Provider value={contextValue}>

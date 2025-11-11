@@ -114,6 +114,8 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
   };
 
   const sendReportToAPI = async () => {
+    // log start of reporting
+    console.log("Starting report submission...");
     if (isLoading || !coords || !sessionData?.UA_user_id) return;
 
     try {

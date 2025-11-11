@@ -51,6 +51,13 @@ const ReportsPanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Deletion states
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [targetDeleteReport, setTargetDeleteReport] = useState<
+    [PreverifiedReport, PostverifiedReport | null] | null
+  >(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Report combination
   const combinedReports = useMemo(() => {
@@ -138,8 +145,12 @@ const ReportsPanel = () => {
 
   const handleEditClick = useCallback(
     (report: [PreverifiedReport, PostverifiedReport | null]) => {
+      // Ensure the selected report state is applied before opening the modal.
+      // Opening immediately may render the modal with null props due to
+      // React state batching; schedule open on next tick.
+      console.log("Report Selected for Edit: ", report);
       setSelectedReport(report);
-      setIsEditModalVisible(true);
+      setTimeout(() => setIsEditModalVisible(true), 0);
     },
     []
   );
@@ -346,6 +357,13 @@ const ReportsPanel = () => {
                   onClick={() => handleReportClick(report)}
                   onEdit={() => handleEditClick(report)}
                   setIsEditModalVisible={setIsEditModalVisible}
+                  onDelete={() => {
+                    // open confirmation modal
+                    setTargetDeleteReport(report);
+                    setDeleteError(null);
+                    setIsDeleteModalVisible(true);
+                  }}
+                  reportsPanel={true}
                 />
               ))}
               {/* Pagination Controls */}
@@ -465,6 +483,141 @@ const ReportsPanel = () => {
         reportData={selectedReport}
         onSave={handleEditSave}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={isDeleteModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirm Deletion</Text>
+            <Text style={styles.modalText}>
+              {targetDeleteReport
+                ? targetDeleteReport[1]
+                  ? `This will delete the verification record (ID ${targetDeleteReport[1]?.VR_verification_id}) for report ${targetDeleteReport[0].PR_report_id}. The preverified report will be updated accordingly.`
+                  : `This will permanently delete the preverified report ${targetDeleteReport[0].PR_report_id}. This action cannot be undone.`
+                : "No report selected."}
+            </Text>
+
+            {deleteError && (
+              <Text
+                style={[styles.modalText, { color: "#F87171", marginTop: 8 }]}
+              >
+                {deleteError}
+              </Text>
+            )}
+
+            <View
+              style={{
+                flexDirection: "row",
+                marginTop: height * 0.02,
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.modalCloseButton,
+                  { backgroundColor: "#6c757d", flex: 1 },
+                ]}
+                onPress={() => setIsDeleteModalVisible(false)}
+                disabled={isDeleting}
+              >
+                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalCloseButton,
+                  { backgroundColor: "#dc2626", flex: 1 },
+                ]}
+                onPress={async () => {
+                  if (!targetDeleteReport) return;
+                  setIsDeleting(true);
+                  setDeleteError(null);
+
+                  try {
+                    // Defensive checks: ensure IDs are present
+                    const prId = targetDeleteReport[0]?.PR_report_id;
+                    const vrId = targetDeleteReport[1]?.VR_verification_id;
+
+                    if (!prId) {
+                      throw new Error(
+                        "Missing PR_report_id for the target report."
+                      );
+                    }
+
+                    // If there's a postverified entry, ensure it has an id
+                    if (targetDeleteReport[1]) {
+                      if (!vrId) {
+                        throw new Error(
+                          "Missing VR_verification_id for the postverified entry."
+                        );
+                      }
+
+                      // send minimal payload: only ids (pre and post)
+                      const payload = [
+                        { PR_report_id: prId },
+                        { VR_verification_id: vrId },
+                      ];
+                      const resp = await fetch(
+                        `${SERVER_LINK}/reports/postverified/one/delete`,
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(payload),
+                        }
+                      );
+
+                      const body = await resp.json().catch(() => ({}));
+                      if (!resp.ok) {
+                        throw new Error(
+                          body?.error || `Server returned ${resp.status}`
+                        );
+                      }
+                    } else {
+                      // delete preverified directly
+                      const payload = { PR_report_id: prId };
+                      const resp = await fetch(
+                        `${SERVER_LINK}/reports/preverified/one/delete`,
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(payload),
+                        }
+                      );
+
+                      const body = await resp.json().catch(() => ({}));
+                      if (!resp.ok) {
+                        throw new Error(
+                          body?.error || `Server returned ${resp.status}`
+                        );
+                      }
+                    }
+
+                    // success -> close and refresh
+                    setIsDeleteModalVisible(false);
+                    setTargetDeleteReport(null);
+                    refreshReports();
+                  } catch (err: any) {
+                    console.error("Delete failed:", err);
+                    setDeleteError(err?.message || String(err));
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+              >
+                <Text style={styles.modalCloseButtonText}>
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };

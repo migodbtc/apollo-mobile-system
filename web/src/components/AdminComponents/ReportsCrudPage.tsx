@@ -449,6 +449,12 @@ const ReportsCrudPage = () => {
   // }, []);
 
   useEffect(() => {
+    // fetch initial data on page load
+    fetchPreverifiedReports();
+    fetchPostverifiedReports();
+  }, []);
+
+  useEffect(() => {
     console.log("Pagination index updated:", pagination.pageIndex);
     // log the stack trace to see where the change originated
     console.trace();

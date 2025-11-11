@@ -160,9 +160,25 @@ export const AdminSQLProvider = ({
         }));
 
         const response = await api.get<T[]>(`/${endpoint}`);
+        // Normalize preverified report coordinates which sometimes arrive as strings
+        const normalizedData =
+          tableName === "preverifiedReports"
+            ? (response.data as any[]).map((item) => ({
+                ...item,
+                PR_latitude:
+                  typeof item.PR_latitude === "string"
+                    ? parseFloat(item.PR_latitude)
+                    : item.PR_latitude,
+                PR_longitude:
+                  typeof item.PR_longitude === "string"
+                    ? parseFloat(item.PR_longitude)
+                    : item.PR_longitude,
+              }))
+            : response.data;
+
         setState((prev) => ({
           ...prev,
-          [tableName]: response.data,
+          [tableName]: normalizedData,
           loading: { ...prev.loading, [tableName]: false },
         }));
       } catch (error) {

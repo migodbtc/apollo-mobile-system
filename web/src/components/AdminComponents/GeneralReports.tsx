@@ -1,6 +1,6 @@
 import { faFire, faTable } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React from "react";
+import React, { useMemo } from "react";
 import { useAdminSQL } from "../../constants/context/AdminSQLContext";
 
 interface GeneralReportsProps {
@@ -18,26 +18,27 @@ const GeneralReports = ({
   const { combinedReports } = useAdminSQL();
 
   const selectionOneStringMap: { [key: number]: string } = {
-    1: "today",
+    1: "last 24 hours",
     2: "this past week",
     3: "this past month",
     4: "since start of records",
   };
 
-  // SIMPLIFIED FILTERING - NO MEMO
-  const getFilteredReports = () => {
+  // Filter reports by selected time window. Exclude future timestamps.
+  const filteredReports = useMemo(() => {
     if (!combinedReports?.length) return [];
     if (selectionOne === 4) return combinedReports;
 
     const now = Date.now();
     const cutoffDays = [1, 7, 30][selectionOne - 1] || 0;
+
     return combinedReports.filter(([pre]) => {
       const reportTime = new Date(pre.PR_timestamp).getTime();
-      return (now - reportTime) / 86400000 < cutoffDays;
+      const ageDays = (now - reportTime) / 86400000;
+      // Exclude future timestamps (ageDays < 0) and enforce cutoff
+      return ageDays >= 0 && ageDays < cutoffDays;
     });
-  };
-
-  const filteredReports = getFilteredReports();
+  }, [combinedReports, selectionOne]);
 
   // SIMPLIFIED METRICS - NO MEMO
   const getMetrics = () => {
@@ -98,10 +99,10 @@ const GeneralReports = ({
             onChange={handleSelectionOneChange}
             value={selectionOne}
           >
-            <option value="1">Today</option>
-            <option value="2">Past Week</option>
-            <option value="3">Past Month</option>
-            <option value="4">All-Time</option>
+            <option value={1}>Last 24h</option>
+            <option value={2}>Past Week</option>
+            <option value={3}>Past Month</option>
+            <option value={4}>All-Time</option>
           </select>
         </div>
       </div>

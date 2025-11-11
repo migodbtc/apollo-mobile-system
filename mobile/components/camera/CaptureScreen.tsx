@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Dimensions, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Dimensions,
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+} from "react-native";
 import CameraPanel from "../panels/CameraPanel";
 import { useRouter } from "expo-router";
-import { CameraType, CameraView } from "expo-camera";
-import { Video } from "expo-av";
+import { CameraType, CameraView, Camera } from "expo-camera";
 import { useVideoUri } from "@/constants/contexts/VideoURIContext";
-import { VideoMetadata } from "@/constants/interfaces/media";
+import { useImageUri } from "@/constants/contexts/ImageURIContext";
 import * as FileSystem from "expo-file-system";
 
 // DEVELOPER NOTE: There is a development issue with this script as it
@@ -18,84 +23,108 @@ const ASPECT_RATIO = 16 / 9; // Width to height ratio
 
 const CameraScreen = () => {
   const router = useRouter();
-  const cameraViewReference = useRef<CameraView>(null);
-  const videoReference = useRef<Video>(null);
+  const cameraViewReference = useRef<CameraView | null>(null);
   const [videoSource, setVideoSource] = useState<{ uri: string } | undefined>(
     undefined
   );
   const { videoUri, setVideoUri } = useVideoUri();
+  const { setImageUri } = useImageUri();
+
+  const [hasCameraPermission, setHasCameraPermission] = useState<
+    boolean | null
+  >(null);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(
+    null
+  );
+
+  useEffect(() => {
+    // Request microphone permission proactively so recording doesn't fail
+    // on some devices where it isn't implicitly requested.
+    const reqPerms = async () => {
+      await ensurePermissionsAsync();
+    };
+    reqPerms();
+  }, []);
+
+  // Ensure permissions helper with multiple fallbacks for expo-camera versions
+  const ensurePermissionsAsync = async () => {
+    try {
+      // Microphone
+      if (Camera && (Camera as any).requestMicrophonePermissionsAsync) {
+        const mic = await (Camera as any).requestMicrophonePermissionsAsync();
+        setHasMicPermission(mic.status === "granted");
+      } else if ((Camera as any).getMicrophonePermissionsAsync) {
+        const mic = await (Camera as any).getMicrophonePermissionsAsync();
+        setHasMicPermission(mic.status === "granted");
+      } else {
+        // best-effort fallback
+        setHasMicPermission(false);
+      }
+
+      // Camera
+      if (Camera && (Camera as any).requestCameraPermissionsAsync) {
+        const cam = await (Camera as any).requestCameraPermissionsAsync();
+        setHasCameraPermission(cam.status === "granted");
+      } else if ((Camera as any).requestPermissionsAsync) {
+        // older fallback
+        const cam = await (Camera as any).requestPermissionsAsync();
+        setHasCameraPermission(cam.status === "granted");
+      } else if ((Camera as any).getPermissionsAsync) {
+        const cam = await (Camera as any).getPermissionsAsync();
+        setHasCameraPermission(cam.status === "granted");
+      } else {
+        // best-effort fallback
+        setHasCameraPermission(false);
+      }
+    } catch (e) {
+      setHasCameraPermission(false);
+      setHasMicPermission(false);
+    }
+  };
+
+  // If permissions are revoked while recording, stop recording immediately
+  useEffect(() => {
+    if (
+      (hasCameraPermission === false || hasMicPermission === false) &&
+      isRecording
+    ) {
+      handleStopRecording();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasCameraPermission, hasMicPermission]);
 
   const [facing, setFacing] = useState<CameraType>("back");
   const [isVideoMode, setIsVideoMode] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const durationIntervalRef = useRef<number | null>(null);
 
   const toggleMediaType = () => {
     setIsVideoMode((prev) => !prev);
     if (isRecording) handleStopRecording();
   };
 
-  const getVideoMetadata = async (uri: string): Promise<VideoMetadata> => {
-    return new Promise(async (resolve, reject) => {
-      let intervalId: NodeJS.Timeout | null = null;
-      let timeoutId: NodeJS.Timeout | null = null;
-      const MAX_RETRIES = 30;
-      let retryCount = 0;
-
-      try {
-        setVideoUri(uri);
-        setVideoSource({ uri });
-
-        intervalId = setInterval(async () => {
-          retryCount++;
-          const ref = videoReference.current;
-
-          if (!ref) {
-            if (retryCount >= MAX_RETRIES) {
-              clearInterval(intervalId!);
-              reject(new Error("Video reference not available"));
-            }
-            return;
-          }
-
-          try {
-            const status = await ref.getStatusAsync();
-
-            if (status.isLoaded && status.durationMillis !== undefined) {
-              clearInterval(intervalId!);
-              if (timeoutId) clearTimeout(timeoutId);
-
-              const fileInfo = await FileSystem.getInfoAsync(uri);
-
-              resolve({
-                duration: status.durationMillis / 1000,
-                size: fileInfo.exists ? fileInfo.size : null,
-                uri,
-              });
-            } else if (retryCount >= MAX_RETRIES) {
-              clearInterval(intervalId!);
-              reject(new Error("Video never loaded"));
-            }
-          } catch (error) {
-            clearInterval(intervalId!);
-            reject(error);
-          }
-        }, 100);
-
-        timeoutId = setTimeout(() => {
-          clearInterval(intervalId!);
-          reject(new Error("Timeout: Video metadata fetch took too long"));
-        }, 5000);
-      } catch (err) {
-        if (intervalId) clearInterval(intervalId);
-        if (timeoutId) clearTimeout(timeoutId);
-        reject(err);
-      }
-    });
-  };
+  // NOTE: metadata fetching via a Video ref is fragile across different preview
+  // implementations. We simply set the video URI and proceed to the preview
+  // screen; preview handlers (PreviewPanel) can load duration if needed.
 
   const handleStartRecording = async () => {
+    // Prevent starting when we don't know or don't have permissions
+    if (hasCameraPermission === null || hasMicPermission === null) {
+      await ensurePermissionsAsync();
+    }
+
+    // log if cannot record
+    console.log("Recording requested; camera permission:", hasCameraPermission);
+    console.log("Recording requested; mic permission:", hasMicPermission);
+
+    if (!hasCameraPermission || !hasMicPermission) {
+      console.warn(
+        "Camera or microphone permission not granted. Cannot record."
+      );
+      return;
+    }
+
     if (!cameraViewReference.current) return;
     try {
       setVideoUri(null);
@@ -105,15 +134,20 @@ const CameraScreen = () => {
       durationIntervalRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
-
-      const video = await cameraViewReference.current.recordAsync({
+      const video = await (cameraViewReference.current as any).recordAsync({
         maxDuration: 30,
       });
 
       if (video?.uri) {
+        // Persist uri to context and navigate to preview. File size can be
+        // derived if needed by preview or submission flow.
         setVideoUri(video.uri);
-
-        const metadata = await getVideoMetadata(video.uri);
+        try {
+          const fileInfo = await FileSystem.getInfoAsync(video.uri);
+          setVideoSource({ uri: video.uri });
+        } catch (e) {
+          // ignore file info errors; preview will still attempt to play
+        }
         router.push("/(dash)/(camera)/preview");
       }
     } catch (err) {
@@ -126,7 +160,7 @@ const CameraScreen = () => {
   const handleStopRecording = async () => {
     if (!cameraViewReference.current || !isRecording) return;
     try {
-      await cameraViewReference.current.stopRecording();
+      await (cameraViewReference.current as any).stopRecording();
     } catch (err) {
     } finally {
       setIsRecording(false);
@@ -134,6 +168,49 @@ const CameraScreen = () => {
         clearInterval(durationIntervalRef.current);
     }
   };
+
+  const handleTakePhoto = async () => {
+    if (!cameraViewReference.current) return;
+    try {
+      const photo = await (
+        cameraViewReference.current as any
+      ).takePictureAsync();
+      if (photo?.uri) {
+        setImageUri(photo.uri);
+        router.push("/(dash)/(camera)/preview");
+      }
+    } catch (err) {
+      console.error("take photo error", err);
+    }
+  };
+
+  // Simple UI gating while permissions are being resolved or denied
+  if (hasCameraPermission === null || hasMicPermission === null) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: "black" }]}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={{ color: "white", marginTop: 12 }}>
+          Checking camera & mic permissions...
+        </Text>
+      </View>
+    );
+  }
+
+  if (!hasCameraPermission || !hasMicPermission) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: "black", padding: 20 },
+        ]}
+      >
+        <Text style={{ color: "white", textAlign: "center" }}>
+          Camera and microphone permissions are required to record video. Please
+          enable them in system settings and reopen the app.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -143,9 +220,8 @@ const CameraScreen = () => {
         backgroundColor: "black",
       }}
     >
-      {/* <CameraPanel
+      <CameraPanel
         cameraRef={cameraViewReference}
-        videoRef={videoReference}
         facing={facing}
         setFacing={setFacing}
         isRecording={isRecording}
@@ -154,9 +230,10 @@ const CameraScreen = () => {
         handleStartRecording={handleStartRecording}
         handleStopRecording={handleStopRecording}
         recordingDuration={recordingDuration}
-        handleGoBack={() => router.push("/dashboard")}
-        handleTakePhoto={}
-      /> */}
+        handleGoBack={() => router.push("/(dash)/dashboard")}
+        handleTakePhoto={handleTakePhoto}
+        captureFeedback={null}
+      />
     </View>
   );
 };

@@ -24,7 +24,7 @@ const AboutPanel = () => {
   const developmentTeam = [
     {
       name: "Miguel Justin Bunda",
-      role: "Project Manager, Lead Fullstack Developer, Database Administrator, Solutions Architect, UI/UX Designer, Assistant Technical Writer, Visionary Associate, GIS Developer, Lead Mobile Developer, Lead R&D Engineer, DevOps Engineer, ML Engineer, Lead QA Tester, Graphic Designer",
+      role: "Project Manager, Lead Fullstack Developer, Database Administrator, Solutions Architect, UI/UX Designer, Assistant Technical Writer, Visionary Associate, GIS Developer, Lead Mobile Developer, Lead R&D Engineer, DevOps Engineer, ML Engineer, Lead QA Tester, Graphic Designer, Cloud Engineer",
     },
     {
       name: "Leeroi Claudio",

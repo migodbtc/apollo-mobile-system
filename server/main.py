@@ -7,6 +7,7 @@ import json
 import os
 import threading
 import random
+import traceback
 
 import flask
 import psutil
@@ -357,12 +358,13 @@ def add_postverified_report(request):
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pms_DictCursor)
-        # print("[DEBUG] Executing INSERT INTO postverified_reports ...")
-        cursor.execute("""
-            INSERT INTO postverified_reports
-            (VR_report_id, VR_confidence_score, VR_detected, VR_verification_timestamp, VR_severity_level, VR_spread_potential, VR_fire_type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (
+
+        # Build INSERT dynamically so we can optionally include VR_verification_id
+        cols = [
+            "VR_report_id", "VR_confidence_score", "VR_detected", "VR_verification_timestamp",
+            "VR_severity_level", "VR_spread_potential", "VR_fire_type"
+        ]
+        vals = [
             data["VR_report_id"],
             data["VR_confidence_score"],
             data["VR_detected"],
@@ -370,15 +372,30 @@ def add_postverified_report(request):
             VR_severity_level,
             VR_spread_potential,
             VR_fire_type
-        ))
+        ]
+
+        # If client supplied a VR_verification_id, include it explicitly.
+        supplied_ver_id = data.get("VR_verification_id")
+        if supplied_ver_id is not None:
+            cols.insert(0, "VR_verification_id")
+            vals.insert(0, supplied_ver_id)
+
+        placeholders = ", ".join(["%s"] * len(vals))
+        cols_sql = ", ".join(cols)
+
+        sql = f"INSERT INTO postverified_reports ({cols_sql}) VALUES ({placeholders})"
+        cursor.execute(sql, tuple(vals))
         conn.commit()
-        # print("[DEBUG] Insert successful, lastrowid:", cursor.lastrowid)
+
+        # Determine verification id returned: either supplied value or lastrowid
+        verification_id = supplied_ver_id if supplied_ver_id is not None else cursor.lastrowid
+
         return jsonify({
             "message": "Postverified report added",
-            "verification_id": cursor.lastrowid
+            "verification_id": verification_id
         }), 201
     except Exception as e:
-        print("[DEBUG] Exception occurred:", str(e))
+        print("[DEBUG] Exception occurred in add_postverified_report:", str(e))
         return jsonify({"error": str(e)}), 500
     finally:
         if cursor: cursor.close()
@@ -391,14 +408,51 @@ def update_postverified_report(request):
     print("[DEBUG] data = ", data)
 
     VR_verification_id = data.get("VR_verification_id")
+    # Do NOT overwrite the stored verification timestamp by default. Mobile
+    # clients were sending ISO strings like '2025-10-24T06:50:23.566Z' which
+    # fail the naive strptime parsing and caused 500 errors. We'll ignore any
+    # incoming VR_verification_timestamp unless the client explicitly needs
+    # to update it in a supported format. This avoids unintentional changes.
+    VR_verification_timestamp = data.get("VR_verification_timestamp")
+
+    # If the client doesn't provide VR_verification_id, try to resolve it
+    # from VR_report_id so mobile clients that only send the report id still
+    # update the correct postverified row instead of creating duplicates.
     if not VR_verification_id:
-        print("[DEBUG] Missing VR_verification_id")
-        return jsonify({"error": "Missing VR_verification_id"}), 400
+        VR_report_id = data.get("VR_report_id")
+        if not VR_report_id:
+            print("[DEBUG] Missing VR_verification_id and VR_report_id")
+            return jsonify({"error": "Missing VR_verification_id or VR_report_id"}), 400
+
+        # lookup existing postverified row by VR_report_id
+        try:
+            conn = mysql.connect()
+            cursor = conn.cursor(pms_DictCursor)
+            cursor.execute(
+                "SELECT VR_verification_id FROM postverified_reports WHERE VR_report_id = %s ORDER BY VR_verification_id DESC LIMIT 1",
+                (VR_report_id,)
+            )
+            found = cursor.fetchone()
+            if not found:
+                print(f"[DEBUG] No postverified row found for VR_report_id={VR_report_id}")
+                return jsonify({"error": "No postverified report found for provided VR_report_id"}), 404
+            VR_verification_id = found.get("VR_verification_id")
+            print(f"[DEBUG] Resolved VR_verification_id={VR_verification_id} from VR_report_id={VR_report_id}")
+        except Exception as e:
+            print("[DEBUG] Error resolving VR_verification_id:", str(e))
+            return jsonify({"error": "Database error resolving VR_verification_id"}), 500
+        finally:
+            if cursor: cursor.close()
+            if conn: conn.close()
 
     # List of fields that can be updated
+    # NOTE: keep each field as a separate string (don't accidentally concatenate
+    # adjacent string literals). A missing comma here previously combined
+    # "VR_spread_potential" and "VR_fire_type" into one token which made the
+    # handler ignore updates to VR_spread_potential.
     allowed_fields = [
         "VR_report_id", "VR_confidence_score", "VR_detected",
-        "VR_verification_timestamp", "VR_severity_level",
+        "VR_verification_timestamp", "VR_severity_level", "VR_spread_potential",
         "VR_fire_type", "VR_status"
     ]
 
@@ -407,6 +461,10 @@ def update_postverified_report(request):
 
     for field in allowed_fields:
         if field in data:
+            # Skip updating the timestamp unless you really intend to change it.
+            if field == "VR_verification_timestamp":
+                print("[DEBUG] Skipping VR_verification_timestamp field to avoid invalid datetime updates")
+                continue
             update_fields.append(f"{field} = %s")
             update_values.append(data[field])
 
@@ -679,7 +737,9 @@ def get_all_media_file_details():
 
         return jsonify(media_rows), 200
     except Exception as e:
-        print(str(e))
+        # Print full traceback for easier debugging (do NOT return traceback to clients)
+        print("[ERROR] add_media_file exception:")
+        traceback.print_exc()
         return {"error": str(e)}, 500
     finally:
         if cursor:
@@ -824,6 +884,11 @@ def add_media_file(request):
         file_name = f"ID{user_id}TIME{current_time}DATE{current_date}{media_type.upper()}.{extension}"
 
         file_data_bytes = media_file.read()
+        # Log file size to help diagnose large uploads causing DB disconnects
+        try:
+            print(f"[DEBUG] add_media_file: file_size={len(file_data_bytes)} bytes, media_type={media_type}")
+        except Exception:
+            pass
 
         conn = mysql.connect()
         cursor = conn.cursor(pms_DictCursor)
@@ -859,9 +924,17 @@ def add_media_file(request):
     except json.JSONDecodeError as e:
         return {"error": f"Invalid report data: {str(e)}"}, 400
     except Exception as e:
-        if conn:
-            conn.rollback()
-        print(str(e))
+        # Guard rollback — if the connection was lost the rollback call can raise
+        try:
+            if conn:
+                conn.rollback()
+        except Exception:
+            # connection already closed or rollback failed; ignore so original
+            # error can be reported and traceback printed below
+            pass
+
+        print("[ERROR] add_media_file exception:")
+        traceback.print_exc()
         return {"error": str(e)}, 500
     finally:
         if cursor:
@@ -1379,11 +1452,12 @@ def route_upload_report_video():
         }), 200
 
     except Exception as e:
-        print(f"Error processing video report: {str(e)}")
+        # Log full traceback for debugging; return a safe error message to client
+        print("[ERROR] Error processing video report:")
+        traceback.print_exc()
         return jsonify({
             "status": "error",
-            "message": "Failed to process video report",
-            "error": str(e)
+            "message": "Failed to process video report. See server logs for details."
         }), 500
     
 @app.route('/reports/upload/image', methods=["POST"])
@@ -1469,22 +1543,158 @@ def route_verify_preverified_report():
     
     try:
         data = request.json
+        # Expecting payload: [PreverifiedReport, PostverifiedReport]
+        if not isinstance(data, list) or len(data) < 2:
+            return jsonify({"error": "Invalid payload format. Expected [PreverifiedReport, PostverifiedReport]."}), 400
 
         preverified_report = data[0]
-        del preverified_report["PR_user_id"]
-        del preverified_report["PR_image"]
-        del preverified_report["PR_video"]
-        del preverified_report["PR_latitude"]
-        del preverified_report["PR_longitude"]
-        del preverified_report["PR_address"]
-        del preverified_report["PR_timestamp"]
         postverified_report = data[1]
-        del postverified_report["VR_verification_id"]
 
-        update_preverified_report(preverified_report)
-        add_postverified_report(postverified_report)
-        
-        return jsonify({"message": "Route finished execution!"}), 200
+        # Keep only fields update_preverified_report expects
+        pr_allowed = {"PR_report_id", "PR_verified", "PR_report_status"}
+        pr_update_payload = {k: v for k, v in preverified_report.items() if k in pr_allowed}
+
+        # Normalize and validate postverified payload before inserting
+        # Allow clients to supply VR_verification_id (optional). If provided,
+        # we'll attempt to use it during insert. The DB will still enforce
+        # uniqueness; if a duplicate is supplied the insert will fail and
+        # the caller will receive an error.
+
+        # Ensure required keys are present and typed correctly
+        # VR_report_id should point to PR_report_id
+        if "VR_report_id" not in postverified_report:
+            postverified_report["VR_report_id"] = preverified_report.get("PR_report_id")
+
+        # Confidence score: coerce to float/int
+        if "VR_confidence_score" in postverified_report:
+            try:
+                postverified_report["VR_confidence_score"] = float(postverified_report["VR_confidence_score"]) if postverified_report["VR_confidence_score"] is not None else 0
+            except Exception:
+                postverified_report["VR_confidence_score"] = 0
+
+        # Detected: coerce to boolean/int accepted by DB
+        if "VR_detected" in postverified_report:
+            v = postverified_report["VR_detected"]
+            if isinstance(v, str):
+                postverified_report["VR_detected"] = True if v.lower() in ("1", "true", "yes") else False
+            else:
+                postverified_report["VR_detected"] = bool(v)
+
+        # Timestamp: normalize ISO -> MySQL DATETIME format if possible
+        if "VR_verification_timestamp" in postverified_report and postverified_report["VR_verification_timestamp"]:
+            raw_ts = postverified_report["VR_verification_timestamp"]
+            try:
+                # Accept strings like 2025-10-24T12:34:56Z or with offset
+                parsed = None
+                if isinstance(raw_ts, str):
+                    try:
+                        # Try parsing common ISO formats
+                        parsed = datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
+                    except Exception:
+                        try:
+                            parsed = datetime.strptime(raw_ts, "%Y-%m-%d %H:%M:%S")
+                        except Exception:
+                            parsed = None
+
+                if parsed:
+                    postverified_report["VR_verification_timestamp"] = parsed.astimezone(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    postverified_report["VR_verification_timestamp"] = datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                postverified_report["VR_verification_timestamp"] = datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            postverified_report["VR_verification_timestamp"] = datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+
+        # Insert postverified record first — but if a postverified row already
+        # exists for this PR_report_id, update it instead of inserting a new one.
+        conn = None
+        cursor = None
+        try:
+            conn = mysql.connect()
+            cursor = conn.cursor(pms_DictCursor)
+            cursor.execute(
+                "SELECT * FROM postverified_reports WHERE VR_report_id = %s",
+                (postverified_report["VR_report_id"],),
+            )
+            existing = cursor.fetchone()
+        except Exception as e:
+            # If DB check fails, fall back to insert to avoid blocking the flow
+            print(f"[VERIFY] Error checking existing postverified: {e}")
+            existing = None
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+        print(f"[VERIFY] Existing postverified found: {existing is not None}")
+        if existing:
+            # Update the existing postverified record with the provided fields
+            try:
+                conn = mysql.connect()
+                cursor = conn.cursor()
+                update_fields = []
+                update_values = []
+                allowed = [
+                    "VR_confidence_score",
+                    "VR_detected",
+                    "VR_verification_timestamp",
+                    "VR_severity_level",
+                    "VR_spread_potential",
+                    "VR_fire_type",
+                    "VR_status",
+                ]
+                for f in allowed:
+                    if f in postverified_report:
+                        update_fields.append(f"{f} = %s")
+                        update_values.append(postverified_report[f])
+
+                if update_fields:
+                    update_values.append(existing.get("VR_verification_id"))
+                    sql = f"UPDATE postverified_reports SET {', '.join(update_fields)} WHERE VR_verification_id = %s"
+                    cursor.execute(sql, tuple(update_values))
+                    conn.commit()
+
+                # emulate add_postverified_report return shape for downstream logic
+                add_result = (jsonify({"message": "Postverified report updated", "verification_id": existing.get("VR_verification_id")}), 200)
+            except Exception as e:
+                print(f"[VERIFY] Failed updating existing postverified: {e}")
+                # fallback to attempting insert
+                add_result = add_postverified_report(postverified_report)
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+        else:
+            add_result = add_postverified_report(postverified_report)
+
+        # add_postverified_report returns (Response, status) when successful or error tuple
+        if isinstance(add_result, tuple):
+            resp_obj, status_code = add_result
+            try:
+                # If it's a Flask Response, get json
+                if hasattr(resp_obj, "get_data"):
+                    body_text = resp_obj.get_data(as_text=True)
+                    body = json.loads(body_text) if body_text else {}
+                else:
+                    body = resp_obj
+            except Exception:
+                body = {}
+
+            if not (200 <= int(status_code) < 300):
+                return jsonify({"error": "Failed to add postverified report", "details": body}), status_code
+
+            verification_id = body.get("verification_id") or body.get("verification_id")
+        else:
+            # Unexpected return value
+            verification_id = None
+
+        # Now update preverified report
+        pr_update_payload = pr_update_payload or {"PR_report_id": preverified_report.get("PR_report_id"), "PR_verified": True, "PR_report_status": preverified_report.get("PR_report_status", "verified")}
+        update_result = update_preverified_report(pr_update_payload)
+
+        return jsonify({"message": "Verification processed", "verification_id": verification_id}), 200
     except Exception as e:
         print(f"Error verifying preverified report: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -1732,19 +1942,70 @@ def start_background_verification(interval=10):
 
                             # Case 1: If fire is detected
                             if tuple_outputs[0] == True:
-                                add_new_postverified = add_postverified_report({
-                                    "VR_report_id": report["PR_report_id"],
-                                    "VR_detected": tuple_outputs[0],
-                                    "VR_confidence_score": tuple_outputs[1],
-                                    "VR_fire_type": tuple_outputs[2],
-                                    "VR_severity_level": tuple_outputs[3],
-                                    "VR_spread_potential": tuple_outputs[4],
-                                    "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
-                                })
+                                # If a postverified row already exists for this report, update it
+                                existing = None
+                                try:
+                                    conn2 = mysql.connect()
+                                    cursor2 = conn2.cursor(pms_DictCursor)
+                                    cursor2.execute(
+                                        "SELECT * FROM postverified_reports WHERE VR_report_id = %s",
+                                        (report["PR_report_id"],),
+                                    )
+                                    existing = cursor2.fetchone()
+                                except Exception as e:
+                                    print(f"[THREAD] Error checking existing postverified (detected): {e}")
+                                    existing = None
+                                finally:
+                                    if cursor2: cursor2.close()
+                                    if conn2: conn2.close()
 
-                                response_obj = add_new_postverified[0]  
-                                response_json = response_obj.get_data(as_text=True)  
-                                response_dict = json.loads(response_json)            
+                                if existing:
+                                    try:
+                                        conn2 = mysql.connect()
+                                        cursor2 = conn2.cursor()
+                                        cursor2.execute(
+                                            "UPDATE postverified_reports SET VR_confidence_score = %s, VR_detected = %s, VR_fire_type = %s, VR_severity_level = %s, VR_spread_potential = %s, VR_verification_timestamp = %s WHERE VR_verification_id = %s",
+                                            (
+                                                tuple_outputs[1],
+                                                tuple_outputs[0],
+                                                tuple_outputs[2],
+                                                tuple_outputs[3],
+                                                tuple_outputs[4],
+                                                datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S"),
+                                                existing.get("VR_verification_id"),
+                                            ),
+                                        )
+                                        conn2.commit()
+                                        add_new_postverified = (jsonify({"message": "Postverified updated", "verification_id": existing.get("VR_verification_id")}), 200)
+                                    except Exception as e:
+                                        print(f"[THREAD] Failed updating existing postverified (detected): {e}")
+                                        add_new_postverified = add_postverified_report({
+                                            "VR_report_id": report["PR_report_id"],
+                                            "VR_detected": tuple_outputs[0],
+                                            "VR_confidence_score": tuple_outputs[1],
+                                            "VR_fire_type": tuple_outputs[2],
+                                            "VR_severity_level": tuple_outputs[3],
+                                            "VR_spread_potential": tuple_outputs[4],
+                                            "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                                        })
+                                    finally:
+                                        if cursor2: cursor2.close()
+                                        if conn2: conn2.close()
+                                else:
+                                    add_new_postverified = add_postverified_report({
+                                        "VR_report_id": report["PR_report_id"],
+                                        "VR_detected": tuple_outputs[0],
+                                        "VR_confidence_score": tuple_outputs[1],
+                                        "VR_fire_type": tuple_outputs[2],
+                                        "VR_severity_level": tuple_outputs[3],
+                                        "VR_spread_potential": tuple_outputs[4],
+                                        "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                                    })
+
+                                # extract verification id from response
+                                response_obj = add_new_postverified[0]
+                                response_json = response_obj.get_data(as_text=True)
+                                response_dict = json.loads(response_json)
 
                                 verification_id = response_dict.get("verification_id")
                                 print(f"Verification ID: {verification_id}")
@@ -1775,16 +2036,60 @@ def start_background_verification(interval=10):
                                     
                             # Case 2: If fire is not detected
                             else: 
-                                add_new_postverified = add_postverified_report({
-                                    "VR_report_id": report["PR_report_id"],
-                                    "VR_detected": tuple_outputs[0],
-                                    "VR_confidence_score": tuple_outputs[1],
-                                    "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
-                                }) 
-                                
-                                response_obj = add_new_postverified[0]  
-                                response_json = response_obj.get_data(as_text=True)  
-                                response_dict = json.loads(response_json)            
+                                # check for existing postverified; update if present
+                                existing = None
+                                try:
+                                    conn2 = mysql.connect()
+                                    cursor2 = conn2.cursor(pms_DictCursor)
+                                    cursor2.execute(
+                                        "SELECT * FROM postverified_reports WHERE VR_report_id = %s",
+                                        (report["PR_report_id"],),
+                                    )
+                                    existing = cursor2.fetchone()
+                                except Exception as e:
+                                    print(f"[THREAD] Error checking existing postverified (no-detect): {e}")
+                                    existing = None
+                                finally:
+                                    if cursor2: cursor2.close()
+                                    if conn2: conn2.close()
+
+                                if existing:
+                                    try:
+                                        conn2 = mysql.connect()
+                                        cursor2 = conn2.cursor()
+                                        cursor2.execute(
+                                            "UPDATE postverified_reports SET VR_confidence_score = %s, VR_detected = %s, VR_verification_timestamp = %s WHERE VR_verification_id = %s",
+                                            (
+                                                tuple_outputs[1],
+                                                tuple_outputs[0],
+                                                datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S"),
+                                                existing.get("VR_verification_id"),
+                                            ),
+                                        )
+                                        conn2.commit()
+                                        add_new_postverified = (jsonify({"message": "Postverified updated", "verification_id": existing.get("VR_verification_id")}), 200)
+                                    except Exception as e:
+                                        print(f"[THREAD] Failed updating existing postverified (no-detect): {e}")
+                                        add_new_postverified = add_postverified_report({
+                                            "VR_report_id": report["PR_report_id"],
+                                            "VR_detected": tuple_outputs[0],
+                                            "VR_confidence_score": tuple_outputs[1],
+                                            "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                                        })
+                                    finally:
+                                        if cursor2: cursor2.close()
+                                        if conn2: conn2.close()
+                                else:
+                                    add_new_postverified = add_postverified_report({
+                                        "VR_report_id": report["PR_report_id"],
+                                        "VR_detected": tuple_outputs[0],
+                                        "VR_confidence_score": tuple_outputs[1],
+                                        "VR_verification_timestamp": datetime.now(philippines_timezone).strftime("%Y-%m-%d %H:%M:%S")
+                                    }) 
+
+                                response_obj = add_new_postverified[0]
+                                response_json = response_obj.get_data(as_text=True)
+                                response_dict = json.loads(response_json)
 
                                 verification_id = response_dict.get("verification_id")
                                 print(f"Verification ID: {verification_id}")
@@ -1829,9 +2134,10 @@ def start_background_verification(interval=10):
                 time.sleep(interval) 
                 i += 1
 
+threading.Thread(target=start_background_verification, daemon=True, kwargs={"interval": 5}, name="VerificationThread").start()
+    # Threading runs twice if debug=True!
+
 ### === BOILERPLATE CODE ===
 if __name__ == "__main__":
-    threading.Thread(target=start_background_verification, daemon=True, kwargs={"interval": 5}, name="VerificationThread").start()
-    # Threading runs twice if debug=True!
     app.run(debug=False, host="0.0.0.0", port=5821)
     
